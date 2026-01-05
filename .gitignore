@@ -1,0 +1,30 @@
+# Logs
+logs/
+*.log
+
+# Investigation cases (contain research data)
+cases/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+
+# Node (if applicable)
+node_modules/
+
+# Python (if applicable)
+__pycache__/
+*.pyc
+.venv/
+venv/
