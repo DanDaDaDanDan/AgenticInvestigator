@@ -36,9 +36,14 @@ After any structural change, verify all three files are consistent.
 |---------|---------|---------------|
 | `/investigate --new [topic]` | Start new investigation (topic required) | `.claude/commands/investigate.md` |
 | `/investigate [case-id]` | Resume specific case | `.claude/commands/investigate.md` |
-| `/verify` | Run verification checkpoint on investigation | `.claude/commands/verify.md` |
+| `/investigate [case-id] [topic]` | Resume case with new research direction | `.claude/commands/investigate.md` |
+| `/verify` | Run verification checkpoint | `.claude/commands/verify.md` |
+| `/verify [case-id]` | Verify specific case | `.claude/commands/verify.md` |
 | `/status` | Show case progress | `.claude/commands/status.md` |
-| `/osint` | OSINT database lookup (where to find records) | `.claude/commands/osint.md` |
+| `/status [case-id]` | Show status of specific case | `.claude/commands/status.md` |
+| `/status --list` | List all cases | `.claude/commands/status.md` |
+| `/osint` | OSINT quick reference | `.claude/commands/osint.md` |
+| `/osint [topic]` | OSINT sources for specific investigation type | `.claude/commands/osint.md` |
 
 ---
 
@@ -58,6 +63,7 @@ Only stop when ALL conditions are true:
   2. All positions documented
   3. All alternative theories addressed
   4. All major claims from ALL sides fact-checked
+  5. Verification checklist passed
 ```
 
 ---
@@ -101,6 +107,7 @@ Only stop when ALL conditions are true:
 │    - all_positions_documented                                       │
 │    - alternative_theories_addressed                                 │
 │    - all_major_claims_fact_checked                                  │
+│    - verification_checklist_passed                                  │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```

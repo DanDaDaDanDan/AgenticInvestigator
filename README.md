@@ -103,9 +103,12 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 | `/investigate [case-id]` | Resume specific case by ID |
 | `/investigate [case-id] [topic]` | Resume case with new research direction |
 | `/verify` | Run verification checkpoint |
+| `/verify [case-id]` | Verify specific case |
 | `/status` | Show case progress |
+| `/status [case-id]` | Show status of specific case |
 | `/status --list` | List all cases |
-| `/osint` | OSINT database lookup (where to find records) |
+| `/osint` | OSINT quick reference |
+| `/osint [topic]` | OSINT sources for specific investigation type |
 
 ## MCP Servers
 
@@ -121,8 +124,9 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 |------|----------|
 | `CLAUDE.md` | AI behavioral instructions |
 | `architecture.md` | Technical design, data formats |
-| `.claude/commands/investigate.md` | Full AgenticInvestigator procedure with verification |
+| `.claude/commands/investigate.md` | Full investigation procedure |
 | `.claude/commands/verify.md` | Verification checkpoint procedure |
+| `.claude/commands/status.md` | Status command procedure |
 | `.claude/commands/osint.md` | OSINT database sources |
 | `docs/investigative_data_sources.md` | 100+ OSINT sources |
 
