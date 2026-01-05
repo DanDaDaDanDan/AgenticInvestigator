@@ -108,7 +108,7 @@ cases/inv-YYYYMMDD-HHMMSS/
 │    ┌──────────────────────────────────────────────────────────────────────────┐ │
 │    │  PHASE 2: EXTRACTION                                                      │ │
 │    │  - Extract all claims, people, dates, contradictions                      │ │
-│    │  - Categorize claims by position (not limited to two sides)               │ │
+│    │  - Categorize claims by position                                          │ │
 │    └──────────────────────────────────────────────────────────────────────────┘ │
 │                                    ↓                                             │
 │    ┌──────────────────────────────────────────────────────────────────────────┐ │
@@ -422,7 +422,7 @@ All must be TRUE to complete:
 □ All claims categorized by position
 □ Timeline complete
 □ Source provenance traced
-□ All positions documented (not just two)
+□ All positions documented
 □ Alternative theories addressed
 □ Cross-model critique passed
 □ All major claims fact-checked (all sides)

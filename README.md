@@ -72,7 +72,7 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 │    - For EVERY claim → verify with multiple sources              │
 │    - For EVERY contradiction → investigate discrepancy           │
 │                                                                  │
-│  PHASE 4: VERIFICATION CHECKPOINT (every 5 iterations)           │
+│  PHASE 4: VERIFICATION CHECKPOINT (periodic)                      │
 │    - Cross-model critique (Gemini critiques Claude)              │
 │    - Identify unexplored claims from ALL positions               │
 │    - Identify alternative theories to address                    │
@@ -86,11 +86,11 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 │                                                                  │
 │  TERMINATION CHECK                                               │
 │    ALL must be true:                                             │
-│    ✓ minimum iterations complete                                 │
 │    ✓ no unexplored threads                                       │
 │    ✓ all positions documented                                    │
 │    ✓ alternative theories addressed                              │
 │    ✓ all major claims fact-checked                               │
+│    ✓ verification checklist passed                               │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -106,30 +106,6 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 | `/status` | Show case progress |
 | `/status --list` | List all cases |
 | `/osint` | OSINT database lookup (where to find records) |
-
-## Key Features
-
-### Investigative Journalism
-- **Chain of knowledge**: Traces who knew what, when, and what they did about it
-- **All positions built**: Documents ALL sides with their strongest arguments
-- **Statement vs. evidence**: Compares public claims to documentary evidence
-- **Finds the hook**: Identifies the single detail that captures the whole story
-- **Lets readers decide**: Presents evidence, doesn't dictate conclusions
-
-### Built-In Verification
-- **Verification checkpoints**: Catches self-deception through regular audits
-- **Cross-model critique**: Gemini critiques Claude's work
-- **All-sides fact-checking**: Claims from ALL positions verified
-- **Alternative theory handling**: All major theories get verdicts, not ignored
-
-### Technical
-- **Triple deep research**: Gemini (fast) + OpenAI (max depth) + XAI (real-time)
-- **Looping architecture**: 10+ iterations minimum, inner loops on all points
-- **Probability ranges**: `[0.6, 0.8]` not false precision like `0.7`
-- **Provenance tracking**: Source chains traced, circular reporting detected
-- **Deep-web sources**: OSINT databases not indexed by Google
-- **Modular file structure**: Scalable output, summary.md stays small
-- **Source IDs**: Every claim cites `[S001]`, append-only registry
 
 ## MCP Servers
 
@@ -155,7 +131,7 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 ### Investigative Journalism Principles
 1. **Follow the paper trail** - Documents over opinions. Emails, court records, FOIA, testimony.
 2. **Trace the chain** - Who knew what, when? Who did they tell? What happened next?
-3. **Build ALL cases** - Strongest arguments for EVERY position, not just two.
+3. **Build ALL cases** - Strongest arguments for EVERY position.
 4. **Call out contradictions** - Compare statements to evidence. Note the gaps explicitly.
 5. **Find the hook** - The single most compelling detail that captures the whole story.
 6. **Let readers decide** - Present evidence, acknowledge uncertainty, don't dictate conclusions.

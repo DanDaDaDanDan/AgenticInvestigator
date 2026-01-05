@@ -1,7 +1,7 @@
 # Investigation Verification
 
 You are running a **verification checkpoint** on an investigation. This can be called:
-- **Automatically** by /investigate every 5 iterations
+- **Automatically** by /investigate periodically
 - **Manually** to re-verify an existing case
 - **Before completion** to ensure the investigation meets quality standards
 
@@ -165,7 +165,7 @@ All must be TRUE to pass:
 □ All claims categorized by position
 □ Timeline complete
 □ Source provenance traced
-□ All positions documented (not just two)
+□ All positions documented
 □ Alternative theories addressed
 □ Cross-model critique passed
 □ All major claims fact-checked (all sides)

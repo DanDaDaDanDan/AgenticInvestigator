@@ -55,7 +55,7 @@ DO NOT STOP EARLY.
 
 Only stop when ALL conditions are true:
   1. No unexplored avenues remaining
-  2. All positions documented (not just two - ALL of them)
+  2. All positions documented
   3. All alternative theories addressed
   4. All major claims from ALL sides fact-checked
 ```
@@ -75,7 +75,7 @@ Only stop when ALL conditions are true:
 │                                                                     │
 │  PHASE 2: EXTRACTION                                                │
 │    - Extract all claims, people, dates, contradictions              │
-│    - Categorize by position/perspective (not limited to two)        │
+│    - Categorize by position/perspective                             │
 │                                                                     │
 │  PHASE 3: INVESTIGATION                                             │
 │    - For EVERY person: investigate background                       │
@@ -143,7 +143,7 @@ cases/inv-YYYYMMDD-HHMMSS/
 ├── sources.md        # Master source registry [S001], [S002]... (append-only)
 ├── timeline.md       # Chronological events
 ├── people.md         # Person profiles
-├── positions.md      # ALL positions - not limited to two sides
+├── positions.md      # ALL positions with arguments and evidence
 ├── fact-check.md     # Claim verdicts (all positions)
 ├── theories.md       # Alternative/fringe theories
 ├── evidence.md       # Statement vs evidence
@@ -217,7 +217,7 @@ mcp__mcp-xai__research
 ## AgenticInvestigator-Specific Rules
 
 1. **Never fabricate sources** - If you can't find evidence, say so.
-2. **Steelman ALL positions** - Build strongest version of EVERY side, not just two.
+2. **Steelman ALL positions** - Build strongest version of EVERY side.
 3. **Separate fact from inference** - Be explicit about what's proven vs. concluded.
 4. **Document uncertainty** - "We don't know" is a valid finding.
 5. **Detect circular reporting** - Multiple outlets citing each other is one source.

@@ -13,7 +13,7 @@ AgenticInvestigator is an orchestrated multi-agent system that investigates cont
 3. **Inner loops on all points** found in each iteration
 4. **Built-in verification checkpoints**
 5. **Cross-model critique** for validation
-6. **All-sides fact-checking** (every position, not just two)
+6. **All-sides fact-checking** (every position)
 7. **Alternative theory handling** (investigate, don't ignore)
 8. **Modular file output** with self-contained summary.md deliverable
 
@@ -25,7 +25,7 @@ AgenticInvestigator is an orchestrated multi-agent system that investigates cont
 - **Loop on all points**: Process everything, never cherry-pick
 - **Triple deep research**: Gemini + OpenAI + XAI for triangulation
 - **Cross-model validation**: Different AI models check each other
-- **All-sides coverage**: Claims from ALL positions fact-checked (not limited to two)
+- **All-sides coverage**: Claims from ALL positions fact-checked
 - **Alternative theory handling**: All theories addressed with verdicts
 - **Source attribution is sacred**: Every claim traces to a source ID
 - **Modular but self-contained**: summary.md stands alone with all sources embedded
@@ -53,7 +53,7 @@ AgenticInvestigator is an orchestrated multi-agent system that investigates cont
 │                                    ↓                                             │
 │    ┌──────────────────────────────────────────────────────────────────────────┐ │
 │    │ PHASE 2: EXTRACTION                                                       │ │
-│    │   categorize_claims_by_position()        # Not limited to two sides      │ │
+│    │   categorize_claims_by_position()                                        │ │
 │    │   flag_for_verification(partisan_claims)                                 │ │
 │    │   flag_for_verification(reputation_claims)                               │ │
 │    │   flag_for_verification(alternative_theories)                            │ │
@@ -132,7 +132,7 @@ All must be TRUE to complete:
 □ All claims categorized by position
 □ Timeline complete
 □ Source provenance traced
-□ All positions documented (not just two)
+□ All positions documented
 □ Alternative theories addressed
 □ Cross-model critique passed
 □ All major claims fact-checked (all sides)
@@ -1054,7 +1054,7 @@ def can_terminate():
 | After | Commit Message |
 |-------|----------------|
 | Case creation | `case [id]: Initial setup` |
-| Every 5 iterations | `case [id]: Iterations [N-M] + verification` |
+| Periodic checkpoint | `case [id]: Iterations [N-M] + verification` |
 | Verification pass | `case [id]: Verification checklist passed` |
 | Investigation complete | `case [id]: Investigation complete` |
 
