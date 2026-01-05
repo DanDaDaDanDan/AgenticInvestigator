@@ -33,14 +33,12 @@ Only stop when ALL conditions are true:
 ## USAGE
 
 ```
-/investigate                    # Continue active/last case (or create new if none exists)
-/investigate [topic]            # Continue current case with new research on [topic]
-/investigate --new              # Explicitly start new investigation
-/investigate --new [topic]      # Start new investigation on specific topic
+/investigate --new [topic]      # Start new investigation (topic required)
 /investigate [case-id]          # Resume specific case by ID
+/investigate [case-id] [topic]  # Resume case with new research direction
 ```
 
-**Default behavior**: Continue the current case. Only creates new case if `--new` flag is used OR no case exists.
+**No ambiguous defaults.** You must specify either `--new [topic]` or a `[case-id]`. Use `/status --list` to see existing cases.
 
 ---
 
@@ -214,24 +212,16 @@ Use for: Having Gemini critique Claude's findings.
 ### Decision Tree
 
 ```
-1. Was --new flag provided?
+1. Was --new [topic] provided?
    YES → Create new case (STEP 0B)
    NO  → Continue to step 2
 
-2. Was a specific case-id provided?
+2. Was a [case-id] provided?
    YES → Load that case (STEP 0A)
-   NO  → Continue to step 3
-
-3. Does cases/.active exist?
-   YES → Read active case-id (STEP 0A)
-   NO  → Continue to step 4
-
-4. Are there any case folders in cases/?
-   YES → Use most recent by timestamp (STEP 0A)
-   NO  → Create new case (STEP 0B)
+   NO  → ERROR: "Specify --new [topic] or [case-id]. Use /status --list to see cases."
 ```
 
-### STEP 0A: CONTINUE CASE
+### STEP 0A: RESUME CASE
 
 1. Load case from `cases/.active` or find most recent
 2. Read `summary.md` for current state

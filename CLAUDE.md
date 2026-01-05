@@ -34,8 +34,8 @@ After any structural change, verify all three files are consistent.
 
 | Command | Purpose | Detailed Docs |
 |---------|---------|---------------|
-| `/investigate` | Deep investigative research with verification | `.claude/commands/investigate.md` |
-| `/investigate --new` | Start new investigation | `.claude/commands/investigate.md` |
+| `/investigate --new [topic]` | Start new investigation (topic required) | `.claude/commands/investigate.md` |
+| `/investigate [case-id]` | Resume specific case | `.claude/commands/investigate.md` |
 | `/verify` | Run verification checkpoint on investigation | `.claude/commands/verify.md` |
 | `/status` | Show case progress | `.claude/commands/status.md` |
 | `/osint` | OSINT database lookup (where to find records) | `.claude/commands/osint.md` |

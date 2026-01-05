@@ -21,17 +21,17 @@ BOTH prosecution AND defense cases fact-checked.
 ## Quick Start
 
 ```bash
-# Start new investigation
-/investigate --new
-
-# Continue current investigation (or create new if none exists)
-/investigate
-
-# Continue case with new research direction
-/investigate [topic]
+# Start new investigation (topic required)
+/investigate --new "Corporate fraud at Acme Corp"
 
 # Resume specific case by ID
 /investigate inv-20260103-143022
+
+# Resume case with new research direction
+/investigate inv-20260103-143022 "follow the money"
+
+# List all cases
+/status --list
 
 # Run verification checkpoint
 /verify
@@ -111,12 +111,12 @@ BOTH prosecution AND defense cases fact-checked.
 
 | Command | Purpose |
 |---------|---------|
-| `/investigate` | Continue current case (default) |
-| `/investigate [topic]` | Continue case with new research |
-| `/investigate --new` | Start new investigation |
+| `/investigate --new [topic]` | Start new investigation (topic required) |
 | `/investigate [case-id]` | Resume specific case by ID |
+| `/investigate [case-id] [topic]` | Resume case with new research direction |
 | `/verify` | Run verification checkpoint |
 | `/status` | Show case progress |
+| `/status --list` | List all cases |
 | `/osint` | OSINT database lookup (where to find records) |
 
 ## Key Features
