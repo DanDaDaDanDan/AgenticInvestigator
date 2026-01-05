@@ -179,10 +179,10 @@ All must be TRUE to complete:
 
 | Engine | Server | Tool | Strength |
 |--------|--------|------|----------|
-| **Gemini** | `mcp-gemini` | `deep_research` | Fast, broad coverage (5-15 min) |
-| **OpenAI** | `mcp-openai` | `deep_research` | Maximum depth, complex reasoning (10-30 min) |
-| **XAI** | `mcp-xai` | `research` | Real-time, social media, breaking news |
-| **Gemini (critique)** | `mcp-gemini` | `generate_text` | Cross-model verification |
+| **Gemini** | [`mcp-gemini`](https://github.com/DanDaDaDanDan/mcp-gemini) | `deep_research` | Fast, broad coverage (5-15 min) |
+| **OpenAI** | [`mcp-openai`](https://github.com/DanDaDaDanDan/mcp-openai) | `deep_research` | Maximum depth, complex reasoning (10-30 min) |
+| **XAI** | [`mcp-xai`](https://github.com/DanDaDaDanDan/mcp-xai) | `research` | Real-time, social media, breaking news |
+| **Gemini (critique)** | [`mcp-gemini`](https://github.com/DanDaDaDanDan/mcp-gemini) | `generate_text` | Cross-model verification |
 
 ### When to Use Which
 

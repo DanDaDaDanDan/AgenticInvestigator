@@ -111,9 +111,9 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 
 | Server | Purpose |
 |--------|---------|
-| `mcp-gemini` | Deep research (fast), cross-model critique |
-| `mcp-openai` | Deep research (max depth), cross-model critique |
-| `mcp-xai` | Real-time search (X, web, news), multi-source research |
+| [`mcp-gemini`](https://github.com/DanDaDaDanDan/mcp-gemini) | Deep research (fast), cross-model critique |
+| [`mcp-openai`](https://github.com/DanDaDaDanDan/mcp-openai) | Deep research (max depth), cross-model critique |
+| [`mcp-xai`](https://github.com/DanDaDaDanDan/mcp-xai) | Real-time search (X, web, news), multi-source research |
 
 ## Documentation
 
