@@ -2,21 +2,13 @@
 
 **Investigative journalism framework for Claude Code.** Produces rigorous, balanced reporting on contested topics using parallel multi-model research, cross-model critique, built-in verification, and transparent evidence-based analysis.
 
-This is not a debunking tool. It's a **reporting framework** that traces chains of knowledge, builds cases for both sides, fact-checks claims from ALL perspectives, and lets readers draw their own conclusions.
+This is not a debunking tool. It's a **reporting framework** that traces chains of knowledge, builds cases for ALL sides, fact-checks claims from ALL perspectives, and lets readers draw their own conclusions.
 
-## Core Philosophy: INSATIABLE CURIOSITY + VERIFICATION HONESTY
+## Core Philosophy: INSATIABLE CURIOSITY
 
-**The key to AgenticInvestigator is to be INSATIABLY CURIOUS and RUTHLESSLY HONEST.**
+**The key to AgenticInvestigator is to be INSATIABLY CURIOUS.**
 
-Every finding triggers more questions. Every person mentioned gets investigated. Every source gets traced. Every contradiction gets explored. Every gap gets filled. **Every claim from BOTH sides gets fact-checked.**
-
-```
-MINIMUM 10 iterations on every investigation.
-VERIFICATION CHECKPOINT every 5 iterations.
-Score >= 90% required before claiming complete.
-ALL conspiracy theories must be addressed.
-BOTH prosecution AND defense cases fact-checked.
-```
+Every finding triggers more questions. Every person mentioned gets investigated. Every source gets traced. Every contradiction gets explored. Every gap gets filled. **Every claim from ALL sides gets fact-checked.**
 
 ## Quick Start
 
@@ -49,10 +41,9 @@ BOTH prosecution AND defense cases fact-checked.
 ├── sources.md        # Master source registry [S001], [S002]...
 ├── timeline.md       # Chronological events
 ├── people.md         # Person profiles
-├── prosecution.md    # Case against
-├── defense.md        # Case for
-├── fact-check.md     # Claim verdicts (both sides)
-├── theories.md       # Conspiracy theories analysis
+├── positions.md      # ALL sides - each position with arguments and evidence
+├── fact-check.md     # Claim verdicts (all sides)
+├── theories.md       # Fringe/alternative theories analysis
 ├── evidence.md       # Statement vs evidence, chain of knowledge
 └── iterations.md     # Progress log + verification checkpoints
 ```
@@ -74,7 +65,7 @@ BOTH prosecution AND defense cases fact-checked.
 │                                                                  │
 │  PHASE 2: EXTRACTION                                             │
 │    - Extract claims, people, dates, contradictions               │
-│    - Categorize: prosecution, defense, conspiracy theories       │
+│    - Categorize by position/perspective                          │
 │                                                                  │
 │  PHASE 3: INVESTIGATION                                          │
 │    - For EVERY person → investigate background                   │
@@ -83,10 +74,9 @@ BOTH prosecution AND defense cases fact-checked.
 │                                                                  │
 │  PHASE 4: VERIFICATION CHECKPOINT (every 5 iterations)           │
 │    - Cross-model critique (Gemini critiques Claude)              │
-│    - Identify unexplored accusations (BOTH sides)                │
-│    - Identify conspiracy theories to address                     │
-│    - Score completeness (0-100)                                  │
-│    - If score < 90: FORCE CONTINUE                               │
+│    - Identify unexplored claims from ALL positions               │
+│    - Identify alternative theories to address                    │
+│    - Identify gaps and continue until exhausted                  │
 │                                                                  │
 │  PHASE 5: SYNTHESIS                                              │
 │    - Register sources in sources.md (append-only)                │
@@ -96,13 +86,11 @@ BOTH prosecution AND defense cases fact-checked.
 │                                                                  │
 │  TERMINATION CHECK                                               │
 │    ALL must be true:                                             │
-│    ✓ iteration >= 10                                             │
-│    ✓ verification_score >= 90                                    │
+│    ✓ minimum iterations complete                                 │
 │    ✓ no unexplored threads                                       │
-│    ✓ prosecution case complete                                   │
-│    ✓ defense case complete                                       │
-│    ✓ conspiracy theories addressed                               │
-│    ✓ all accusations fact-checked                                │
+│    ✓ all positions documented                                    │
+│    ✓ alternative theories addressed                              │
+│    ✓ all major claims fact-checked                               │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -123,17 +111,16 @@ BOTH prosecution AND defense cases fact-checked.
 
 ### Investigative Journalism
 - **Chain of knowledge**: Traces who knew what, when, and what they did about it
-- **Both sides built**: Creates prosecution AND defense cases, strongest versions
+- **All positions built**: Documents ALL sides with their strongest arguments
 - **Statement vs. evidence**: Compares public claims to documentary evidence
 - **Finds the hook**: Identifies the single detail that captures the whole story
 - **Lets readers decide**: Presents evidence, doesn't dictate conclusions
 
 ### Built-In Verification
-- **Verification checkpoint every 5 iterations**: Catches self-deception
+- **Verification checkpoints**: Catches self-deception through regular audits
 - **Cross-model critique**: Gemini critiques Claude's work
-- **Score >= 90 required**: Cannot claim complete below threshold
-- **Both-sides fact-checking**: Prosecution AND defense claims verified
-- **Conspiracy theory handling**: All major theories get verdicts, not ignored
+- **All-sides fact-checking**: Claims from ALL positions verified
+- **Alternative theory handling**: All major theories get verdicts, not ignored
 
 ### Technical
 - **Triple deep research**: Gemini (fast) + OpenAI (max depth) + XAI (real-time)
@@ -168,23 +155,21 @@ BOTH prosecution AND defense cases fact-checked.
 ### Investigative Journalism Principles
 1. **Follow the paper trail** - Documents over opinions. Emails, court records, FOIA, testimony.
 2. **Trace the chain** - Who knew what, when? Who did they tell? What happened next?
-3. **Build both cases** - Defense AND prosecution. Strongest arguments for each side.
+3. **Build ALL cases** - Strongest arguments for EVERY position, not just two.
 4. **Call out contradictions** - Compare statements to evidence. Note the gaps explicitly.
 5. **Find the hook** - The single most compelling detail that captures the whole story.
 6. **Let readers decide** - Present evidence, acknowledge uncertainty, don't dictate conclusions.
 
 ### Verification Principles
-1. **Verification score >= 90** - Cannot claim complete below this threshold
-2. **Fact-check BOTH sides** - Prosecution claims AND defense claims
-3. **Address conspiracy theories** - Don't ignore them; debunk with evidence
-4. **Cross-model critique** - Different models check each other's work
-5. **Anti-gaming rules** - Cannot skip verification or claim saturation prematurely
+1. **Fact-check ALL sides** - Claims from every position get verified
+2. **Address alternative theories** - Don't ignore them; investigate with evidence
+3. **Cross-model critique** - Different models check each other's work
+4. **No premature stopping** - Cannot claim saturation until genuinely exhausted
 
 ### Technical Principles
 1. **Insatiable curiosity** - Never stop until all avenues exhausted
-2. **10+ iterations** - Explicit minimum, no early stopping
-3. **Loop on all points** - Process everything, never cherry-pick
-4. **Probability ranges** - `[0.6, 0.8]` not `0.7`. Explicit uncertainty is valuable.
+2. **Loop on all points** - Process everything, never cherry-pick
+3. **Probability ranges** - `[0.6, 0.8]` not `0.7`. Explicit uncertainty is valuable.
 
 ## License
 

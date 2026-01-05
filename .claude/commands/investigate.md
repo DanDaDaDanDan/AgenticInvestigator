@@ -8,24 +8,21 @@ You are initiating a **deep investigative journalism research project**. This fr
 
 **The key to AgenticInvestigator is to be INSATIABLY CURIOUS and RUTHLESSLY HONEST.**
 
-Every finding triggers more questions. Every person mentioned gets investigated. Every source gets traced. Every contradiction gets explored. Every gap gets filled. Every claim from BOTH sides gets fact-checked.
+Every finding triggers more questions. Every person mentioned gets investigated. Every source gets traced. Every contradiction gets explored. Every gap gets filled. Every claim from ALL sides gets fact-checked.
 
 ### The Verified Looping Principle
 
 ```
 DO NOT STOP EARLY. DO NOT DECEIVE YOURSELF.
 
-MINIMUM 10 outer loop iterations.
-VERIFICATION CHECKPOINT every 5 iterations.
-FINAL VERIFICATION before claiming complete.
+VERIFICATION CHECKPOINT periodically and before claiming complete.
 
 Only stop when ALL conditions are true:
-  1. You have completed at least 10 iterations
-  2. Verification score >= 90%
-  3. There are genuinely no unexplored avenues remaining
-  4. Both prosecution AND defense cases are complete
-  5. All conspiracy theories have been addressed
-  6. All major accusations from both sides fact-checked
+  1. There are genuinely no unexplored avenues remaining
+  2. All positions have been documented
+  3. All alternative theories have been addressed
+  4. All major claims from all sides fact-checked
+  5. Verification checklist passed
 ```
 
 ---
@@ -58,10 +55,9 @@ cases/inv-YYYYMMDD-HHMMSS/
 │  # DETAIL FILES (use source IDs for citations)
 ├── timeline.md                   # Full chronological timeline
 ├── people.md                     # All person profiles
-├── prosecution.md                # Full prosecution case
-├── defense.md                    # Full defense case
-├── fact-check.md                 # Claim verdicts (both sides)
-├── theories.md                   # Conspiracy theories analysis
+├── positions.md                  # All positions/sides with arguments and evidence
+├── fact-check.md                 # Claim verdicts (all positions)
+├── theories.md                   # Alternative theories analysis
 ├── evidence.md                   # Statement vs evidence, chain of knowledge
 │
 │  # METADATA
@@ -76,10 +72,9 @@ cases/inv-YYYYMMDD-HHMMSS/
 | `sources.md` | Source registry - append-only, never delete | As sources found |
 | `timeline.md` | Chronological events | As timeline grows |
 | `people.md` | Person profiles | As people investigated |
-| `prosecution.md` | Case against | As evidence found |
-| `defense.md` | Case for | As evidence found |
-| `fact-check.md` | Claim verdicts | As claims verified |
-| `theories.md` | Conspiracy analysis | As theories addressed |
+| `positions.md` | All positions with arguments | As positions found |
+| `fact-check.md` | Claim verdicts (all positions) | As claims verified |
+| `theories.md` | Alternative theory analysis | As theories addressed |
 | `evidence.md` | Documentary analysis | As evidence analyzed |
 | `iterations.md` | Progress tracking | Every iteration |
 
@@ -98,9 +93,9 @@ cases/inv-YYYYMMDD-HHMMSS/
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│                    OUTER LOOP (MINIMUM 10 ITERATIONS)                            │
+│                           INVESTIGATION LOOP                                     │
 │                                                                                  │
-│  for iteration = 1 to ∞:                                                        │
+│  while not exhausted:                                                           │
 │                                                                                  │
 │    ┌──────────────────────────────────────────────────────────────────────────┐ │
 │    │  PHASE 1: RESEARCH                                                        │ │
@@ -113,7 +108,7 @@ cases/inv-YYYYMMDD-HHMMSS/
 │    ┌──────────────────────────────────────────────────────────────────────────┐ │
 │    │  PHASE 2: EXTRACTION                                                      │ │
 │    │  - Extract all claims, people, dates, contradictions                      │ │
-│    │  - Categorize: prosecution claims, defense claims, conspiracy theories    │ │
+│    │  - Categorize claims by position (not limited to two sides)               │ │
 │    └──────────────────────────────────────────────────────────────────────────┘ │
 │                                    ↓                                             │
 │    ┌──────────────────────────────────────────────────────────────────────────┐ │
@@ -125,18 +120,17 @@ cases/inv-YYYYMMDD-HHMMSS/
 │    └──────────────────────────────────────────────────────────────────────────┘ │
 │                                    ↓                                             │
 │    ┌──────────────────────────────────────────────────────────────────────────┐ │
-│    │  PHASE 4: VERIFICATION CHECKPOINT                                         │ │
-│    │  (Run every 5 iterations OR when claiming saturation)                     │ │
+│    │  PHASE 4: VERIFICATION CHECKPOINT (periodic)                              │ │
 │    │                                                                            │ │
 │    │  → Cross-model critique (Gemini critiques Claude's work)                  │ │
-│    │  → Identify ALL unexplored accusations (both sides)                       │ │
-│    │  → Identify ALL conspiracy theories to address                            │ │
-│    │  → Fact-check ALL major claims from prosecution AND defense               │ │
-│    │  → Score completeness (0-100)                                             │ │
+│    │  → Identify unexplored claims (from ALL positions)                        │ │
+│    │  → Identify alternative theories to address                               │ │
+│    │  → Fact-check major claims from ALL positions                             │ │
+│    │  → Check verification checklist                                           │ │
 │    │  → List specific gaps                                                     │ │
 │    │                                                                            │ │
-│    │  if verification_score < 90 OR gaps exist:                                │ │
-│    │      FORCE CONTINUE → address gaps in next iteration                      │ │
+│    │  if gaps exist:                                                           │ │
+│    │      CONTINUE → address gaps in next iteration                            │ │
 │    │  else:                                                                     │ │
 │    │      CHECK TERMINATION CONDITIONS                                         │ │
 │    └──────────────────────────────────────────────────────────────────────────┘ │
@@ -152,13 +146,11 @@ cases/inv-YYYYMMDD-HHMMSS/
 │    │  TERMINATION CHECK                                                        │ │
 │    │                                                                            │ │
 │    │  MUST ALL BE TRUE:                                                        │ │
-│    │  ✓ iteration >= 10                                                        │ │
-│    │  ✓ verification_score >= 90                                               │ │
 │    │  ✓ no unexplored threads                                                  │ │
-│    │  ✓ prosecution case complete                                              │ │
-│    │  ✓ defense case complete                                                  │ │
-│    │  ✓ conspiracy theories addressed                                          │ │
-│    │  ✓ all major accusations fact-checked                                     │ │
+│    │  ✓ all positions documented                                               │ │
+│    │  ✓ alternative theories addressed                                         │ │
+│    │  ✓ all major claims fact-checked                                          │ │
+│    │  ✓ verification checklist passed                                          │ │
 │    │                                                                            │ │
 │    │  if ALL true: COMPLETE                                                    │ │
 │    │  else: CONTINUE                                                           │ │
@@ -267,9 +259,10 @@ ONE MESSAGE containing parallel calls:
 |-------|------------------|
 | **Mainstream** | Consensus narrative, major outlet coverage |
 | **Official** | Court filings, government documents, FOIA |
-| **Prosecution** | Evidence of wrongdoing, accusations, criticisms |
-| **Defense** | Rebuttals, context, exculpatory evidence |
-| **Fringe/Conspiracy** | Alternative theories, debunkable claims |
+| **Critical** | Evidence of wrongdoing, accusations, criticisms |
+| **Supportive** | Rebuttals, context, exculpatory evidence |
+| **All Positions** | Arguments from every party/stakeholder |
+| **Alternative Theories** | Fringe theories to investigate with evidence |
 | **Social** | X/Twitter sentiment, viral claims |
 | **Timeline** | Chronological reconstruction |
 | **People** | Individual backgrounds, motivations |
@@ -285,11 +278,17 @@ From all research, extract and categorize:
 
 ```
 claims = {
-    prosecution_claims: [],    # Accusations, criticisms, evidence of wrongdoing
-    defense_claims: [],        # Rebuttals, context, exculpatory evidence
-    conspiracy_theories: [],   # Fringe claims to investigate/debunk
+    by_position: {},           # Claims grouped by position/stakeholder (N positions)
+    alternative_theories: [],  # Fringe claims to investigate with evidence
     contested_facts: [],       # Where sources disagree
 }
+
+# Example:
+# by_position = {
+#     "Company acted wrongfully": [...],
+#     "Company acted reasonably": [...],
+#     "Regulatory failure": [...],
+# }
 
 people = []                    # Everyone mentioned - need investigation
 dates = []                     # Timeline events - need verification
@@ -302,7 +301,7 @@ Mark items that MUST be fact-checked:
 - Any claim from partisan sources
 - Any claim that damages someone's reputation
 - Any claim that exonerates someone
-- Any conspiracy theory
+- Any alternative theory
 - Any "too good to be true" evidence
 
 ---
@@ -352,7 +351,7 @@ for each contradiction:
 
 ## PHASE 4: VERIFICATION CHECKPOINT
 
-**Run this phase every 5 iterations OR when claiming the investigation is saturated.**
+**Run this phase periodically OR when claiming the investigation is saturated.**
 
 ### Step 1: Cross-Model Critique
 
@@ -366,83 +365,76 @@ mcp__mcp-gemini__generate_text:
     - Biases in sourcing
     - What would DISPROVE current conclusions
     - What evidence is suspiciously ABSENT
-    - Unexplored accusations from EITHER side
-    - Conspiracy theories that haven't been addressed
-    - Defense arguments that haven't been steelmanned
-    - Prosecution arguments that haven't been built
+    - Unexplored claims from ANY position
+    - Alternative theories that haven't been addressed
+    - Arguments from any position that haven't been steelmanned
   prompt: |
     Review this investigation:
 
     [Current summary.md content]
 
     Also consider the detail files:
-    - prosecution.md: [summary of prosecution case]
-    - defense.md: [summary of defense case]
+    - positions.md: [summary of all positions]
     - theories.md: [list of theories addressed]
     - fact-check.md: [claims checked vs unchecked]
 
     Provide:
-    1. Completeness score (0-100)
-    2. List of specific gaps
-    3. Unexplored accusations (prosecution side)
-    4. Unexplored accusations (defense side)
-    5. Conspiracy theories needing address
-    6. Unverified claims that should be fact-checked
+    1. List of specific gaps
+    2. Unexplored claims from each position
+    3. Alternative theories needing address
+    4. Unverified claims that should be fact-checked
 ```
 
-### Step 2: Accusation Audit
+### Step 2: Position Audit
 
-Explicitly list ALL accusations from both sides and their status:
+Explicitly list claims from ALL positions and their status:
 
 ```markdown
-## Accusation Audit
+## Position Audit
 
-### Prosecution/Critical Accusations
-| Accusation | Source | Status | Evidence |
-|------------|--------|--------|----------|
-| [accusation] | [who says it] | VERIFIED/DEBUNKED/PARTIAL/UNEXAMINED | [evidence] |
+### Position 1: [Name]
+| Claim | Source | Status | Evidence |
+|-------|--------|--------|----------|
+| [claim] | [who says it] | VERIFIED/DEBUNKED/PARTIAL/UNEXAMINED | [evidence] |
 
-### Defense Arguments
-| Defense | Source | Status | Evidence |
-|---------|--------|--------|----------|
-| [defense] | [who says it] | VERIFIED/DEBUNKED/PARTIAL/UNEXAMINED | [evidence] |
+### Position 2: [Name]
+| Claim | Source | Status | Evidence |
+|-------|--------|--------|----------|
+| [claim] | [who says it] | VERIFIED/DEBUNKED/PARTIAL/UNEXAMINED | [evidence] |
 
-### Conspiracy Theories
+### Position N: [Name]
+[... as many positions as exist ...]
+
+### Alternative Theories
 | Theory | Source | Status | Verdict |
 |--------|--------|--------|---------|
 | [theory] | [who promotes] | DEBUNKED/UNPROVEN/PARTIAL | [verdict] |
 ```
 
-### Step 3: Verification Score
+### Step 3: Verification Checklist
 
-Calculate completeness:
+Check completeness:
 
 ```
-score = 0
+All must be TRUE to complete:
 
-# Core completeness (40 points)
-if all_people_investigated: score += 10
-if all_claims_categorized: score += 10
-if timeline_complete: score += 10
-if source_provenance_traced: score += 10
-
-# Both-sides coverage (30 points)
-if prosecution_case_built: score += 10
-if defense_case_steelmanned: score += 10
-if conspiracy_theories_addressed: score += 10
-
-# Verification quality (30 points)
-if cross_model_critique_done: score += 10
-if all_accusations_fact_checked: score += 10
-if no_unexamined_major_claims: score += 10
+□ All people investigated
+□ All claims categorized by position
+□ Timeline complete
+□ Source provenance traced
+□ All positions documented (not just two)
+□ Alternative theories addressed
+□ Cross-model critique passed
+□ All major claims fact-checked (all sides)
+□ No unexamined major claims
 ```
 
 ### Step 4: Gap List
 
-If score < 90, list SPECIFIC gaps:
+If any checklist items are FALSE or PARTIAL:
 
 ```markdown
-## Verification Gaps (Score: [X]/100)
+## Verification Gaps
 
 ### Must Address Before Complete:
 1. [Specific gap] → Action: [what to research]
@@ -453,10 +445,10 @@ If score < 90, list SPECIFIC gaps:
 ### Step 5: Verdict
 
 ```
-if score >= 90 AND no_gaps:
+if all_checklist_items_true AND no_gaps:
     PROCEED TO TERMINATION CHECK
 else:
-    FORCE CONTINUE - address gaps in next iteration(s)
+    CONTINUE - address gaps in next iteration(s)
 ```
 
 ---
@@ -474,10 +466,9 @@ After each iteration, update the modular files:
 2. DETAIL FILES (as relevant)
    timeline.md    → New timeline events
    people.md      → New/updated person profiles
-   prosecution.md → Prosecution evidence and arguments
-   defense.md     → Defense evidence and arguments
-   fact-check.md  → Claim verifications
-   theories.md    → Conspiracy theory analysis
+   positions.md   → All positions with evidence and arguments
+   fact-check.md  → Claim verifications (all positions)
+   theories.md    → Alternative theory analysis
    evidence.md    → Statement vs evidence, chain of knowledge
 
 3. PROGRESS LOG
@@ -512,13 +503,13 @@ Each detail file uses source IDs for citations:
 # In people.md:
 **What They Knew**: Aware of issue by Jan 2024 [S001] [S002]
 
-# In prosecution.md:
+# In positions.md:
 Internal email dated Jan 15, 2024 [S002] shows awareness.
 
 # In fact-check.md:
-| Claim | Verdict | Evidence |
-|-------|---------|----------|
-| CEO knew by January | TRUE | Confirmed by [S001] [S003] |
+| Claim | Position | Verdict | Evidence |
+|-------|----------|---------|----------|
+| CEO knew by January | Position 1 | TRUE | Confirmed by [S001] [S003] |
 ```
 
 ### File Structure Reference
@@ -534,50 +525,44 @@ See `architecture.md` for complete file templates and structure definitions.
 ```python
 def can_terminate():
     return (
-        iteration >= 10 and
-        verification_score >= 90 and
         no_unexplored_threads() and
-        prosecution_case_complete() and
-        defense_case_complete() and
-        conspiracy_theories_addressed() and
-        all_major_accusations_fact_checked()
+        all_positions_documented() and
+        alternative_theories_addressed() and
+        all_major_claims_fact_checked() and
+        verification_checklist_passed()
     )
 ```
 
 ### Before Stopping, Verify:
 
 - [ ] All people mentioned have been investigated
-- [ ] All claims categorized (verified/contested/unverified/false)
+- [ ] All claims categorized by position
 - [ ] All contradictions analyzed
 - [ ] Timeline complete
 - [ ] Source provenance traced for major claims
 - [ ] Cross-model critique completed
-- [ ] Prosecution case built (strongest version)
-- [ ] Defense case built (strongest version)
-- [ ] All conspiracy theories addressed with verdicts
-- [ ] All major accusations from both sides fact-checked
-- [ ] Verification score >= 90
+- [ ] All positions documented (strongest versions)
+- [ ] All alternative theories addressed with verdicts
+- [ ] All major claims from all positions fact-checked
+- [ ] Verification checklist passed
 - [ ] Open questions listed (genuinely unanswerable)
 
 ---
 
 ## HARD RULES
 
-1. **MINIMUM 10 ITERATIONS** - Do not stop before iteration 10
-2. **VERIFICATION CHECKPOINT EVERY 5 ITERATIONS** - Cannot skip
-3. **VERIFICATION SCORE >= 90 TO COMPLETE** - Cannot finish below 90
-4. **BOTH SIDES FACT-CHECKED** - Prosecution AND defense claims verified
-5. **CONSPIRACY THEORIES ADDRESSED** - All major theories get verdicts
-6. **LOOP ON ALL POINTS** - Every person, claim, date, contradiction
-7. **USE ALL THREE RESEARCH ENGINES** - Gemini, OpenAI, XAI
-8. **CROSS-MODEL CRITIQUE** - Gemini critiques Claude's work
-9. **BUILD BOTH CASES** - Prosecution AND defense, strongest versions
-10. **NEVER FABRICATE** - If you can't find evidence, say so
-11. **PROBABILITY RANGES** - [0.6, 0.8] not 0.7
-12. **LET READERS DECIDE** - Present evidence, don't dictate conclusions
-13. **EVERY CLAIM NEEDS A SOURCE ID** - No [SXXX] = no claim. Source attribution is sacred.
-14. **APPEND-ONLY SOURCES** - Never renumber or delete source IDs
-15. **SUMMARY.MD SELF-CONTAINED** - Must embed full source list, shareable standalone
+1. **ALL SIDES FACT-CHECKED** - Claims from ALL positions verified
+2. **ALTERNATIVE THEORIES ADDRESSED** - All major theories get verdicts
+3. **LOOP ON ALL POINTS** - Every person, claim, date, contradiction
+4. **USE ALL THREE RESEARCH ENGINES** - Gemini, OpenAI, XAI
+5. **CROSS-MODEL CRITIQUE** - Gemini critiques Claude's work
+6. **BUILD ALL CASES** - Every position, strongest versions
+7. **NEVER FABRICATE** - If you can't find evidence, say so
+8. **PROBABILITY RANGES** - [0.6, 0.8] not 0.7
+9. **LET READERS DECIDE** - Present evidence, don't dictate conclusions
+10. **EVERY CLAIM NEEDS A SOURCE ID** - No [SXXX] = no claim. Source attribution is sacred.
+11. **APPEND-ONLY SOURCES** - Never renumber or delete source IDs
+12. **SUMMARY.MD SELF-CONTAINED** - Must embed full source list, shareable standalone
 
 ---
 
@@ -585,12 +570,12 @@ def can_terminate():
 
 The verification checkpoint is MANDATORY at:
 
-1. **Iteration 5, 10, 15, 20...** (every 5 iterations)
+1. **Periodically during investigation** (as needed)
 2. **When claiming "saturation"** (no more threads)
 3. **When claiming "complete"** (before final status)
 4. **When asked to stop** (user says "wrap up")
 
-If verification fails (score < 90 or gaps exist), you MUST continue investigating.
+If verification fails (gaps exist), you MUST continue investigating.
 
 ---
 
@@ -599,9 +584,9 @@ If verification fails (score < 90 or gaps exist), you MUST continue investigatin
 Do NOT:
 - Skip verification because "it's obviously done"
 - Claim saturation to avoid more iterations
-- Cherry-pick which accusations to fact-check
-- Ignore conspiracy theories because they're "obviously false"
-- Stop at iteration 10 if verification score < 90
+- Cherry-pick which claims to fact-check
+- Ignore alternative theories because they're "obviously false"
+- Assume only two sides exist
 - Present incomplete work as "good enough"
 
 The verification checkpoint catches self-deception. Trust the process.
@@ -615,36 +600,34 @@ The verification checkpoint catches self-deception. Trust the process.
 
 ### Cross-Model Critique (Gemini)
 "The investigation has thoroughly covered the main events but has gaps in:
-1. Opposition claims about regulatory failures - UNEXAMINED
+1. Position 3 claims about regulatory failures - UNEXAMINED
 2. The leaked memo claim - mentioned but not fully contextualized
 3. Systemic failure claims - dismissed without investigation
-4. Defense argument about prior approvals - not fully verified"
+4. Position 2 argument about prior approvals - not fully verified"
 
-### Completeness Score: 72/100
+### Verification Checklist
 
-| Category | Points | Notes |
+| Category | Status | Notes |
 |----------|--------|-------|
-| People investigated | 10/10 | All key people covered |
-| Claims categorized | 8/10 | Some missing |
-| Timeline complete | 10/10 | Good |
-| Sources traced | 8/10 | Some gaps |
-| Prosecution case | 10/10 | Strong |
-| Defense case | 6/10 | Needs work |
-| Conspiracy theories | 4/10 | Not addressed |
-| Cross-model critique | 6/10 | Done but gaps found |
-| Accusations fact-checked | 5/10 | Many unexamined |
-| No unexamined claims | 5/10 | Several remain |
+| All people investigated | YES | All key people covered |
+| Claims categorized by position | PARTIAL | Some missing |
+| Timeline complete | YES | Good |
+| Source provenance traced | PARTIAL | Some gaps |
+| All positions documented | NO | Position 3 underdeveloped |
+| Alternative theories addressed | NO | Not addressed |
+| Cross-model critique passed | NO | Gaps found |
+| All major claims fact-checked | PARTIAL | Many unexamined |
 
 ### Gaps to Address
-1. Fact-check regulatory failure claims
+1. Fact-check regulatory failure claims (Position 3)
 2. Research the leaked memo context
 3. Investigate systemic failure claims
-4. Verify prior approval defense argument
-5. Address coverup conspiracy theory
+4. Verify prior approval argument (Position 2)
+5. Address coverup alternative theory
 6. Address political motivation theory
 
 ### Verdict: CONTINUE
-Score 72 < 90 threshold. 6 gaps identified. Must continue.
+Checklist has NO/PARTIAL items. 6 gaps identified. Must continue.
 ```
 
 ---
@@ -654,14 +637,14 @@ Score 72 < 90 threshold. 6 gaps identified. Must continue.
 1. Read `summary.md` for current state and key findings
 2. Read `iterations.md` for progress log and last verification checkpoint
 3. Read `sources.md` to determine next source ID (e.g., if last is [S047], next is [S048])
-4. If verification_score < 90: address listed gaps from iterations.md
-5. If verification_score >= 90: check termination conditions
+4. If verification gaps exist: address listed gaps from iterations.md
+5. If no gaps: check termination conditions
 6. Continue from next iteration number
 
 ### Quick Resume Checklist
 
 ```
-□ Read summary.md header (status, verification score, iteration count)
+□ Read summary.md header (status, iteration count)
 □ Read iterations.md (last iteration, verification gaps)
 □ Read sources.md (find next available source ID)
 □ Identify gaps to address in next iteration

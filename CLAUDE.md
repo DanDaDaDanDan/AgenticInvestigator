@@ -42,37 +42,31 @@ After any structural change, verify all three files are consistent.
 
 ---
 
-## Core Philosophy: INSATIABLE CURIOSITY + VERIFICATION HONESTY
+## Core Philosophy: INSATIABLE CURIOSITY
 
-**The key to AgenticInvestigator is to be INSATIABLY CURIOUS and RUTHLESSLY HONEST.**
+**The key to AgenticInvestigator is to be INSATIABLY CURIOUS.**
 
-Every finding triggers more questions. Every person gets investigated. Every source gets traced. Every contradiction gets explored. Every gap gets filled. **Every claim from BOTH sides gets fact-checked.**
+Every finding triggers more questions. Every person gets investigated. Every source gets traced. Every contradiction gets explored. Every gap gets filled. **Every claim from ALL sides gets fact-checked.**
 
-### The Verified Looping Principle
+### The Looping Principle
 
 ```
-DO NOT STOP EARLY. DO NOT DECEIVE YOURSELF.
-
-MINIMUM 10 outer loop iterations.
-VERIFICATION CHECKPOINT every 5 iterations.
-FINAL VERIFICATION before claiming complete.
+DO NOT STOP EARLY.
 
 Only stop when ALL conditions are true:
-  1. At least 10 iterations complete
-  2. Verification score >= 90%
-  3. No unexplored avenues remaining
-  4. Both prosecution AND defense cases complete
-  5. All conspiracy theories addressed
-  6. All major accusations from both sides fact-checked
+  1. No unexplored avenues remaining
+  2. All positions documented (not just two - ALL of them)
+  3. All alternative theories addressed
+  4. All major claims from ALL sides fact-checked
 ```
 
 ---
 
-## The Verified Investigation Loop
+## The Investigation Loop
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                    OUTER LOOP (MINIMUM 10 ITERATIONS)               │
+│                         INVESTIGATION LOOP                          │
 │                                                                     │
 │  PHASE 1: RESEARCH                                                  │
 │    - Gemini deep research (primary)                                 │
@@ -81,33 +75,32 @@ Only stop when ALL conditions are true:
 │                                                                     │
 │  PHASE 2: EXTRACTION                                                │
 │    - Extract all claims, people, dates, contradictions              │
-│    - Categorize: prosecution claims, defense claims, conspiracies   │
+│    - Categorize by position/perspective (not limited to two)        │
 │                                                                     │
 │  PHASE 3: INVESTIGATION                                             │
 │    - For EVERY person: investigate background                       │
 │    - For EVERY claim: verify with multiple sources                  │
 │    - For EVERY contradiction: investigate discrepancy               │
 │                                                                     │
-│  PHASE 4: VERIFICATION CHECKPOINT (every 5 iterations)              │
+│  PHASE 4: VERIFICATION CHECKPOINT (periodic)                        │
 │    → Cross-model critique (Gemini critiques Claude)                 │
-│    → Identify unexplored accusations (both sides)                   │
-│    → Identify conspiracy theories to address                        │
+│    → Identify unexplored claims from ALL positions                  │
+│    → Identify alternative theories to address                       │
 │    → Fact-check all major claims                                    │
-│    → Score completeness (0-100)                                     │
 │    → List specific gaps                                             │
-│    → If score < 90 OR gaps exist: FORCE CONTINUE                    │
+│    → If gaps exist: CONTINUE                                        │
 │                                                                     │
 │  PHASE 5: SYNTHESIS                                                 │
 │    - Register sources in sources.md (append-only, [SXXX] IDs)       │
-│    - Update detail files (timeline, people, prosecution, defense)   │
+│    - Update detail files (timeline, people, positions, etc.)        │
 │    - Update summary.md (embed full source list)                     │
 │    - Log iteration in iterations.md                                 │
 │                                                                     │
 │  TERMINATION CHECK                                                  │
-│    - iteration >= 10 AND verification_score >= 90                   │
-│    - AND no_unexplored_threads AND both_cases_complete              │
-│    - AND conspiracy_theories_addressed                              │
-│    - AND all_accusations_fact_checked                               │
+│    - no_unexplored_threads                                          │
+│    - all_positions_documented                                       │
+│    - alternative_theories_addressed                                 │
+│    - all_major_claims_fact_checked                                  │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -128,17 +121,16 @@ Launch ALL of these simultaneously in ONE message:
 - X/Twitter analysis
 - Mainstream angle
 - Official records
-- Opposition/defense views
-- Fringe theories
+- All major positions/perspectives
+- Alternative theories
 ```
 
 **Phase 4 - Verification (parallel)**:
 ```
 Launch ALL of these simultaneously in ONE message:
 - Cross-model critique (Gemini)
-- Accusation search (prosecution side)
-- Defense search
-- Conspiracy theory search
+- Unexplored claims search (all positions)
+- Alternative theory search
 ```
 
 ---
@@ -151,10 +143,9 @@ cases/inv-YYYYMMDD-HHMMSS/
 ├── sources.md        # Master source registry [S001], [S002]... (append-only)
 ├── timeline.md       # Chronological events
 ├── people.md         # Person profiles
-├── prosecution.md    # Case against
-├── defense.md        # Case for
-├── fact-check.md     # Claim verdicts
-├── theories.md       # Conspiracy analysis
+├── positions.md      # ALL positions - not limited to two sides
+├── fact-check.md     # Claim verdicts (all positions)
+├── theories.md       # Alternative/fringe theories
 ├── evidence.md       # Statement vs evidence
 └── iterations.md     # Progress log + verification checkpoints
 ```
@@ -226,28 +217,27 @@ mcp__mcp-xai__research
 ## AgenticInvestigator-Specific Rules
 
 1. **Never fabricate sources** - If you can't find evidence, say so.
-2. **Steelman before attacking** - Build strongest version first.
+2. **Steelman ALL positions** - Build strongest version of EVERY side, not just two.
 3. **Separate fact from inference** - Be explicit about what's proven vs. concluded.
 4. **Document uncertainty** - "We don't know" is a valid finding.
 5. **Detect circular reporting** - Multiple outlets citing each other is one source.
-6. **Fact-check BOTH sides** - Prosecution claims AND defense claims.
-7. **Address conspiracy theories** - Don't ignore them; debunk with evidence.
-8. **Verification score >= 90** - Cannot claim complete below this threshold.
-9. **Every claim needs [SXXX]** - Source attribution is sacred. No ID = no claim.
-10. **Append-only sources** - Never renumber or delete source IDs.
-11. **summary.md is self-contained** - Must embed full source list, shareable standalone.
+6. **Fact-check ALL sides** - Claims from every position get verified.
+7. **Address alternative theories** - Don't ignore them; investigate with evidence.
+8. **Every claim needs [SXXX]** - Source attribution is sacred. No ID = no claim.
+9. **Append-only sources** - Never renumber or delete source IDs.
+10. **summary.md is self-contained** - Must embed full source list, shareable standalone.
 
 ---
 
 ## Verification Checkpoint Rules
 
-**Run verification checkpoint at:**
-- Iteration 5, 10, 15, 20... (every 5 iterations)
+**Run verification checkpoint:**
+- Periodically during investigation
 - When claiming "saturation" (no more threads)
 - When claiming "complete" (before final status)
 - When user says "wrap up"
 
-**If verification fails (score < 90 OR gaps exist):**
+**If gaps exist:**
 - MUST continue investigating
 - Address listed gaps in next iteration(s)
 - Re-verify when gaps addressed
@@ -255,8 +245,8 @@ mcp__mcp-xai__research
 **Anti-gaming rules:**
 - Do NOT skip verification because "it's obviously done"
 - Do NOT claim saturation to avoid more iterations
-- Do NOT cherry-pick which accusations to fact-check
-- Do NOT ignore conspiracy theories because they're "obviously false"
+- Do NOT cherry-pick which claims to fact-check
+- Do NOT ignore alternative theories because they're "obviously false"
 
 ---
 

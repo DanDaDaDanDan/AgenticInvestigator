@@ -9,36 +9,36 @@ Technical design documentation for the AgenticInvestigator multi-agent investiga
 AgenticInvestigator is an orchestrated multi-agent system that investigates contested narratives through:
 
 1. **Triple deep research** across Gemini, OpenAI, and XAI engines
-2. **Insatiable curiosity looping** with 10+ iteration minimum
+2. **Insatiable curiosity looping** until exhaustion
 3. **Inner loops on all points** found in each iteration
-4. **Built-in verification checkpoints** every 5 iterations
+4. **Built-in verification checkpoints**
 5. **Cross-model critique** for validation
-6. **Both-sides fact-checking** (prosecution AND defense)
-7. **Conspiracy theory handling** (debunk, don't ignore)
+6. **All-sides fact-checking** (every position, not just two)
+7. **Alternative theory handling** (investigate, don't ignore)
 8. **Modular file output** with self-contained summary.md deliverable
 
 ### Core Principles
 
 - **Insatiable curiosity**: Every finding triggers more questions
-- **10+ iterations minimum**: Explicit loop counter, no early stopping
-- **Verification checkpoints**: Every 5 iterations, score >= 90 to complete
+- **Loop until exhausted**: No artificial iteration limits
+- **Verification checkpoints**: Periodic audits to catch gaps
 - **Loop on all points**: Process everything, never cherry-pick
 - **Triple deep research**: Gemini + OpenAI + XAI for triangulation
 - **Cross-model validation**: Different AI models check each other
-- **Both-sides coverage**: Prosecution AND defense claims fact-checked
-- **Conspiracy handling**: All theories addressed with verdicts
+- **All-sides coverage**: Claims from ALL positions fact-checked (not limited to two)
+- **Alternative theory handling**: All theories addressed with verdicts
 - **Source attribution is sacred**: Every claim traces to a source ID
 - **Modular but self-contained**: summary.md stands alone with all sources embedded
 
 ---
 
-## Verified Looping Architecture
+## Looping Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│                    OUTER LOOP (MINIMUM 10 ITERATIONS)                            │
+│                           INVESTIGATION LOOP                                     │
 │                                                                                  │
-│  for iteration = 1 to ∞:                                                        │
+│  while not exhausted:                                                           │
 │                                                                                  │
 │    ┌──────────────────────────────────────────────────────────────────────────┐ │
 │    │ PHASE 1: RESEARCH                                                         │ │
@@ -53,10 +53,10 @@ AgenticInvestigator is an orchestrated multi-agent system that investigates cont
 │                                    ↓                                             │
 │    ┌──────────────────────────────────────────────────────────────────────────┐ │
 │    │ PHASE 2: EXTRACTION                                                       │ │
-│    │   categorize_claims(prosecution, defense, conspiracy)                    │ │
+│    │   categorize_claims_by_position()        # Not limited to two sides      │ │
 │    │   flag_for_verification(partisan_claims)                                 │ │
 │    │   flag_for_verification(reputation_claims)                               │ │
-│    │   flag_for_verification(conspiracy_theories)                             │ │
+│    │   flag_for_verification(alternative_theories)                            │ │
 │    └──────────────────────────────────────────────────────────────────────────┘ │
 │                                    ↓                                             │
 │    ┌──────────────────────────────────────────────────────────────────────────┐ │
@@ -72,26 +72,23 @@ AgenticInvestigator is an orchestrated multi-agent system that investigates cont
 │    └──────────────────────────────────────────────────────────────────────────┘ │
 │                                    ↓                                             │
 │    ┌──────────────────────────────────────────────────────────────────────────┐ │
-│    │ PHASE 4: VERIFICATION CHECKPOINT (every 5 iterations)                     │ │
+│    │ PHASE 4: VERIFICATION CHECKPOINT (periodic)                               │ │
 │    │                                                                            │ │
-│    │   if iteration % 5 == 0 OR claiming_saturation:                          │ │
-│    │     cross_model_critique(summary_md)   # Gemini critiques Claude         │ │
-│    │     search_unexplored_accusations(prosecution_side)                      │ │
-│    │     search_unexplored_accusations(defense_side)                          │ │
-│    │     search_conspiracy_theories()                                         │ │
-│    │     score = calculate_completeness()  # 0-100                            │ │
-│    │     gaps = identify_gaps()                                               │ │
+│    │   cross_model_critique(summary_md)     # Gemini critiques Claude         │ │
+│    │   search_unexplored_claims()           # From ALL positions              │ │
+│    │   search_alternative_theories()                                          │ │
+│    │   gaps = identify_gaps()                                                 │ │
 │    │                                                                            │ │
-│    │     if score < 90 OR gaps.exist():                                       │ │
-│    │       FORCE_CONTINUE = True  # Address gaps in next iteration            │ │
-│    │     else:                                                                 │ │
-│    │       FORCE_CONTINUE = False                                             │ │
+│    │   if gaps.exist():                                                       │ │
+│    │     CONTINUE = True                                                      │ │
+│    │   else:                                                                   │ │
+│    │     CONTINUE = False                                                     │ │
 │    └──────────────────────────────────────────────────────────────────────────┘ │
 │                                    ↓                                             │
 │    ┌──────────────────────────────────────────────────────────────────────────┐ │
 │    │ PHASE 5: SYNTHESIS                                                        │ │
 │    │   register_new_sources(sources_md)     # Add sources with unique IDs     │ │
-│    │   update_detail_files()                # timeline, people, cases, etc.   │ │
+│    │   update_detail_files()                # timeline, people, positions     │ │
 │    │   update_summary_md()                  # Key findings + embedded sources │ │
 │    │   log_iteration(iterations_md)         # Progress tracking               │ │
 │    │   add_verification_results() if checkpoint_ran                           │ │
@@ -101,13 +98,10 @@ AgenticInvestigator is an orchestrated multi-agent system that investigates cont
 │    │ TERMINATION CHECK                                                         │ │
 │    │                                                                            │ │
 │    │   ALL conditions must be TRUE:                                           │ │
-│    │   ✓ iteration >= 10                          # Hard minimum              │ │
-│    │   ✓ verification_score >= 90                 # Quality gate              │ │
-│    │   ✓ no_unexplored_threads()                  # All threads exhausted     │ │
-│    │   ✓ prosecution_case_complete()              # Accusations addressed     │ │
-│    │   ✓ defense_case_complete()                  # Defenses addressed        │ │
-│    │   ✓ conspiracy_theories_addressed()          # Theories have verdicts    │ │
-│    │   ✓ all_accusations_fact_checked()           # Both sides verified       │ │
+│    │   ✓ no_unexplored_threads()              # All threads exhausted         │ │
+│    │   ✓ all_positions_documented()           # Every side represented        │ │
+│    │   ✓ alternative_theories_addressed()     # Theories have verdicts        │ │
+│    │   ✓ all_major_claims_fact_checked()      # All sides verified            │ │
 │    │                                                                            │ │
 │    │   if ALL true: COMPLETE                                                  │ │
 │    │   else: CONTINUE                                                         │ │
@@ -124,34 +118,25 @@ AgenticInvestigator is an orchestrated multi-agent system that investigates cont
 
 | Trigger | Condition |
 |---------|-----------|
-| Regular interval | Every 5 iterations (5, 10, 15, 20...) |
+| Periodic | During investigation as needed |
 | Saturation claim | When claiming "no more threads" |
 | Completion claim | Before marking investigation COMPLETE |
 | User request | When user says "wrap up" |
 
-### Verification Score Calculation
+### Verification Checklist
 
-```python
-score = 0
+```
+All must be TRUE to complete:
 
-# Core completeness (40 points)
-if all_people_investigated:           score += 10
-if all_claims_categorized:            score += 10
-if timeline_complete:                 score += 10
-if source_provenance_traced:          score += 10
-
-# Both-sides coverage (30 points)
-if prosecution_case_built:            score += 10
-if defense_case_steelmanned:          score += 10
-if conspiracy_theories_addressed:     score += 10
-
-# Verification quality (30 points)
-if cross_model_critique_passed:       score += 10
-if all_accusations_fact_checked:      score += 10
-if no_unexamined_major_claims:        score += 10
-
-# Total: 100 points possible
-# Threshold: >= 90 to complete
+□ All people investigated
+□ All claims categorized by position
+□ Timeline complete
+□ Source provenance traced
+□ All positions documented (not just two)
+□ Alternative theories addressed
+□ Cross-model critique passed
+□ All major claims fact-checked (all sides)
+□ No unexamined major claims
 ```
 
 ### Anti-Gaming Rules
@@ -160,9 +145,9 @@ if no_unexamined_major_claims:        score += 10
 |--------|-----|
 | Skip verification | Self-deception risk |
 | Claim saturation early | Avoids thorough investigation |
-| Cherry-pick accusations | Biased coverage |
-| Ignore conspiracy theories | They spread if not debunked |
-| Round up scores | False completion signal |
+| Cherry-pick claims | Biased coverage |
+| Ignore alternative theories | They spread if not investigated |
+| Assume only two sides | Real disputes have N parties |
 
 ---
 
@@ -171,7 +156,7 @@ if no_unexamined_major_claims:        score += 10
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                              CLAUDE (Orchestrator)                          │
-│  - Runs the outer loop (10+ iterations)                                     │
+│  - Runs the investigation loop until exhausted                              │
 │  - Dispatches to deep research engines                                      │
 │  - Runs inner loops on all points found                                     │
 │  - Runs verification checkpoints                                            │
@@ -262,10 +247,9 @@ cases/
     │  # DETAIL FILES (use source IDs for citations)
     ├── timeline.md                   # Full chronological timeline
     ├── people.md                     # All person profiles
-    ├── prosecution.md                # Full prosecution case
-    ├── defense.md                    # Full defense case
-    ├── fact-check.md                 # Claim verdicts (both sides)
-    ├── theories.md                   # Conspiracy theories analysis
+    ├── positions.md                  # ALL positions/sides with arguments and evidence
+    ├── fact-check.md                 # Claim verdicts (all positions)
+    ├── theories.md                   # Alternative/fringe theories analysis
     ├── evidence.md                   # Statement vs evidence, chain of knowledge
     │
     │  # METADATA
@@ -280,10 +264,9 @@ cases/
 | `sources.md` | Source registry - every URL, every citation | Unlimited | Reference only |
 | `timeline.md` | Chronological events | Unlimited | No (uses source IDs) |
 | `people.md` | Person profiles | Unlimited | No (uses source IDs) |
-| `prosecution.md` | Case against | Unlimited | No (uses source IDs) |
-| `defense.md` | Case for | Unlimited | No (uses source IDs) |
-| `fact-check.md` | Claim verdicts | Unlimited | No (uses source IDs) |
-| `theories.md` | Conspiracy analysis | Unlimited | No (uses source IDs) |
+| `positions.md` | All positions with arguments | Unlimited | No (uses source IDs) |
+| `fact-check.md` | Claim verdicts (all positions) | Unlimited | No (uses source IDs) |
+| `theories.md` | Alternative theory analysis | Unlimited | No (uses source IDs) |
 | `evidence.md` | Documentary analysis | Unlimited | No (uses source IDs) |
 | `iterations.md` | Progress tracking | Unlimited | No |
 
@@ -405,12 +388,10 @@ When multiple sources cite each other, note it:
 
 **Case ID**: inv-YYYYMMDD-HHMMSS
 **Status**: [IN PROGRESS | COMPLETE]
-**Verification Score**: [X]/100
 **Last Updated**: [datetime]
 
 > **Quick Links**: [Timeline](timeline.md) | [People](people.md) |
-> [Prosecution](prosecution.md) | [Defense](defense.md) |
-> [Fact-Check](fact-check.md) | [Theories](theories.md)
+> [Positions](positions.md) | [Fact-Check](fact-check.md) | [Theories](theories.md)
 
 ---
 
@@ -462,7 +443,7 @@ what we found, what remains uncertain. No source IDs here - this is prose.]
 
 ---
 
-## Conspiracy Theories: Quick Verdicts
+## Alternative Theories: Quick Verdicts
 
 | Theory | Verdict | Key Evidence |
 |--------|---------|--------------|
@@ -478,9 +459,9 @@ what we found, what remains uncertain. No source IDs here - this is prose.]
 |--------|-------|
 | Iterations completed | [N] |
 | Verification checkpoints | [N] |
-| Final verification score | [X]/100 |
 | Total sources | [N] |
 | Primary sources | [N] |
+| Positions documented | [N] |
 | People investigated | [N] |
 | Claims fact-checked | [N] |
 
@@ -610,103 +591,132 @@ According to meeting minutes obtained by NYT [S002], the board...
 [... similar structure ...]
 ```
 
-### prosecution.md
+### positions.md
 
 ```markdown
-# The Prosecution Case: [Topic]
+# Positions: [Topic]
 
 **Case**: inv-YYYYMMDD-HHMMSS
+**Positions Documented**: [N]
 
 ---
 
-## Summary
+## Position Index
 
-The strongest case for culpability rests on three pillars:
+| Position | Proponents | Strength | Summary |
+|----------|------------|----------|---------|
+| Company acted wrongfully | Regulators, plaintiffs, whistleblowers | [0.6, 0.8] | See Position 1 |
+| Company acted reasonably | Company, industry groups | [0.3, 0.5] | See Position 2 |
+| Regulatory failure | Industry critics | [0.4, 0.6] | See Position 3 |
+
+---
+
+## Position 1: Company Acted Wrongfully
+
+**Proponents**: Regulators, plaintiffs, whistleblowers
+
+### Summary
+The case for culpability rests on:
 1. Knowledge (they knew)
 2. Inaction (they didn't act)
 3. Coverup (they hid it)
 
----
+### Key Arguments
 
-## Argument 1: They Knew
-
-### Evidence
+#### Argument 1.1: They Knew
+**Evidence**:
 - Internal email dated Jan 15, 2024 [S002]
 - Testimony of whistleblower [S007]
 - Board minutes [S003]
 
-### Strength: HIGH
+**Strength**: HIGH
 Multiple independent sources confirm awareness.
 
----
-
-## Argument 2: They Didn't Act
-
-### Evidence
+#### Argument 1.2: They Didn't Act
+**Evidence**:
 - 60-day gap between knowledge and action [S001] [S002]
 - Similar issues at competitor led to immediate response [S030]
 
-### Strength: MEDIUM
+**Strength**: MEDIUM
 Timeline established, but "reasonable response time" is debatable.
 
----
-
-## Argument 3: They Hid It
-
-### Evidence
+#### Argument 1.3: They Hid It
+**Evidence**:
 - Public statement contradicts internal docs [S005] vs [S002]
 - Deleted emails referenced in discovery [S008]
 
-### Strength: MEDIUM
+**Strength**: MEDIUM
 Gap exists, but "coverup" vs "mistake" is interpretive.
 
----
-
-## Overall Prosecution Strength: [0.6, 0.8]
-```
-
-### defense.md
-
-```markdown
-# The Defense Case: [Topic]
-
-**Case**: inv-YYYYMMDD-HHMMSS
+### Overall Position Strength: [0.6, 0.8]
 
 ---
 
-## Summary
+## Position 2: Company Acted Reasonably
 
-The strongest case for innocence/mitigation:
+**Proponents**: Company, defense counsel, industry associations
+
+### Summary
+The case for innocence/mitigation:
 1. Industry standard (everyone does it)
 2. Good faith effort (they tried)
 3. Hindsight bias (not foreseeable)
 
----
+### Key Arguments
 
-## Argument 1: Industry Standard
-
-### Evidence
+#### Argument 2.1: Industry Standard
+**Evidence**:
 - Industry report showing common practice [S040]
 - Competitor behavior [S041]
 
-### Strength: MEDIUM
+**Strength**: MEDIUM
 Establishes context, but "everyone does it" isn't exculpatory.
 
----
-
-## Argument 2: Good Faith Effort
-
-### Evidence
+#### Argument 2.2: Good Faith Effort
+**Evidence**:
 - Internal investigation launched [S004]
 - Outside counsel retained [S042]
 - Remediation plan [S043]
 
-### Strength: HIGH
+**Strength**: HIGH
 Documented efforts to address once aware.
+
+### Overall Position Strength: [0.3, 0.5]
 
 ---
 
-[... continues ...]
+## Position 3: Regulatory Failure
+
+**Proponents**: Industry critics, some defendants, policy analysts
+
+### Summary
+The case that regulators bear responsibility:
+1. Failed oversight
+2. Unclear guidance
+3. Selective enforcement
+
+### Key Arguments
+
+#### Argument 3.1: Failed Oversight
+**Evidence**:
+- Regulator missed warning signs [S060]
+- Understaffed department [S061]
+
+**Strength**: MEDIUM
+Documented gaps, but doesn't eliminate company responsibility.
+
+### Overall Position Strength: [0.4, 0.6]
+
+---
+
+## Adding New Positions
+
+When new perspectives emerge during investigation:
+1. Create new ## Position N section
+2. Document proponents
+3. Build strongest arguments with evidence
+4. Assess overall strength
+5. Update Position Index table
 ```
 
 ### fact-check.md
@@ -716,19 +726,26 @@ Documented efforts to address once aware.
 
 **Case**: inv-YYYYMMDD-HHMMSS
 **Claims Checked**: [N]
+**Positions Covered**: [N]
 
 ---
 
-## Prosecution Claims
+## Claim Summary
 
-| # | Claim | Claimant | Verdict | Evidence |
-|---|-------|----------|---------|----------|
-| P1 | CEO knew by January | NYT [S002] | TRUE | Confirmed by [S001] [S003] |
-| P2 | Board was warned | Whistleblower [S007] | PARTIALLY TRUE | Minutes show discussion [S003], but "warning" language disputed |
-| P3 | Coverup occurred | Lawsuit [S001] | UNPROVEN | Gap exists but intent unclear |
+| # | Claim | Position | Claimant | Verdict | Evidence |
+|---|-------|----------|----------|---------|----------|
+| C1 | CEO knew by January | Position 1 | NYT [S002] | TRUE | Confirmed by [S001] [S003] |
+| C2 | Board was warned | Position 1 | Whistleblower [S007] | PARTIALLY TRUE | Minutes show discussion, "warning" disputed |
+| C3 | Response was timely | Position 2 | Company [S050] | DISPUTED | Industry comparison mixed |
+| C4 | Regulator delayed intentionally | Position 3 | Critics [S060] | DEBUNKED | Delay within normal range |
 
-### P1: CEO Knew by January
+---
+
+## Detailed Fact-Checks
+
+### C1: CEO Knew by January
 - **Claim**: CEO was aware of the issue by January 2024
+- **Position**: Position 1 (Company acted wrongfully)
 - **Source**: NYT article [S002]
 - **Verdict**: TRUE
 - **Supporting Evidence**:
@@ -736,8 +753,9 @@ Documented efforts to address once aware.
   - Board minutes [S003] show CEO present at Jan 20 discussion
 - **Contradicting Evidence**: None found
 
-### P2: Board Was Warned
+### C2: Board Was Warned
 - **Claim**: Board received explicit warning about risks
+- **Position**: Position 1 (Company acted wrongfully)
 - **Source**: Whistleblower testimony [S007]
 - **Verdict**: PARTIALLY TRUE
 - **Supporting Evidence**:
@@ -747,16 +765,28 @@ Documented efforts to address once aware.
   - Board member statement [S044] disputes characterization
 - **Assessment**: Issue was discussed, but "warning" characterization is disputed
 
-[... continues ...]
+### C3: Response Was Timely
+- **Claim**: Company responded within reasonable timeframe
+- **Position**: Position 2 (Company acted reasonably)
+- **Source**: Company statement [S050]
+- **Verdict**: DISPUTED
+- **Supporting Evidence**:
+  - Industry report shows similar response times [S040]
+- **Contradicting Evidence**:
+  - Competitor responded faster to similar issue [S030]
+- **Assessment**: Depends on what counts as "timely" in this context
 
----
-
-## Defense Claims
-
-| # | Claim | Claimant | Verdict | Evidence |
-|---|-------|----------|---------|----------|
-| D1 | Response was timely | Company statement [S050] | DISPUTED | Industry comparison mixed |
-| D2 | No intent to deceive | Legal filing [S051] | UNPROVEN | Circumstantial either way |
+### C4: Regulator Delayed Intentionally
+- **Claim**: Government regulators intentionally delayed investigation
+- **Position**: Position 3 (Regulatory failure)
+- **Source**: Industry critics [S060]
+- **Verdict**: DEBUNKED
+- **Supporting Evidence**:
+  - Regulator did delay 6 months [S063]
+- **Contradicting Evidence**:
+  - Delay consistent with normal backlog [S065]
+  - Similar delays in unrelated cases [S066]
+- **Assessment**: Delay documented but intent unproven; pattern matches normal operations
 
 [... continues ...]
 ```
@@ -764,7 +794,7 @@ Documented efforts to address once aware.
 ### theories.md
 
 ```markdown
-# Conspiracy Theories: [Topic]
+# Alternative Theories: [Topic]
 
 **Case**: inv-YYYYMMDD-HHMMSS
 **Theories Analyzed**: [N]
@@ -906,7 +936,6 @@ This could indicate:
 
 **Case**: inv-YYYYMMDD-HHMMSS
 **Current Iteration**: [N]
-**Verification Score**: [X]/100
 
 ---
 
@@ -916,7 +945,7 @@ This could indicate:
 |-----------|------|-------|-------------|--------------|
 | 1 | 2026-01-05 | Initial research | 15 | Basic narrative |
 | 2 | 2026-01-05 | People investigation | 8 | CEO timeline |
-| 3 | 2026-01-05 | Defense case | 12 | Mitigating factors |
+| 3 | 2026-01-05 | Position 2 arguments | 12 | Mitigating factors |
 | ... | ... | ... | ... | ... |
 
 ---
@@ -934,7 +963,7 @@ This could indicate:
 ### Key Findings
 - Basic timeline established
 - 5 key people identified
-- 3 conspiracy theories noted for investigation
+- 3 alternative theories noted for investigation
 
 ### New Threads Identified
 1. CEO's prior company history
@@ -953,35 +982,33 @@ This could indicate:
 
 ### Cross-Model Critique (Gemini)
 
-> "The investigation has solid coverage of prosecution arguments but
-> defense case is underdeveloped. Specific gaps:
+> "The investigation has solid coverage of Position 1 arguments but
+> Position 2 is underdeveloped. Specific gaps:
 > 1. No analysis of industry standard practices
 > 2. Whistleblower credibility not assessed
-> 3. 'Coverup' theory asserted but 'Government coverup' conspiracy not addressed"
+> 3. Alternative theory 'Government coverup' not addressed"
 
-### Completeness Score: 68/100
+### Verification Checklist
 
-| Category | Points | Notes |
+| Category | Status | Notes |
 |----------|--------|-------|
-| People investigated | 10/10 | All key figures covered |
-| Claims categorized | 8/10 | Some prosecution claims unchecked |
-| Timeline complete | 10/10 | Good |
-| Sources traced | 8/10 | Some circular reporting |
-| Prosecution case | 10/10 | Strong |
-| Defense case | 4/10 | **Underdeveloped** |
-| Conspiracy theories | 2/10 | **Not addressed** |
-| Cross-model critique | 6/10 | Done, gaps found |
-| Accusations fact-checked | 6/10 | Partial |
-| No unexamined claims | 4/10 | Several remain |
+| All people investigated | YES | All key figures covered |
+| Claims categorized by position | PARTIAL | Some Position 1 claims unchecked |
+| Timeline complete | YES | Good |
+| Source provenance traced | PARTIAL | Some circular reporting |
+| All positions documented | NO | Position 2 underdeveloped |
+| Alternative theories addressed | NO | Government coverup not addressed |
+| Cross-model critique passed | NO | Gaps found |
+| All major claims fact-checked | PARTIAL | Several remain |
 
 ### Gaps to Address
-1. Build out defense case with industry context
+1. Build out Position 2 with industry context
 2. Assess whistleblower credibility
 3. Address "Government coverup" theory
-4. Fact-check remaining prosecution claims
+4. Fact-check remaining claims from all positions
 
 ### Verdict: CONTINUE
-Score 68 < 90 threshold. Must address gaps.
+Checklist has NO/PARTIAL items. Must address gaps before completion.
 
 ---
 
@@ -999,13 +1026,11 @@ Score 68 < 90 threshold. Must address gaps.
 ```python
 def can_terminate():
     return (
-        iteration >= 10 and                    # Hard minimum
-        verification_score >= 90 and           # Quality gate
         no_unexplored_threads() and            # All threads exhausted
-        prosecution_case_complete() and        # Accusations addressed
-        defense_case_complete() and            # Defenses addressed
-        conspiracy_theories_addressed() and    # Theories have verdicts
-        all_accusations_fact_checked()         # Both sides verified
+        all_positions_documented() and         # Every side represented
+        alternative_theories_addressed() and   # Theories have verdicts
+        all_major_claims_fact_checked() and    # All sides verified
+        verification_checklist_passed()        # No gaps in checklist
     )
 ```
 
@@ -1016,10 +1041,9 @@ def can_terminate():
 - Contradiction identified but not explored
 - Date referenced but timeline not verified
 - Source cited but not cross-checked
-- Defense argument not steelmanned
-- Prosecution argument not built
-- **Accusation not fact-checked** (either side)
-- **Conspiracy theory without verdict**
+- Position argument not steelmanned
+- **Claim not fact-checked** (any position)
+- **Alternative theory without verdict**
 
 ---
 
@@ -1031,7 +1055,7 @@ def can_terminate():
 |-------|----------------|
 | Case creation | `case [id]: Initial setup` |
 | Every 5 iterations | `case [id]: Iterations [N-M] + verification` |
-| Verification pass | `case [id]: Verification passed ([X]/100)` |
+| Verification pass | `case [id]: Verification checklist passed` |
 | Investigation complete | `case [id]: Investigation complete` |
 
 ---
@@ -1044,9 +1068,10 @@ def can_terminate():
 |-------|------------------|
 | **Mainstream** | Consensus narrative, major outlet coverage |
 | **Official** | Court filings, government documents, FOIA |
-| **Prosecution** | Evidence of wrongdoing, accusations, criticisms |
-| **Defense** | Rebuttals, context, exculpatory evidence |
-| **Fringe/Conspiracy** | Alternative theories to debunk |
+| **Critical** | Evidence of wrongdoing, accusations, criticisms |
+| **Supportive** | Rebuttals, context, exculpatory evidence |
+| **All Positions** | Arguments from every party/stakeholder |
+| **Alternative Theories** | Fringe theories to investigate with evidence |
 | **Social** | X/Twitter sentiment, viral claims |
 | **Timeline** | Chronological reconstruction |
 | **People** | Individual backgrounds, motivations |
