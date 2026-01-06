@@ -23,6 +23,7 @@ The verification checkpoint ensures investigations are:
 2. **Honest** - Not deceiving ourselves about coverage
 3. **Balanced** - Claims from ALL positions fact-checked
 4. **Thorough** - Alternative theories addressed, not ignored
+5. **Temporally Rich** - Statement histories documented, role evolution tracked
 
 ---
 
@@ -67,6 +68,15 @@ mcp__mcp-gemini__generate_text:
     - People mentioned but not investigated
     - Claims asserted but not verified
     - Contradictions identified but not resolved
+
+    STATEMENT & TEMPORAL GAPS (check these specifically):
+    - Key persons missing statement history
+    - Statements not compared across time (same person, different dates)
+    - Statements not compared across venues (public vs. testimony vs. internal)
+    - Role changes not documented (when did they join/leave/get promoted?)
+    - Position evolution not tracked (how did their stance change?)
+    - Testimony/depositions not sought for key figures
+    - Social media history not checked
 
     Be specific. Name names. Cite missing evidence.
 
@@ -161,6 +171,7 @@ For each theory, check if addressed:
 ```
 All must be TRUE to pass:
 
+# Core Investigation
 □ All people investigated
 □ All claims categorized by position
 □ Timeline complete
@@ -170,6 +181,13 @@ All must be TRUE to pass:
 □ Cross-model critique passed
 □ All major claims fact-checked (all sides)
 □ No unexamined major claims
+
+# Statement & Temporal Coverage
+□ Key persons have statement history documented
+□ Role timelines documented for key figures
+□ Statement evolution analyzed (same person, different times)
+□ Statement venue comparison done (public vs. testimony vs. internal)
+□ All statement contradictions flagged and investigated
 ```
 
 ### Checklist Evaluation
@@ -185,6 +203,11 @@ All must be TRUE to pass:
 | Cross-model critique | Critique found no major gaps | Minor gaps | Major gaps |
 | Claims fact-checked | All positions' claims verified | Mostly checked | Many unchecked |
 | No unexamined claims | Nothing major left | Few minor items | Major items remain |
+| **Statement history** | All key persons have history | Most (>80%) | Many missing |
+| **Role timelines** | All key figures have role history | Most (>80%) | Many missing |
+| **Statement evolution** | Compared across time | Some compared | Not compared |
+| **Venue comparison** | Public vs testimony compared | Some compared | Not compared |
+| **Statement contradictions** | All flagged and investigated | Some investigated | Not investigated |
 
 ---
 
@@ -295,6 +318,11 @@ Append to iterations.md:
 | Cross-model critique passed | YES/PARTIAL/NO | [note] |
 | All major claims fact-checked | YES/PARTIAL/NO | [note] |
 | No unexamined major claims | YES/PARTIAL/NO | [note] |
+| **Statement history documented** | YES/PARTIAL/NO | [note] |
+| **Role timelines documented** | YES/PARTIAL/NO | [note] |
+| **Statement evolution analyzed** | YES/PARTIAL/NO | [note] |
+| **Venue comparison done** | YES/PARTIAL/NO | [note] |
+| **Statement contradictions flagged** | YES/PARTIAL/NO | [note] |
 
 ### Verdict: [PASS/FAIL]
 
@@ -363,6 +391,11 @@ The verification checkpoint exists to catch self-deception. Be ruthless.
 | Cross-model critique passed | NO | Found 5 significant gaps |
 | All major claims fact-checked | PARTIAL | Many claims unchecked |
 | No unexamined major claims | NO | Several major items remain |
+| **Statement history documented** | PARTIAL | CEO covered, CFO incomplete |
+| **Role timelines documented** | YES | All key figures have role history |
+| **Statement evolution analyzed** | NO | Not yet compared across time |
+| **Venue comparison done** | NO | Need to compare testimony vs. public |
+| **Statement contradictions flagged** | PARTIAL | Some identified, not all investigated |
 
 ### Verdict: FAIL
 
@@ -374,7 +407,10 @@ The verification checkpoint exists to catch self-deception. Be ruthless.
 5. Political motivation theory - investigate with facts
 6. Prior approval argument (Position 2) - verify with documentation
 7. Performance metrics comparison - verify with data
+8. CFO statement history incomplete - search for testimony, interviews
+9. Statement evolution not analyzed - compare CEO statements over time
+10. Venue comparison needed - compare public statements to congressional testimony
 
 ### Next Steps:
-Address all 7 gaps. Re-verify when complete.
+Address all 10 gaps. Re-verify when complete.
 ```

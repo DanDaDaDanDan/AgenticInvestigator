@@ -63,12 +63,16 @@ AgenticInvestigator is an orchestrated multi-agent system that investigates cont
 │    │ PHASE 3: INVESTIGATION                                                    │ │
 │    │   for each person in people_found:        # ALL of them                  │ │
 │    │     investigate_person(person)                                           │ │
+│    │     collect_all_statements(person)        # Proactively seek statements  │ │
+│    │     document_role_timeline(person)        # Track role changes over time │ │
 │    │   for each claim in claims_found:         # ALL of them                  │ │
 │    │     trace_provenance(claim)                                              │ │
 │    │   for each date in dates_found:           # ALL of them                  │ │
 │    │     verify_timeline(date)                                                │ │
 │    │   for each contradiction in contradictions: # ALL of them                │ │
 │    │     explore_contradiction(contradiction)                                 │ │
+│    │   compare_statements_over_time()          # Same person, different dates │ │
+│    │   compare_statements_across_venues()      # Public vs testimony vs intrnl│ │
 │    └──────────────────────────────────────────────────────────────────────────┘ │
 │                                    ↓                                             │
 │    ┌──────────────────────────────────────────────────────────────────────────┐ │
@@ -102,6 +106,9 @@ AgenticInvestigator is an orchestrated multi-agent system that investigates cont
 │    │   ✓ all_positions_documented()           # Every side represented        │ │
 │    │   ✓ alternative_theories_addressed()     # Theories have verdicts        │ │
 │    │   ✓ all_major_claims_fact_checked()      # All sides verified            │ │
+│    │   ✓ statement_histories_complete()       # Key persons have statements   │ │
+│    │   ✓ statement_evolution_analyzed()       # Compared across time/venues   │ │
+│    │   ✓ verification_checklist_passed()      # All checklist items TRUE      │ │
 │    │                                                                            │ │
 │    │   if ALL true: COMPLETE                                                  │ │
 │    │   else: CONTINUE                                                         │ │
@@ -128,6 +135,7 @@ AgenticInvestigator is an orchestrated multi-agent system that investigates cont
 ```
 All must be TRUE to complete:
 
+# Core Investigation
 □ All people investigated
 □ All claims categorized by position
 □ Timeline complete
@@ -137,6 +145,13 @@ All must be TRUE to complete:
 □ Cross-model critique passed
 □ All major claims fact-checked (all sides)
 □ No unexamined major claims
+
+# Statement & Temporal Coverage
+□ Key persons have statement history documented
+□ Role timelines documented for key figures
+□ Statement evolution analyzed (same person, different times)
+□ Statement venue comparison done (public vs. testimony vs. internal)
+□ All statement contradictions flagged and investigated
 ```
 
 ### Anti-Gaming Rules
@@ -778,10 +793,18 @@ According to meeting minutes obtained by NYT [S002], the board...
 
 ### John Smith (CEO)
 
-**Role**: Chief Executive Officer, 2020-present
+**Current Role**: Chief Executive Officer (resigned June 2024)
+
+**Role Timeline**:
+| Period | Role | Organization | Notes |
+|--------|------|--------------|-------|
+| 2010-2015 | VP Finance | Previous Corp | [S015] |
+| 2015-2018 | CFO | Acme Corp | Recruited by founder [S016] |
+| 2018-2020 | COO | Acme Corp | Promoted during expansion |
+| 2020-2024 | CEO | Acme Corp | Appointed after predecessor left |
 
 **Background**:
-- Previous positions [S015]
+- Education, early career [S015]
 - Known associates [S016]
 
 **What They Knew**:
@@ -792,10 +815,26 @@ According to meeting minutes obtained by NYT [S002], the board...
 - Authorized investigation [S004]
 - Made public statement denying knowledge [S005]
 
+**Statement History** (chronological):
+| Date | Venue | Topic | Statement Summary | Source |
+|------|-------|-------|-------------------|--------|
+| 2024-01-20 | Internal (board meeting) | Issue awareness | Present at discussion, no recorded statement | [S003] |
+| 2024-03-15 | Press release | Issue awareness | "I first learned of this in March" | [S005] |
+| 2024-04-10 | Earnings call | Company response | "We acted swiftly once aware" | [S025] |
+| 2024-05-20 | Congressional testimony | Timeline | "I cannot recall exact dates" | [S030] |
+| 2024-06-01 | Resignation letter | Departure | "Leaving to pursue other opportunities" | [S020] |
+
+**Statement Evolution Analysis**:
+- **Initial position** (Mar 2024): Claimed first awareness in March
+- **Shift** (May 2024): Moved to "cannot recall" under oath
+- **Pattern**: Increasingly hedged as documentary evidence emerged
+
 **Statement vs. Evidence**:
 | Statement | Evidence | Gap |
 |-----------|----------|-----|
 | "I learned in March" [S005] | Email shows Jan awareness [S002] | 2 month discrepancy |
+| "Acted swiftly" [S025] | 60-day gap documented [S003] | Definition of "swift" |
+| "Cannot recall" [S030] | Calendar shows 3 meetings [S031] | Selective memory |
 
 **Current Status**:
 - Resigned June 2024 [S020]
@@ -805,7 +844,7 @@ According to meeting minutes obtained by NYT [S002], the board...
 
 ### Jane Doe (CFO)
 
-[... similar structure ...]
+[... similar structure with Role Timeline and Statement History ...]
 ```
 
 ### positions.md

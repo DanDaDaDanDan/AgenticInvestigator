@@ -267,6 +267,44 @@ ONE MESSAGE containing parallel calls:
 | **Timeline** | Chronological reconstruction |
 | **People** | Individual backgrounds, motivations |
 | **Money** | Financial flows, incentives |
+| **Statements** | What key people said, when, where (see below) |
+
+### Statement-Seeking Research (NEW)
+
+For each key person, explicitly search for their statements:
+
+```
+ONE MESSAGE containing parallel statement searches:
+
+├── XAI search: "[Person] testimony statement quotes about [topic]"
+├── XAI search: "[Person] interview transcript [topic]"
+├── XAI search: "[Person] congressional testimony deposition"
+├── Gemini research: "[Person] earnings call statements investor communications"
+├── XAI X search: "from:[person_handle] [topic keywords]"
+└── Gemini research: "[Person] speeches presentations public remarks [topic]"
+```
+
+#### Statement Research Query Templates
+
+| Statement Type | Query Pattern |
+|----------------|---------------|
+| Testimony | `"[Person]" testimony OR deposition OR "under oath" [topic]` |
+| Interviews | `"[Person]" interview OR "told reporters" OR "said in" [topic]` |
+| Earnings calls | `"[Person]" "earnings call" OR "investor call" OR "analyst call"` |
+| Social media | `from:[handle] [topic keywords]` (use XAI x_search) |
+| SEC filings | `"[Person]" CEO letter OR MD&A OR certification` |
+| Speeches | `"[Person]" speech OR keynote OR conference OR remarks [topic]` |
+
+#### What to Extract from Statements
+
+For each statement found:
+1. **Who** said it
+2. **When** (exact date)
+3. **Where** (venue type: testimony, interview, earnings call, etc.)
+4. **Context** (what prompted it, who was the audience)
+5. **Topic** (what issue they addressed)
+6. **Quote** (exact words when possible)
+7. **Source ID** (register in sources.md)
 
 ---
 
@@ -312,15 +350,51 @@ Mark items that MUST be fact-checked:
 
 ```
 for each person in newly_discovered_people:
+    # Background research
     research(person.background)
     research(person.role_in_events)
     research(person.what_they_knew)
     research(person.what_they_did)
     research(person.where_now)
+
+    # ROLE TIMELINE (NEW) - Track how roles changed over time
+    research(person.role_history)          # All positions with dates
+    research(person.organizational_moves)  # When joined, left, promoted
+    research(person.relationship_changes)  # Allies who became adversaries, etc.
+
+    # STATEMENT COLLECTION (NEW) - Proactively hunt for ALL statements
+    search(person.testimony)               # Congressional, deposition, court
+    search(person.interviews)              # Media interviews, podcasts
+    search(person.earnings_calls)          # If executive - investor communications
+    search(person.sec_filings)             # Letters, certifications, MD&A
+    search(person.social_media_history)    # Twitter/X, LinkedIn, archived posts
+    search(person.internal_communications) # If available via discovery/FOIA
+    search(person.speeches_presentations)  # Conference talks, public remarks
+
+    # STATEMENT EVOLUTION ANALYSIS (NEW)
+    compare_statements_over_time()         # Same topic, different dates
+    compare_statements_across_venues()     # Public vs. testimony vs. internal
+    identify_position_shifts()             # How stance evolved
+    flag_contradictions()                  # Add to contradictions list
+
     register_sources(sources.md)       # Get [SXXX] IDs
-    add_profile(people.md)             # With source citations
+    add_profile(people.md)             # With Role Timeline + Statement History
     update_summary(summary.md)         # Key people table
 ```
+
+#### Statement Sources to Proactively Seek
+
+| Venue Type | Where to Find | Priority |
+|------------|---------------|----------|
+| Congressional testimony | Congress.gov, hearing transcripts | HIGH |
+| Depositions | PACER, court records, news reports | HIGH |
+| Court testimony | Court transcripts, news coverage | HIGH |
+| Earnings calls | SEC EDGAR, company IR pages | HIGH (executives) |
+| Media interviews | News archives, video transcripts | MEDIUM |
+| Social media | Twitter/X, archived via Wayback | MEDIUM |
+| SEC filings | EDGAR - letters, certifications | MEDIUM (executives) |
+| Speeches/conferences | Event archives, YouTube | LOW |
+| Internal communications | Discovery, FOIA, leaks | IF AVAILABLE |
 
 ### For EVERY Claim Found
 
@@ -418,6 +492,7 @@ Check completeness:
 ```
 All must be TRUE to complete:
 
+# Core Investigation
 □ All people investigated
 □ All claims categorized by position
 □ Timeline complete
@@ -427,6 +502,13 @@ All must be TRUE to complete:
 □ Cross-model critique passed
 □ All major claims fact-checked (all sides)
 □ No unexamined major claims
+
+# Statement & Temporal Coverage (NEW)
+□ Key persons have statement history documented
+□ Role timelines documented for key figures
+□ Statement evolution analyzed (same person, different times)
+□ Statement venue comparison done (public vs. testimony vs. internal)
+□ All contradictions between statements flagged and investigated
 ```
 
 ### Step 4: Gap List
@@ -542,6 +624,8 @@ def can_terminate():
         all_positions_documented() and
         alternative_theories_addressed() and
         all_major_claims_fact_checked() and
+        statement_histories_complete() and        # NEW
+        statement_evolution_analyzed() and        # NEW
         verification_checklist_passed()
     )
 ```
@@ -557,6 +641,10 @@ def can_terminate():
 - [ ] All positions documented (strongest versions)
 - [ ] All alternative theories addressed with verdicts
 - [ ] All major claims from all positions fact-checked
+- [ ] Key persons have statement history documented
+- [ ] Role timelines documented for key figures
+- [ ] Statement evolution analyzed (same person, different times)
+- [ ] Statement venue comparison done (public vs. testimony vs. internal)
 - [ ] Verification checklist passed
 - [ ] Open questions listed (genuinely unanswerable)
 
@@ -631,6 +719,11 @@ The verification checkpoint catches self-deception. Trust the process.
 | Alternative theories addressed | NO | Not addressed |
 | Cross-model critique passed | NO | Gaps found |
 | All major claims fact-checked | PARTIAL | Many unexamined |
+| **Statement history documented** | PARTIAL | CEO covered, CFO incomplete |
+| **Role timelines documented** | YES | All key figures have role history |
+| **Statement evolution analyzed** | NO | Not yet compared across time |
+| **Statement venue comparison** | NO | Need to compare testimony vs. public |
+| **Statement contradictions flagged** | PARTIAL | Some identified, not all investigated |
 
 ### Gaps to Address
 1. Fact-check regulatory failure claims (Position 3)
