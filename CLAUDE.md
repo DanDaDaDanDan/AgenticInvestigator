@@ -44,6 +44,8 @@ After any structural change, verify all three files are consistent.
 | `/status --list` | List all cases | `.claude/commands/status.md` |
 | `/osint` | OSINT quick reference | `.claude/commands/osint.md` |
 | `/osint [topic]` | OSINT sources for specific investigation type | `.claude/commands/osint.md` |
+| `/questions` | Generate investigative questions for active case | `.claude/commands/questions.md` |
+| `/questions [case-id]` | Generate questions for specific case | `.claude/commands/questions.md` |
 
 ---
 
@@ -168,6 +170,43 @@ Source format: [S001], [S002], [S003]...
 - summary.md embeds complete source list → shareable standalone
 ```
 
+### summary.md Quality Standards (CRITICAL)
+
+**summary.md is THE DELIVERABLE - a polished final product, NOT a ledger.**
+
+#### What summary.md IS:
+- A self-contained, shareable investigative report
+- Written as if composed in one sitting by a professional journalist
+- Smooth narrative flow with no seams showing
+- Complete with all sources embedded
+- Ready to share with anyone without additional context
+
+#### What summary.md is NOT:
+- A log of iterative discoveries
+- A ledger showing additions over time
+- A changelog with "additionally found..." or "we also discovered..."
+- A working document with visible revision artifacts
+
+#### Rewrite, Don't Append
+
+Each time summary.md is updated:
+1. **Completely rewrite** as a fresh, polished document
+2. **Remove all artifacts** of iterative process
+3. **No language** that reveals multiple passes:
+   - ❌ "We also found..."
+   - ❌ "Additionally..."
+   - ❌ "In a subsequent search..."
+   - ❌ "Further investigation revealed..."
+   - ✅ Just state the findings directly
+4. **Smooth narrative** that reads as cohesive prose
+5. **Professional quality** - publishable as-is
+
+#### The Test
+
+> Could you hand this to a journalist or executive right now and have them understand the full investigation without any explanation?
+
+If yes, it's a proper summary.md. If no, rewrite it.
+
 ---
 
 ## MCP Quick Reference
@@ -267,4 +306,5 @@ mcp__mcp-xai__research
 | Verification procedure | `.claude/commands/verify.md` |
 | Status command | `.claude/commands/status.md` |
 | OSINT command | `.claude/commands/osint.md` |
+| Questions generator | `.claude/commands/questions.md` |
 | Deep-web data sources | `docs/investigative_data_sources.md` |
