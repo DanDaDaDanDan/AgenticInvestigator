@@ -62,6 +62,7 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 │    - Gemini deep research (fast, broad)                          │
 │    - OpenAI deep research (max depth, critical claims)           │
 │    - XAI real-time search (X/Twitter, web, news)                 │
+│    - Statement searches (testimony, interviews, earnings calls)  │
 │                                                                  │
 │  PHASE 2: EXTRACTION                                             │
 │    - Extract claims, people, dates, contradictions               │
@@ -69,13 +70,17 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 │                                                                  │
 │  PHASE 3: INVESTIGATION                                          │
 │    - For EVERY person → investigate background                   │
+│    - For EVERY person → collect ALL statements (proactive)       │
+│    - For EVERY person → document role timeline                   │
 │    - For EVERY claim → verify with multiple sources              │
 │    - For EVERY contradiction → investigate discrepancy           │
+│    - Compare statements across time and venues                   │
 │                                                                  │
 │  PHASE 4: VERIFICATION CHECKPOINT (periodic)                      │
 │    - Cross-model critique (Gemini critiques Claude)              │
 │    - Identify unexplored claims from ALL positions               │
 │    - Identify alternative theories to address                    │
+│    - Check statement coverage and contradictions                 │
 │    - Identify gaps and continue until exhausted                  │
 │                                                                  │
 │  PHASE 5: SYNTHESIS                                              │
@@ -90,6 +95,8 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 │    ✓ all positions documented                                    │
 │    ✓ alternative theories addressed                              │
 │    ✓ all major claims fact-checked                               │
+│    ✓ statement histories complete                                │
+│    ✓ statement evolution analyzed                                │
 │    ✓ verification checklist passed                               │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
@@ -113,6 +120,7 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 | `/questions [case-id]` | Generate questions for specific case |
 | `/financial [entity]` | Financial investigation toolkit |
 | `/financial [case-id]` | Financial analysis for existing case |
+| `/financial [case-id] [entity]` | Add financial focus to existing case |
 | `/legal-review` | Pre-publication legal risk assessment |
 | `/legal-review [case-id]` | Legal review for specific case |
 
@@ -202,6 +210,13 @@ Pre-publication review for defamation exposure:
 2. **Address alternative theories** - Don't ignore them; investigate with evidence
 3. **Cross-model critique** - Different models check each other's work
 4. **No premature stopping** - Cannot claim saturation until genuinely exhausted
+
+### Statement & Temporal Tracking Principles
+1. **Proactively seek statements** - Hunt for testimony, depositions, interviews, earnings calls
+2. **Document role timelines** - When did they join, leave, get promoted? Roles change.
+3. **Compare statements over time** - Same person, different dates - how did their story evolve?
+4. **Compare statements across venues** - Public vs. testimony vs. internal - note discrepancies
+5. **Flag all contradictions** - When someone's statements conflict, investigate why
 
 ### Technical Principles
 1. **Insatiable curiosity** - Never stop until all avenues exhausted

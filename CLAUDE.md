@@ -48,6 +48,7 @@ After any structural change, verify all three files are consistent.
 | `/questions [case-id]` | Generate questions for specific case | `.claude/commands/questions.md` |
 | `/financial [entity]` | Financial investigation toolkit | `.claude/commands/financial.md` |
 | `/financial [case-id]` | Financial analysis for existing case | `.claude/commands/financial.md` |
+| `/financial [case-id] [entity]` | Add financial focus to existing case | `.claude/commands/financial.md` |
 | `/legal-review` | Pre-publication legal risk assessment | `.claude/commands/legal-review.md` |
 | `/legal-review [case-id]` | Legal review for specific case | `.claude/commands/legal-review.md` |
 
@@ -84,6 +85,7 @@ Only stop when ALL conditions are true:
 │    - Gemini deep research (primary)                                 │
 │    - OpenAI deep research (critical claims)                         │
 │    - XAI real-time search (current events, social media)            │
+│    - Statement searches (testimony, interviews, earnings calls)     │
 │                                                                     │
 │  PHASE 2: EXTRACTION                                                │
 │    - Extract all claims, people, dates, contradictions              │
@@ -91,14 +93,18 @@ Only stop when ALL conditions are true:
 │                                                                     │
 │  PHASE 3: INVESTIGATION                                             │
 │    - For EVERY person: investigate background                       │
+│    - For EVERY person: collect ALL statements (proactively seek)    │
+│    - For EVERY person: document role timeline                       │
 │    - For EVERY claim: verify with multiple sources                  │
 │    - For EVERY contradiction: investigate discrepancy               │
+│    - Compare statements across time and venues                      │
 │                                                                     │
 │  PHASE 4: VERIFICATION CHECKPOINT (periodic)                        │
 │    → Cross-model critique (Gemini critiques Claude)                 │
 │    → Identify unexplored claims from ALL positions                  │
 │    → Identify alternative theories to address                       │
 │    → Fact-check all major claims                                    │
+│    → Check statement coverage (histories, evolution, contradictions)│
 │    → List specific gaps                                             │
 │    → If gaps exist: CONTINUE                                        │
 │                                                                     │
@@ -113,6 +119,8 @@ Only stop when ALL conditions are true:
 │    - all_positions_documented                                       │
 │    - alternative_theories_addressed                                 │
 │    - all_major_claims_fact_checked                                  │
+│    - statement_histories_complete                                   │
+│    - statement_evolution_analyzed                                   │
 │    - verification_checklist_passed                                  │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
@@ -325,6 +333,11 @@ mcp__mcp-xai__research
 8. **Every claim needs [SXXX]** - Source attribution is sacred. No ID = no claim.
 9. **Append-only sources** - Never renumber or delete source IDs.
 10. **summary.md is self-contained** - Must embed full source list, shareable standalone.
+11. **Proactively seek statements** - Don't wait for statements to surface; hunt for testimony, interviews, earnings calls.
+12. **Document role timelines** - Track when people joined, left, got promoted - roles change over time.
+13. **Compare statements across time** - Same person, different dates - track how their story evolved.
+14. **Compare statements across venues** - Public statements vs. testimony vs. internal - note discrepancies.
+15. **Flag all statement contradictions** - When someone's statements conflict, investigate the discrepancy.
 
 ---
 
