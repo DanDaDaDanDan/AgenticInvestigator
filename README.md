@@ -111,6 +111,10 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 | `/osint [topic]` | OSINT sources for specific investigation type |
 | `/questions` | Generate investigative questions for active case |
 | `/questions [case-id]` | Generate questions for specific case |
+| `/financial [entity]` | Financial investigation toolkit |
+| `/financial [case-id]` | Financial analysis for existing case |
+| `/legal-review` | Pre-publication legal risk assessment |
+| `/legal-review [case-id]` | Legal review for specific case |
 
 ## The /questions Command: 20 Investigative Frameworks
 
@@ -134,6 +138,32 @@ The `/questions` command generates investigative questions using **20 frameworks
 | **Late** (stress testing) | Add Counterfactual, Pre-Mortem, Cognitive Bias, Second-Order Effects |
 | **When stuck** | Focus on Pre-Mortem, Bias Check, Uncomfortable Questions |
 
+## Financial Investigation Toolkit (/financial)
+
+Specialized tools for following the money:
+
+| Capability | Description |
+|------------|-------------|
+| **Corporate Structure Mapping** | Trace ownership chains, subsidiaries, beneficial owners |
+| **Transaction Pattern Analysis** | Identify red flags (round-trips, structuring, related-party) |
+| **Beneficial Ownership Tracing** | Penetrate shell companies, nominee directors, trusts |
+| **Money Flow Mapping** | Track source → intermediaries → destination |
+
+**Data Sources**: SEC EDGAR, OpenCorporates, ICIJ Offshore Leaks, FEC, PACER, state corporate registries, and more.
+
+## Legal Risk Assessment (/legal-review)
+
+Pre-publication review for defamation exposure:
+
+| Assessment | What It Evaluates |
+|------------|-------------------|
+| **Subject Classification** | Public official, public figure, limited public figure, private figure |
+| **Claim Risk** | Criminal allegations, professional misconduct, financial wrongdoing |
+| **Evidence Strength** | Tier 1 (strong) through Tier 4 (insufficient) |
+| **Corroboration** | Multiple primary sources → single anonymous source |
+
+**Output**: Claim-by-claim risk assessment, hedging suggestions, evidence gaps, pre-publication checklist.
+
 ## MCP Servers
 
 | Server | Purpose |
@@ -153,6 +183,8 @@ The `/questions` command generates investigative questions using **20 frameworks
 | `.claude/commands/status.md` | Status command procedure |
 | `.claude/commands/osint.md` | OSINT database sources |
 | `.claude/commands/questions.md` | Question generation procedure |
+| `.claude/commands/financial.md` | Financial investigation toolkit |
+| `.claude/commands/legal-review.md` | Legal risk assessment procedure |
 | `docs/investigative_data_sources.md` | 100+ OSINT sources |
 
 ## Philosophy

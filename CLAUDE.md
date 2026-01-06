@@ -46,6 +46,10 @@ After any structural change, verify all three files are consistent.
 | `/osint [topic]` | OSINT sources for specific investigation type | `.claude/commands/osint.md` |
 | `/questions` | Generate investigative questions for active case | `.claude/commands/questions.md` |
 | `/questions [case-id]` | Generate questions for specific case | `.claude/commands/questions.md` |
+| `/financial [entity]` | Financial investigation toolkit | `.claude/commands/financial.md` |
+| `/financial [case-id]` | Financial analysis for existing case | `.claude/commands/financial.md` |
+| `/legal-review` | Pre-publication legal risk assessment | `.claude/commands/legal-review.md` |
+| `/legal-review [case-id]` | Legal review for specific case | `.claude/commands/legal-review.md` |
 
 ---
 
@@ -356,4 +360,6 @@ mcp__mcp-xai__research
 | Status command | `.claude/commands/status.md` |
 | OSINT command | `.claude/commands/osint.md` |
 | Questions generator | `.claude/commands/questions.md` |
+| Financial toolkit | `.claude/commands/financial.md` |
+| Legal risk assessment | `.claude/commands/legal-review.md` |
 | Deep-web data sources | `docs/investigative_data_sources.md` |
