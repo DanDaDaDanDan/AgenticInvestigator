@@ -120,6 +120,99 @@ Use these lenses to generate questions. Each reveals different blind spots:
 - What's being left out of the coverage?
 - Why do we know what we know?
 
+### 11. THE 5 WHYS (ROOT CAUSE ANALYSIS)
+
+For each major finding, drill down to the root cause:
+
+```
+Finding: [X happened]
+  → Why? [Because Y]
+    → Why? [Because Z]
+      → Why? [Because A]
+        → Why? [Because B]
+          → Why? [ROOT CAUSE]
+```
+
+- Why did this happen? (symptom level)
+- Why did THAT happen? (process level)
+- Why did THAT happen? (system level)
+- Why did THAT happen? (organizational level)
+- Why did THAT happen? (root cause / incentive level)
+
+**The goal**: Get past symptoms to systemic causes. Most investigations stop at "who did it" - the 5 Whys asks "why was it possible?"
+
+Key questions:
+- What systemic failure enabled this?
+- What incentives created this behavior?
+- What oversight was missing?
+- What would prevent this from happening again?
+- Is this a one-off or a symptom of deeper problems?
+
+### 12. FRAMING, CONTEXT & SENSE-MAKING
+
+Every finding needs to be understood and contextualized. These questions help make sense of what you've found:
+
+**Meaning & Interpretation**:
+- What does this actually mean?
+- How should we interpret this finding?
+- What are the possible interpretations?
+- Which interpretation is best supported by evidence?
+- What are we missing to fully understand this?
+- Does this confirm or contradict our working theory?
+
+**Synthesis & Coherence**:
+- How does this fit with everything else we know?
+- Does this change the overall picture?
+- What story do all the facts tell together?
+- Are there contradictions we need to resolve?
+- What's the simplest explanation that fits all the facts?
+- What remains unexplained?
+
+**Significance & Weight**:
+- How important is this finding?
+- Is this a smoking gun or circumstantial?
+- What would change if this weren't true?
+- Is this central to the investigation or peripheral?
+- Should this change our priorities?
+
+**Historical Context**:
+- When did this pattern first emerge?
+- What historical precedent exists?
+- How does this compare to similar past events?
+- What lessons from history apply?
+
+**Industry/Sector Context**:
+- Is this common in this industry?
+- What's the industry standard?
+- How do peers/competitors handle this?
+- What regulatory context applies?
+
+**Broader Significance**:
+- What's the "so what?" - why does this matter?
+- Who should care about this and why?
+- What are the implications if this is true?
+- What are the implications if this is false?
+- What precedent does this set?
+
+**Narrative Framing**:
+- What's the simplest way to explain this?
+- What's the most accurate frame?
+- What frames are being pushed by each side?
+- What frame would a neutral observer use?
+- What's the one-sentence version?
+
+**Audience Considerations**:
+- How would different audiences interpret this?
+- What context does a layperson need?
+- What context does an expert need?
+- What would be misleading without proper context?
+
+**Future Implications**:
+- What does this mean going forward?
+- What should change as a result?
+- Who needs to know about this?
+- What decisions does this inform?
+
 ---
 
 ## STEP 1: LOAD CASE
@@ -287,7 +380,11 @@ Group questions by framework:
 - Contradiction questions
 - Document questions
 - Pattern questions
-- Adversarial questions
+- Counterfactual questions
+- Uncomfortable questions
+- Meta questions
+- 5 Whys / Root Cause questions
+- Framing, Context & Sense-Making questions
 
 ### 3C: Prioritize
 Rank by:
@@ -378,7 +475,23 @@ blind spots in [Y areas] and suggests new research directions for [Z].
 1. [Question]
 2. [Question]
 
-### Adversarial Questions
+### Counterfactual Questions
+1. [Question]
+2. [Question]
+
+### Uncomfortable Questions
+1. [Question]
+2. [Question]
+
+### Meta Questions
+1. [Question]
+2. [Question]
+
+### 5 Whys / Root Cause Analysis
+1. [Question with 5-level drill-down]
+2. [Question with 5-level drill-down]
+
+### Framing, Context & Sense-Making Questions
 1. [Question]
 2. [Question]
 
@@ -503,6 +616,29 @@ January 15th awareness.
 2. What happened to the internal auditor who filed the initial report?
 3. Why are no board members commenting on the timeline questions?
 
+### 5 Whys / Root Cause Analysis
+1. Why did the fraud go undetected for 18 months?
+   → Why? Internal audit was understaffed
+   → Why? Budget cuts in 2023
+   → Why? Board prioritized growth over compliance
+   → Why? Compensation tied to stock price
+   → ROOT CAUSE: Incentive misalignment
+
+2. Why did the CFO not escalate the concerns?
+   → Why? Feared retaliation
+   → Why? Previous whistleblower was fired
+   → Why? No protected channels existed
+   → Why? Legal never established them
+   → ROOT CAUSE: Missing institutional safeguards
+
+### Framing, Context & Sense-Making Questions
+1. What does the 2-month awareness gap actually mean? Is it damning or explainable?
+2. How does the $2.3M figure compare to industry norms for similar adjustments?
+3. What's the simplest explanation that fits all the facts we have so far?
+4. What regulatory precedent exists for this type of disclosure delay?
+5. What's the one-sentence summary a general audience would understand?
+6. What historical parallels (Enron, WorldCom, etc.) apply or don't apply?
+
 [...continues...]
 ```
 
@@ -534,6 +670,8 @@ When generating questions, channel these principles:
 8. **"Who introduced whom?"** - Relationships explain behavior
 9. **"Why now?"** - Timing is never accidental
 10. **"What's not being said?"** - Silence speaks volumes
+11. **"Why was this possible?"** - Get past symptoms to root causes
+12. **"So what?"** - Every finding needs significance and context
 
 ---
 
