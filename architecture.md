@@ -383,6 +383,31 @@ When multiple sources cite each other, note it:
 
 **The deliverable. Self-contained. Shareable. Has ALL sources embedded.**
 
+### Quality Standards: Final Product, Not Ledger
+
+**summary.md must read as a polished investigative report, not a working document.**
+
+| summary.md IS | summary.md is NOT |
+|---------------|-------------------|
+| A self-contained final report | A log of iterative discoveries |
+| Written as if composed in one sitting | A ledger showing additions over time |
+| Smooth narrative with no seams | A changelog with "additionally found..." |
+| Ready to share with anyone | A working document with revision artifacts |
+| Publishable quality | An internal scratchpad |
+
+**Rewrite, Don't Append**: Each time summary.md is updated, completely rewrite it as a fresh, polished document. Remove all artifacts of the iterative process. No language that reveals multiple passes.
+
+**Forbidden phrases**:
+- ❌ "We also found..."
+- ❌ "Additionally..."
+- ❌ "In a subsequent search..."
+- ❌ "Further investigation revealed..."
+- ✅ Just state findings directly
+
+**The Test**: Could you hand this to a journalist or executive right now and have them understand the full investigation without explanation? If yes, it's a proper summary.md.
+
+### Structure Template
+
 ```markdown
 # Investigation: [Topic]
 
