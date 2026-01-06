@@ -109,6 +109,8 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 | `/status --list` | List all cases |
 | `/osint` | OSINT quick reference |
 | `/osint [topic]` | OSINT sources for specific investigation type |
+| `/questions` | Generate investigative questions for active case |
+| `/questions [case-id]` | Generate questions for specific case |
 
 ## MCP Servers
 
@@ -128,6 +130,7 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 | `.claude/commands/verify.md` | Verification checkpoint procedure |
 | `.claude/commands/status.md` | Status command procedure |
 | `.claude/commands/osint.md` | OSINT database sources |
+| `.claude/commands/questions.md` | Question generation procedure |
 | `docs/investigative_data_sources.md` | 100+ OSINT sources |
 
 ## Philosophy

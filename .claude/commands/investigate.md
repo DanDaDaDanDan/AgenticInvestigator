@@ -488,12 +488,25 @@ After each iteration, update the modular files:
 4. After all updates, regenerate summary.md source section
 ```
 
-### summary.md Must Be Self-Contained
+### summary.md: Final Product, Not Ledger (CRITICAL)
+
+**summary.md is THE DELIVERABLE. Rewrite it completely each time - don't append.**
 
 At the end of each synthesis:
-1. Update executive summary, key findings, verdict
-2. **Embed the complete source list** from sources.md
-3. summary.md should be shareable standalone with full attribution
+1. **Completely rewrite** summary.md as a polished final document
+2. **Remove all artifacts** of iterative process - no "we also found..." or "additionally..."
+3. Write as if composed in one sitting by a professional journalist
+4. **Embed the complete source list** from sources.md
+5. summary.md must be shareable standalone - ready to hand to anyone
+
+**Forbidden language** (reveals iterative process):
+- ❌ "We also found..."
+- ❌ "Additionally..."
+- ❌ "In a subsequent search..."
+- ❌ "Further investigation revealed..."
+- ✅ Just state the findings directly
+
+**The Test**: Could you hand this to a journalist or executive right now and have them understand the full investigation without explanation?
 
 ### Detail File Update Pattern
 
@@ -562,7 +575,8 @@ def can_terminate():
 9. **LET READERS DECIDE** - Present evidence, don't dictate conclusions
 10. **EVERY CLAIM NEEDS A SOURCE ID** - No [SXXX] = no claim. Source attribution is sacred.
 11. **APPEND-ONLY SOURCES** - Never renumber or delete source IDs
-12. **SUMMARY.MD SELF-CONTAINED** - Must embed full source list, shareable standalone
+12. **SUMMARY.MD IS A FINAL PRODUCT** - Rewrite completely each time. No ledger artifacts. Publishable quality.
+13. **SUMMARY.MD SELF-CONTAINED** - Must embed full source list, shareable standalone
 
 ---
 
