@@ -2,8 +2,6 @@
 
 You are running the **questions engine** - the heart of investigative curiosity. This command embodies the principle that **there are always more questions**.
 
-An investigative journalist's superpower is asking the questions others don't think to ask. This command generates those questions.
-
 ---
 
 ## USAGE
@@ -15,23 +13,63 @@ An investigative journalist's superpower is asking the questions others don't th
 
 ---
 
-## PHILOSOPHY
+## QUICK REFERENCE: 20 FRAMEWORKS
 
-**Investigative journalism is the art of asking uncomfortable questions.**
-
-The best investigators ask questions that:
-- Others forgot to ask
-- Others were afraid to ask
-- Others didn't think to ask
-- Reveal what's missing, not just what's there
-
-This command approaches your investigation with fresh eyes and relentless curiosity.
+| # | Framework | Category | Key Question | When to Use |
+|---|-----------|----------|--------------|-------------|
+| 1 | Follow the Money | Core | Who benefits financially? | Always |
+| 2 | Follow the Silence | Core | Who's NOT talking? | Always |
+| 3 | Follow the Timeline | Core | What happened before/after? | Always |
+| 4 | Follow the Documents | Core | What paper trail exists? | Always |
+| 5 | Follow the Relationships | People | Who knows whom? | Always |
+| 6 | Follow the Contradictions | Core | Who changed their story? | Always |
+| 7 | Stakeholder Mapping | People | Who has power/interests? | Early |
+| 8 | Network Analysis | People | Who connects the players? | Mid |
+| 9 | Means/Motive/Opportunity | People | Who could have done it? | Mid |
+| 10 | ACH (Competing Hypotheses) | Analysis | Which theory fits evidence? | Mid |
+| 11 | Key Assumptions Check | Analysis | What are we assuming? | Mid |
+| 12 | Follow the Patterns | Analysis | Has this happened before? | Mid |
+| 13 | Counterfactual Thinking | Adversarial | What would prove this wrong? | Late |
+| 14 | Pre-Mortem Analysis | Adversarial | If we're wrong, why? | Late |
+| 15 | Cognitive Bias Check | Adversarial | Where are our blind spots? | Late |
+| 16 | Uncomfortable Questions | Adversarial | What would they refuse to answer? | Always |
+| 17 | Second-Order Effects | Context | What happens after the consequence? | Late |
+| 18 | Meta Questions | Context | Why is this story being told now? | Mid |
+| 19 | 5 Whys (Root Cause) | Root Cause | Why was this possible? | Mid/Late |
+| 20 | Framing & Sense-Making | Context | What does this actually mean? | Always |
 
 ---
 
-## THE QUESTION FRAMEWORKS
+## SELECTION GUIDE: WHICH FRAMEWORKS WHEN
 
-Use these lenses to generate questions. Each reveals different blind spots:
+### Early Investigation (Gathering Facts)
+**Use these 8 frameworks:**
+- Follow the Money, Silence, Timeline, Documents, Contradictions (Core)
+- Follow the Relationships, Stakeholder Mapping (People)
+- Framing & Sense-Making (Context)
+
+### Mid Investigation (Building Understanding)
+**Add these 6 frameworks:**
+- Network Analysis, Means/Motive/Opportunity (People)
+- ACH, Key Assumptions Check, Follow the Patterns (Analysis)
+- Meta Questions, 5 Whys (Context/Root Cause)
+
+### Late Investigation (Stress Testing)
+**Add these 4 frameworks:**
+- Counterfactual Thinking, Pre-Mortem, Cognitive Bias Check (Adversarial)
+- Second-Order Effects (Context)
+
+### When Stuck
+**Focus on:**
+- Pre-Mortem Analysis ("If this investigation is wrong, why?")
+- Cognitive Bias Check ("What are we missing?")
+- Uncomfortable Questions ("What would they refuse to answer?")
+
+---
+
+## CATEGORY 1: CORE INVESTIGATION
+
+These six frameworks should be used in EVERY investigation:
 
 ### 1. FOLLOW THE MONEY
 - Who benefits financially from this?
@@ -41,6 +79,7 @@ Use these lenses to generate questions. Each reveals different blind spots:
 - Who stands to gain from each outcome?
 - What are the financial incentives?
 - Are there undisclosed financial relationships?
+- What's the compensation structure and how does it drive behavior?
 
 ### 2. FOLLOW THE SILENCE
 - Who is conspicuously NOT talking?
@@ -50,6 +89,7 @@ Use these lenses to generate questions. Each reveals different blind spots:
 - What's the dog that didn't bark?
 - Who would know but hasn't been asked?
 - What records should exist but don't?
+- Who has lawyered up?
 
 ### 3. FOLLOW THE TIMELINE
 - What happened right before the key event?
@@ -59,26 +99,9 @@ Use these lenses to generate questions. Each reveals different blind spots:
 - What's the gap between knowing and acting?
 - Are there timeline contradictions?
 - What's the earliest documented instance?
+- What decisions were made at each point?
 
-### 4. FOLLOW THE RELATIONSHIPS
-- Who knows whom?
-- Who introduced whom?
-- Who worked together before?
-- Who has shared business interests?
-- Who has personal connections?
-- Who went to school together?
-- Who serves on the same boards?
-- Who has overlapping social circles?
-
-### 5. FOLLOW THE CONTRADICTIONS
-- Who changed their story?
-- What statements don't match documents?
-- What doesn't add up?
-- Where does the official narrative strain credibility?
-- What explanations have shifted over time?
-- Who said different things to different audiences?
-
-### 6. FOLLOW THE DOCUMENTS
+### 4. FOLLOW THE DOCUMENTS
 - What documents should exist?
 - What documents are missing?
 - What was deleted or destroyed?
@@ -87,8 +110,112 @@ Use these lenses to generate questions. Each reveals different blind spots:
 - What's been FOIA'd but not released?
 - What court filings exist?
 - What financial disclosures exist?
+- What emails/texts/messages exist?
 
-### 7. FOLLOW THE PATTERNS
+### 5. FOLLOW THE CONTRADICTIONS
+- Who changed their story?
+- What statements don't match documents?
+- What doesn't add up?
+- Where does the official narrative strain credibility?
+- What explanations have shifted over time?
+- Who said different things to different audiences?
+- What's the gap between public statements and private actions?
+
+### 6. UNCOMFORTABLE QUESTIONS
+- What question would make people defensive?
+- What question would they refuse to answer?
+- What question has never been asked publicly?
+- What question would a hostile critic ask?
+- What would a lawyer advise them not to answer?
+- What question do insiders whisper about but won't say on record?
+
+---
+
+## CATEGORY 2: PEOPLE & NETWORKS
+
+Map the human landscape systematically:
+
+### 7. STAKEHOLDER MAPPING
+- Who are ALL the stakeholders in this situation?
+- What are each stakeholder's interests?
+- What is each stakeholder's power/influence?
+- Who has formal authority vs. informal influence?
+- What coalitions exist?
+- Who is aligned with whom?
+- Whose interests conflict?
+- Who has the most to lose? Most to gain?
+
+### 8. NETWORK ANALYSIS
+- Who is the connector between different groups?
+- What's the shortest path between key players?
+- Who bridges different worlds (business/politics/media)?
+- Who are the gatekeepers?
+- What nodes would break the network if removed?
+- Who has access that others don't?
+- What's the information flow path?
+- Who introduced whom to whom?
+
+### 9. MEANS, MOTIVE, OPPORTUNITY
+- Who had the MEANS to do this? (capability, resources, access)
+- Who had the MOTIVE? (benefit, grudge, ideology, pressure)
+- Who had the OPPORTUNITY? (access, timing, position)
+- Where do all three overlap?
+- Who had means but not motive?
+- Who had motive but not opportunity?
+- What does the intersection tell us?
+
+### 10. FOLLOW THE RELATIONSHIPS
+- Who knows whom personally?
+- Who introduced whom?
+- Who worked together before?
+- Who has shared business interests?
+- Who has personal connections (family, romance, friendship)?
+- Who went to school together?
+- Who serves on the same boards?
+- Who has overlapping social circles?
+- What's the history between key players?
+
+---
+
+## CATEGORY 3: HYPOTHESIS & ANALYSIS
+
+Systematically evaluate competing explanations:
+
+### 11. ACH (ANALYSIS OF COMPETING HYPOTHESES)
+
+For each major question, list ALL plausible hypotheses and evaluate:
+
+```
+Hypothesis A: [Theory 1]
+Hypothesis B: [Theory 2]
+Hypothesis C: [Theory 3]
+
+For each piece of evidence:
+- Does it support, contradict, or is it neutral to each hypothesis?
+- Which hypothesis is LEAST contradicted by the evidence?
+- What's the DIAGNOSTIC evidence (supports one, contradicts others)?
+```
+
+Key questions:
+- What are ALL plausible explanations?
+- What evidence distinguishes between hypotheses?
+- Which hypothesis requires the fewest assumptions?
+- What evidence would we expect if each hypothesis were true?
+- What evidence is conspicuously absent for each?
+
+### 12. KEY ASSUMPTIONS CHECK
+- What are we assuming to be true without evidence?
+- What if that assumption is wrong?
+- Which assumptions are "load-bearing" (whole theory collapses if wrong)?
+- What assumptions are we making about:
+  - People's motivations?
+  - Timeline accuracy?
+  - Document authenticity?
+  - Source reliability?
+  - Cause and effect relationships?
+- What would we do differently if each assumption were false?
+
+### 13. FOLLOW THE PATTERNS
 - Has this happened before?
 - Are there similar cases?
 - Are the same players involved elsewhere?
@@ -96,61 +223,93 @@ Use these lenses to generate questions. Each reveals different blind spots:
 - What's the precedent?
 - Who else has made similar claims?
 - Are there parallel investigations?
+- What do similar cases reveal about likely outcomes?
+- Is this an isolated incident or symptom of something systemic?
 
-### 8. COUNTERFACTUAL THINKING
+---
+
+## CATEGORY 4: ADVERSARIAL & STRESS TESTING
+
+Challenge your own conclusions ruthlessly:
+
+### 14. COUNTERFACTUAL THINKING
 - What would prove this wrong?
 - What's the alternative explanation?
 - What would we expect to see if the opposite were true?
 - What's the strongest version of the other side?
 - What evidence would change your mind?
 - What's the null hypothesis?
+- What if the most incriminating evidence has an innocent explanation?
 
-### 9. THE UNCOMFORTABLE QUESTIONS
-- What question would make people defensive?
-- What question would they refuse to answer?
-- What question has never been asked publicly?
-- What question would a hostile critic ask?
-- What would a lawyer advise them not to answer?
+### 15. PRE-MORTEM ANALYSIS
 
-### 10. THE META QUESTIONS
+Imagine the investigation is completely wrong. Work backwards:
+
+```
+"It's 6 months from now. This investigation was wrong.
+What happened? What did we miss?"
+```
+
+- What's our biggest blind spot?
+- What information could emerge that would invalidate our findings?
+- What are we most confident about that could be wrong?
+- Who might have deceived us and how?
+- What documents might be forged or misleading?
+- What sources might have ulterior motives?
+- What would a successful coverup look like?
+
+### 16. COGNITIVE BIAS CHECK
+
+Audit your own thinking for common biases:
+
+| Bias | Check Question |
+|------|----------------|
+| Confirmation | Are we seeking info that confirms what we already believe? |
+| Anchoring | Are we over-weighting the first information we received? |
+| Availability | Are we over-weighting vivid or recent information? |
+| Authority | Are we believing sources because of who they are, not what they say? |
+| Groupthink | Are we agreeing with consensus without independent analysis? |
+| Sunk cost | Are we sticking with a theory because we've invested in it? |
+| Hindsight | Are we assuming the outcome was predictable when it wasn't? |
+
+- What evidence have we dismissed too quickly?
+- What sources have we trusted too easily?
+- What alternative explanations have we not fully explored?
+- Are we falling in love with a narrative?
+
+---
+
+## CATEGORY 5: CONTEXT & FRAMING
+
+Understand significance and implications:
+
+### 17. SECOND-ORDER EFFECTS
+
+Think beyond immediate consequences:
+
+```
+Event → First-order effect → Second-order effect → Third-order effect
+```
+
+- What happens after the first consequence?
+- What feedback loops exist?
+- What unintended consequences might occur?
+- How might different actors respond to the initial event?
+- What precedent does this set?
+- What becomes possible (or impossible) because of this?
+- What are the downstream effects on related systems?
+
+### 18. META QUESTIONS
 - Why is this story being told now?
 - Who benefits from this framing?
 - What's the narrative being sold?
 - Who are the sources and why are they talking?
 - What's being left out of the coverage?
 - Why do we know what we know?
+- What agenda might be driving the information flow?
+- Who controls the narrative?
 
-### 11. THE 5 WHYS (ROOT CAUSE ANALYSIS)
-
-For each major finding, drill down to the root cause:
-
-```
-Finding: [X happened]
-  → Why? [Because Y]
-    → Why? [Because Z]
-      → Why? [Because A]
-        → Why? [Because B]
-          → Why? [ROOT CAUSE]
-```
-
-- Why did this happen? (symptom level)
-- Why did THAT happen? (process level)
-- Why did THAT happen? (system level)
-- Why did THAT happen? (organizational level)
-- Why did THAT happen? (root cause / incentive level)
-
-**The goal**: Get past symptoms to systemic causes. Most investigations stop at "who did it" - the 5 Whys asks "why was it possible?"
-
-Key questions:
-- What systemic failure enabled this?
-- What incentives created this behavior?
-- What oversight was missing?
-- What would prevent this from happening again?
-- Is this a one-off or a symptom of deeper problems?
-
-### 12. FRAMING, CONTEXT & SENSE-MAKING
-
-Every finding needs to be understood and contextualized. These questions help make sense of what you've found:
+### 19. FRAMING, CONTEXT & SENSE-MAKING
 
 **Meaning & Interpretation**:
 - What does this actually mean?
@@ -173,505 +332,236 @@ Every finding needs to be understood and contextualized. These questions help ma
 - Is this a smoking gun or circumstantial?
 - What would change if this weren't true?
 - Is this central to the investigation or peripheral?
-- Should this change our priorities?
-
-**Historical Context**:
-- When did this pattern first emerge?
-- What historical precedent exists?
-- How does this compare to similar past events?
-- What lessons from history apply?
-
-**Industry/Sector Context**:
-- Is this common in this industry?
-- What's the industry standard?
-- How do peers/competitors handle this?
-- What regulatory context applies?
-
-**Broader Significance**:
 - What's the "so what?" - why does this matter?
-- Who should care about this and why?
-- What are the implications if this is true?
-- What are the implications if this is false?
-- What precedent does this set?
 
-**Narrative Framing**:
-- What's the simplest way to explain this?
-- What's the most accurate frame?
-- What frames are being pushed by each side?
-- What frame would a neutral observer use?
-- What's the one-sentence version?
-
-**Audience Considerations**:
-- How would different audiences interpret this?
-- What context does a layperson need?
-- What context does an expert need?
-- What would be misleading without proper context?
-
-**Future Implications**:
-- What does this mean going forward?
-- What should change as a result?
-- Who needs to know about this?
-- What decisions does this inform?
+**Context**:
+- Historical: What precedent exists?
+- Industry: Is this common in this sector?
+- Regulatory: What rules apply?
+- Comparative: How does this compare to similar cases?
 
 ---
 
-## STEP 1: LOAD CASE
+## CATEGORY 6: ROOT CAUSE
 
-```python
-if case_id provided:
-    load(cases/[case-id]/)
-else:
-    case_id = read(cases/.active)
-    load(cases/[case_id]/)
+Get past symptoms to systemic causes:
 
-# Read ALL files to understand current state
-read(summary.md)
-read(sources.md)
-read(timeline.md)
-read(people.md)
-read(positions.md)
-read(fact-check.md)
-read(theories.md)
-read(evidence.md)
-read(iterations.md)
+### 20. THE 5 WHYS (ROOT CAUSE ANALYSIS)
+
+For each major finding, drill down:
+
+```
+Finding: [X happened]
+  → Why? [Because Y]
+    → Why? [Because Z]
+      → Why? [Because A]
+        → Why? [Because B]
+          → Why? [ROOT CAUSE]
 ```
 
+Levels:
+1. Symptom level - What happened?
+2. Process level - What process failed?
+3. System level - What system allowed this?
+4. Organizational level - What organizational factors contributed?
+5. Incentive level - What incentives drove this behavior?
+
+Key questions:
+- What systemic failure enabled this?
+- What incentives created this behavior?
+- What oversight was missing?
+- What would prevent this from happening again?
+- Is this a one-off or a symptom of deeper problems?
+- What's the root cause vs. the proximate cause?
+
 ---
 
-## STEP 2: PARALLEL QUESTION GENERATION
+## EXECUTION: PARALLEL QUESTION GENERATION
 
-**Launch ALL of these simultaneously in ONE message to maximize parallel execution:**
+**Launch ALL of these simultaneously in ONE message:**
 
-### 2A: Deep Analytical Questions (Gemini - High Thinking)
-
+### Call 1: Core Investigation Questions (Gemini)
 ```
 mcp__mcp-gemini__generate_text:
   thinking_level: "high"
   system_prompt: |
-    You are an elite investigative journalist with 30 years of experience
-    breaking major stories. You've investigated corporate fraud, government
-    corruption, and complex conspiracies.
-
-    Your superpower: asking the questions others miss.
-
-    Use these frameworks:
-    - Follow the money
-    - Follow the silence
-    - Follow the relationships
-    - Follow the contradictions
-    - Follow the documents
-    - Counterfactual thinking
-
-    Generate questions that:
-    - Reveal what's missing, not just what's there
-    - Make powerful people uncomfortable
-    - Challenge assumptions in the current investigation
-    - Identify blind spots
-    - Suggest new research directions
-
+    You are an elite investigative journalist. Generate questions using:
+    - Follow the Money, Silence, Timeline, Documents, Contradictions
+    - Stakeholder Mapping, Relationships, Network Analysis
+    Be specific. Name names. Suggest specific documents.
   prompt: |
-    INVESTIGATION SUMMARY:
-    [summary.md content]
-
-    KEY PEOPLE:
-    [people.md summary]
-
-    POSITIONS DOCUMENTED:
-    [positions.md summary]
-
-    TIMELINE GAPS:
-    [timeline.md gaps]
-
-    Generate 15-25 NEW questions this investigation should be asking.
-    Be specific. Name names. Suggest specific documents or sources.
-    Group by framework (money, silence, relationships, etc.)
+    INVESTIGATION: [summary.md]
+    PEOPLE: [people.md summary]
+    Generate 20 questions across these frameworks.
 ```
 
-### 2B: Real-Time Questions (XAI - What's Being Asked Now)
+### Call 2: Hypothesis & Analysis Questions (Gemini)
+```
+mcp__mcp-gemini__generate_text:
+  thinking_level: "high"
+  system_prompt: |
+    You are an intelligence analyst. Generate questions using:
+    - ACH (Analysis of Competing Hypotheses)
+    - Key Assumptions Check
+    - Pattern Recognition
+    - Means/Motive/Opportunity
+  prompt: |
+    INVESTIGATION: [summary.md]
+    CLAIMS: [fact-check.md summary]
+    Generate 15 analytical questions.
+```
 
+### Call 3: Adversarial Questions (Gemini)
+```
+mcp__mcp-gemini__generate_text:
+  thinking_level: "high"
+  system_prompt: |
+    You are hostile opposing counsel AND a cognitive bias auditor.
+    Generate questions using:
+    - Counterfactual Thinking
+    - Pre-Mortem Analysis
+    - Cognitive Bias Check
+    - Uncomfortable Questions
+    Find EVERY weakness in this investigation.
+  prompt: |
+    INVESTIGATION: [summary.md]
+    Generate 15 adversarial questions.
+```
+
+### Call 4: Context & Root Cause Questions (Gemini)
+```
+mcp__mcp-gemini__generate_text:
+  thinking_level: "high"
+  system_prompt: |
+    You are a systems thinker and contextual analyst. Generate questions using:
+    - Second-Order Effects
+    - Meta Questions
+    - Framing & Sense-Making
+    - 5 Whys Root Cause Analysis
+  prompt: |
+    INVESTIGATION: [summary.md]
+    Generate 15 context and root cause questions.
+```
+
+### Call 5: Real-Time Questions (XAI)
 ```
 mcp__mcp-xai__research:
   prompt: |
     For [TOPIC], find:
-    1. What questions are people asking on social media?
-    2. What questions are journalists asking?
-    3. What questions are critics asking?
-    4. What questions are supporters asking?
-    5. What questions remain unanswered in public discourse?
-    6. What new information has emerged that raises new questions?
-
-    Focus on questions that reveal gaps in current coverage.
+    - What questions are people asking on social media?
+    - What questions remain unanswered in public discourse?
+    - What new information raises new questions?
   sources: ["x", "web", "news"]
 ```
 
-### 2C: X/Twitter Questions (XAI - Social Media Discourse)
-
-```
-mcp__mcp-xai__x_search:
-  query: "[TOPIC] question OR unanswered OR why OR how"
-  prompt: |
-    Find the most interesting questions being asked about this topic.
-    Focus on:
-    - Questions from journalists and investigators
-    - Questions from critics
-    - Questions from affected parties
-    - Questions that haven't been answered
-```
-
-### 2D: Adversarial Questions (Gemini - Devil's Advocate)
-
-```
-mcp__mcp-gemini__generate_text:
-  thinking_level: "high"
-  system_prompt: |
-    You are a hostile opposing counsel preparing for cross-examination.
-    Your job is to find EVERY weakness in this investigation.
-
-    You want to:
-    - Destroy the credibility of key claims
-    - Find alternative explanations
-    - Identify assumptions that weren't tested
-    - Find what would exonerate the accused
-    - Challenge the chain of evidence
-
-  prompt: |
-    INVESTIGATION SUMMARY:
-    [summary.md content]
-
-    KEY CLAIMS:
-    [fact-check.md summary]
-
-    Generate 10-15 ADVERSARIAL questions that:
-    - Challenge the strongest claims
-    - Propose alternative explanations
-    - Identify untested assumptions
-    - Point out missing exculpatory evidence
-    - Question source credibility
-```
-
-### 2E: Pattern Recognition Questions (OpenAI Deep Research)
-
+### Call 6: Pattern Research (OpenAI)
 ```
 mcp__mcp-openai__deep_research:
   query: |
-    Find similar cases, precedents, and patterns related to [TOPIC].
+    Find similar cases, precedents, and patterns for [TOPIC].
     - Has this happened before?
-    - Are the same players involved in other cases?
-    - What's the historical context?
-    - Are there parallel investigations?
-    - What patterns emerge across similar cases?
+    - Same players in other cases?
+    - What patterns emerge?
 ```
 
 ---
 
-## STEP 3: SYNTHESIZE QUESTIONS
+## SYNTHESIS & OUTPUT
 
-Collect all questions from parallel research and:
+### Categorize by Framework
+Group all generated questions into the 20 frameworks.
 
-### 3A: Deduplicate
-Remove questions that are essentially the same
-
-### 3B: Categorize
-Group questions by framework:
-- Money questions
-- Silence questions
-- Timeline questions
-- Relationship questions
-- Contradiction questions
-- Document questions
-- Pattern questions
-- Counterfactual questions
-- Uncomfortable questions
-- Meta questions
-- 5 Whys / Root Cause questions
-- Framing, Context & Sense-Making questions
-
-### 3C: Prioritize
-Rank by:
+### Prioritize
 - **HIGH**: Could fundamentally change the investigation
 - **MEDIUM**: Would fill important gaps
 - **LOW**: Useful but not critical
 
-### 3D: Actionability
-For each question, note:
-- What research would answer it?
-- What sources should be checked?
-- What MCP tools to use?
-
----
-
-## STEP 4: OUTPUT
-
-Generate a structured question report:
+### Output Format
 
 ```markdown
 # Investigation Questions: [Topic]
 
 **Case**: [case-id]
 **Generated**: [datetime]
+**Frameworks Applied**: [N of 20]
 **Questions Generated**: [N]
 
 ---
 
 ## Executive Summary
 
-The investigation currently focuses on [X]. This question analysis reveals
-blind spots in [Y areas] and suggests new research directions for [Z].
+Investigation stage: [Early/Mid/Late]
+Primary gaps identified: [list]
+Recommended focus: [frameworks]
 
 ---
 
-## Priority Questions
+## HIGH PRIORITY QUESTIONS
 
-### HIGH PRIORITY (Investigation-Changing)
-
-#### Q1: [Question]
-- **Framework**: [Money/Silence/Timeline/etc.]
+### Q1: [Question]
+- **Framework**: [Name]
 - **Why it matters**: [explanation]
-- **How to answer**: [research approach]
-- **Sources to check**: [specific sources]
+- **How to answer**: [approach]
 
-#### Q2: [Question]
-...
-
-### MEDIUM PRIORITY (Gap-Filling)
-
-#### Q5: [Question]
-...
-
-### LOW PRIORITY (Nice-to-Have)
-
-#### Q10: [Question]
-...
+[...continues...]
 
 ---
 
-## Questions by Framework
+## Questions by Category
 
-### Follow the Money
-1. [Question]
-2. [Question]
+### Core Investigation
+[Questions from frameworks 1-6]
 
-### Follow the Silence
-1. [Question]
-2. [Question]
+### People & Networks
+[Questions from frameworks 7-10]
 
-### Follow the Relationships
-1. [Question]
-2. [Question]
+### Hypothesis & Analysis
+[Questions from frameworks 11-13]
 
-### Follow the Timeline
-1. [Question]
-2. [Question]
+### Adversarial
+[Questions from frameworks 14-16]
 
-### Follow the Contradictions
-1. [Question]
-2. [Question]
+### Context & Framing
+[Questions from frameworks 17-19]
 
-### Follow the Documents
-1. [Question]
-2. [Question]
-
-### Follow the Patterns
-1. [Question]
-2. [Question]
-
-### Counterfactual Questions
-1. [Question]
-2. [Question]
-
-### Uncomfortable Questions
-1. [Question]
-2. [Question]
-
-### Meta Questions
-1. [Question]
-2. [Question]
-
-### 5 Whys / Root Cause Analysis
-1. [Question with 5-level drill-down]
-2. [Question with 5-level drill-down]
-
-### Framing, Context & Sense-Making Questions
-1. [Question]
-2. [Question]
-
----
-
-## Unanswered Questions from Public Discourse
-
-[Questions being asked on social media and in journalism that the
-investigation hasn't addressed]
+### Root Cause
+[Questions from framework 20]
 
 ---
 
 ## Suggested Research Actions
 
-| # | Question | Action | Tool | Priority |
-|---|----------|--------|------|----------|
-| 1 | [Q] | [Research approach] | [MCP tool] | HIGH |
-| 2 | [Q] | [Research approach] | [MCP tool] | HIGH |
-| ... |
-
----
-
-## Next Steps
-
-To incorporate these questions into the investigation:
-1. Use `/investigate [case-id]` to resume
-2. Focus on HIGH priority questions first
-3. Each question suggests specific research approaches
+| Priority | Question | Framework | Tool | Action |
+|----------|----------|-----------|------|--------|
+| HIGH | [Q] | [F] | [MCP] | [Action] |
 ```
-
----
-
-## STEP 5: SAVE TO CASE
-
-Save questions to case directory:
-
-```
-cases/[case-id]/questions-[datetime].md
-```
-
-This preserves the question generation for reference and prevents
-re-asking the same questions.
-
----
-
-## EXAMPLE OUTPUT
-
-```markdown
-# Investigation Questions: Acme Corp Fraud Case
-
-**Case**: inv-20260105-143022
-**Generated**: 2026-01-06 10:30
-**Questions Generated**: 47
-
----
-
-## Executive Summary
-
-The investigation has thoroughly documented the fraud timeline and key players.
-However, this analysis reveals significant blind spots in financial flows,
-board member relationships, and regulatory interactions. The adversarial
-analysis suggests the defense will focus on timeline ambiguity around
-January 15th awareness.
-
----
-
-## Priority Questions
-
-### HIGH PRIORITY (Investigation-Changing)
-
-#### Q1: What was discussed in the January 12th board dinner?
-- **Framework**: Timeline / Silence
-- **Why it matters**: This informal gathering occurred 3 days before the
-  documented "first awareness" email. If the issue was discussed here,
-  the entire timeline shifts.
-- **How to answer**: Interview attendees, check expense reports, review
-  calendar entries
-- **Sources to check**: Board member calendars, restaurant reservations,
-  expense reports
-
-#### Q2: Where did the $2.3M from the Q4 adjustment actually go?
-- **Framework**: Follow the Money
-- **Why it matters**: This amount was written off as "operational adjustment"
-  but no documentation supports this. If it went to individuals, that's
-  material fraud.
-- **How to answer**: Trace bank records, review wire transfers, check
-  vendor payments in that period
-- **Sources to check**: Bank records (subpoena), wire transfer logs,
-  vendor contracts
-
-#### Q3: Why has General Counsel Sarah Miller not been interviewed?
-- **Framework**: Follow the Silence
-- **Why it matters**: As GC, she would have been informed of any legal
-  exposure. Her absence from all coverage is conspicuous.
-- **How to answer**: Reach out directly, check for any statements,
-  review court filings for her involvement
-- **Sources to check**: Court documents, LinkedIn, bar association records
-
-### MEDIUM PRIORITY (Gap-Filling)
-
-#### Q5: Did the auditor raise concerns before the public disclosure?
-- **Framework**: Follow the Documents
-- **Why it matters**: Auditor communications are key to establishing
-  corporate knowledge
-- **How to answer**: FOIA audit working papers, check SEC filings
-- **Sources to check**: SEC EDGAR, audit firm records
-
-[...continues...]
-
----
-
-## Questions by Framework
-
-### Follow the Money
-1. What was the total compensation change for executives after the restructuring?
-2. Who held short positions before the announcement?
-3. Were there any unusual related-party transactions in Q3-Q4?
-4. What was the insurance payout and who received it?
-
-### Follow the Silence
-1. Why hasn't the CFO made any public statements since resignation?
-2. What happened to the internal auditor who filed the initial report?
-3. Why are no board members commenting on the timeline questions?
-
-### 5 Whys / Root Cause Analysis
-1. Why did the fraud go undetected for 18 months?
-   → Why? Internal audit was understaffed
-   → Why? Budget cuts in 2023
-   → Why? Board prioritized growth over compliance
-   → Why? Compensation tied to stock price
-   → ROOT CAUSE: Incentive misalignment
-
-2. Why did the CFO not escalate the concerns?
-   → Why? Feared retaliation
-   → Why? Previous whistleblower was fired
-   → Why? No protected channels existed
-   → Why? Legal never established them
-   → ROOT CAUSE: Missing institutional safeguards
-
-### Framing, Context & Sense-Making Questions
-1. What does the 2-month awareness gap actually mean? Is it damning or explainable?
-2. How does the $2.3M figure compare to industry norms for similar adjustments?
-3. What's the simplest explanation that fits all the facts we have so far?
-4. What regulatory precedent exists for this type of disclosure delay?
-5. What's the one-sentence summary a general audience would understand?
-6. What historical parallels (Enron, WorldCom, etc.) apply or don't apply?
-
-[...continues...]
-```
-
----
-
-## WHEN TO USE /questions
-
-| Situation | Use /questions? |
-|-----------|-----------------|
-| Starting a new investigation | YES - generate initial questions |
-| Feeling stuck in an investigation | YES - find new angles |
-| After verification finds gaps | YES - generate targeted questions |
-| Before claiming completion | YES - ensure nothing missed |
-| Resuming a stale case | YES - fresh perspective |
 
 ---
 
 ## THE INVESTIGATOR'S MINDSET
 
-When generating questions, channel these principles:
+Channel these 20 principles:
 
-1. **"What are they hiding?"** - Assume something is being concealed
-2. **"Who benefits?"** - Every situation has winners
-3. **"What's the simplest explanation?"** - Then test it
-4. **"What would change my mind?"** - Stay open to being wrong
-5. **"Who else knows?"** - Information spreads
-6. **"Where's the paper trail?"** - Documents don't lie
-7. **"What happened before/after?"** - Context matters
-8. **"Who introduced whom?"** - Relationships explain behavior
-9. **"Why now?"** - Timing is never accidental
-10. **"What's not being said?"** - Silence speaks volumes
-11. **"Why was this possible?"** - Get past symptoms to root causes
-12. **"So what?"** - Every finding needs significance and context
+1. **"What are they hiding?"** - Assume concealment
+2. **"Who benefits?"** - Follow the incentives
+3. **"What's the paper trail?"** - Documents don't lie
+4. **"Who's NOT talking?"** - Silence speaks
+5. **"What happened before/after?"** - Context matters
+6. **"Who knows whom?"** - Relationships explain behavior
+7. **"Who has power here?"** - Map the stakeholders
+8. **"Who connects these people?"** - Find the network nodes
+9. **"Who had means, motive, opportunity?"** - Classic forensics
+10. **"Which theory fits the evidence?"** - Test hypotheses
+11. **"What are we assuming?"** - Challenge assumptions
+12. **"Has this happened before?"** - Find patterns
+13. **"What would prove this wrong?"** - Steel-man the opposition
+14. **"If we're wrong, why?"** - Pre-mortem thinking
+15. **"What are our blind spots?"** - Audit for bias
+16. **"What would they refuse to answer?"** - Ask the uncomfortable
+17. **"What happens next?"** - Think second-order
+18. **"Why is this story being told now?"** - Question the narrative
+19. **"Why was this possible?"** - Find root causes
+20. **"So what?"** - Every finding needs significance
 
 ---
 
@@ -679,4 +569,4 @@ When generating questions, channel these principles:
 
 > "The questions you don't ask are the stories you never get."
 
-There are ALWAYS more questions. This command helps you find them.
+There are ALWAYS more questions. 20 frameworks. Zero excuses for missing angles.
