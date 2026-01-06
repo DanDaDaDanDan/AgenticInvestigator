@@ -112,6 +112,28 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 | `/questions` | Generate investigative questions for active case |
 | `/questions [case-id]` | Generate questions for specific case |
 
+## The /questions Command: 20 Investigative Frameworks
+
+The `/questions` command generates investigative questions using **20 frameworks** organized into **6 categories**:
+
+| Category | Frameworks | Key Questions |
+|----------|------------|---------------|
+| **Core Investigation** | Money, Silence, Timeline, Documents, Contradictions, Uncomfortable | Who benefits? Who's not talking? What's the paper trail? |
+| **People & Networks** | Stakeholder Mapping, Network Analysis, Means/Motive/Opportunity, Relationships | Who has power? Who connects them? Who could have done it? |
+| **Hypothesis & Analysis** | ACH, Key Assumptions, Patterns | Which theory fits? What are we assuming? Has this happened before? |
+| **Adversarial** | Counterfactual, Pre-Mortem, Cognitive Bias | What would prove this wrong? If we're wrong, why? What are our blind spots? |
+| **Context & Framing** | Second-Order Effects, Meta Questions, Sense-Making | What happens next? Why is this story being told now? What does it mean? |
+| **Root Cause** | 5 Whys | Why was this possible? (drill down 5 levels) |
+
+### When to Use Which Frameworks
+
+| Stage | Frameworks |
+|-------|------------|
+| **Early** (gathering facts) | Core + Stakeholder Mapping + Relationships + Sense-Making |
+| **Mid** (building understanding) | Add Network Analysis, Means/Motive/Opportunity, ACH, Assumptions, Patterns, Meta, 5 Whys |
+| **Late** (stress testing) | Add Counterfactual, Pre-Mortem, Cognitive Bias, Second-Order Effects |
+| **When stuck** | Focus on Pre-Mortem, Bias Check, Uncomfortable Questions |
+
 ## MCP Servers
 
 | Server | Purpose |
