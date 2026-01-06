@@ -218,6 +218,131 @@ The command launches 6 parallel MCP calls:
 
 ---
 
+## Financial Investigation System (/financial)
+
+Specialized toolkit for following the money.
+
+### Capabilities
+
+| Capability | Purpose | Data Sources |
+|------------|---------|--------------|
+| **Corporate Structure Mapping** | Trace ownership chains | SEC EDGAR, OpenCorporates, State SOS |
+| **Beneficial Ownership Tracing** | Find real owners behind shells | ICIJ Offshore Leaks, OpenOwnership |
+| **Transaction Pattern Analysis** | Identify financial red flags | Court records, regulatory filings |
+| **Money Flow Mapping** | Track source → destination | Bank records, wire transfers, contracts |
+| **Political Money** | Campaign contributions, lobbying | FEC, OpenSecrets, lobbying disclosures |
+
+### Red Flag Detection
+
+```
+CORPORATE RED FLAGS
+├── Multiple layers of holding companies
+├── Secrecy jurisdiction incorporation (BVI, Cayman, etc.)
+├── Nominee directors with many directorships
+├── Complex cross-ownership structures
+└── Missing beneficial ownership information
+
+TRANSACTION RED FLAGS
+├── Related-party transactions not at arm's length
+├── Round-trip or circular transactions
+├── Payments just under reporting thresholds
+├── Unusual consulting/management fees
+└── Loans to related parties never repaid
+```
+
+### Parallel Financial Research
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    /financial PARALLEL EXECUTION                     │
+│                                                                     │
+│  Call 1: Corporate Structure (Gemini)                               │
+│    → Ownership chains, subsidiaries, directors                      │
+│                                                                     │
+│  Call 2: SEC/Regulatory Filings (OpenAI)                           │
+│    → 10-K, proxy statements, enforcement actions                    │
+│                                                                     │
+│  Call 3: Offshore/Shell Company Search (XAI)                        │
+│    → Panama Papers, Paradise Papers, ICIJ leaks                     │
+│                                                                     │
+│  Call 4: Political Money (XAI)                                      │
+│    → Campaign contributions, lobbying, government contracts         │
+│                                                                     │
+│  Call 5: Litigation & Enforcement (Gemini)                          │
+│    → Lawsuits, bankruptcies, regulatory actions                     │
+│                                                                     │
+│  Call 6: Real-Time Financial News (XAI)                             │
+│    → Recent investigations, accounting issues                       │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Legal Risk Assessment System (/legal-review)
+
+Pre-publication defamation risk analysis.
+
+### Subject Classification
+
+| Type | Standard | Plaintiff Burden |
+|------|----------|------------------|
+| **Public Official** | Actual Malice | Must prove knowledge of falsity or reckless disregard |
+| **Public Figure** | Actual Malice | Same - celebrities, prominent executives |
+| **Limited Public Figure** | Actual Malice | Same - injected into specific controversy |
+| **Private Figure** | Negligence | Only needs to prove lack of reasonable care |
+
+### Evidence Strength Tiers
+
+```
+TIER 1: STRONG (Publishable with confidence)
+├── Primary source documents
+├── On-record statements from direct participants
+├── Court findings/judgments
+├── Official government records
+└── Multiple independent corroborating sources
+
+TIER 2: MEDIUM (Publishable with hedging)
+├── Two independent sources
+├── Documents + human source corroboration
+├── Expert analysis of primary documents
+└── Pattern evidence
+
+TIER 3: WEAK (Requires additional verification)
+├── Single source only
+├── Off-record/anonymous sources
+├── Secondhand accounts
+└── Circumstantial evidence
+
+TIER 4: INSUFFICIENT (Do not publish)
+├── Speculation without evidence
+├── Sources with clear bias (uncorroborated)
+├── Unverified tips
+└── Claims contradicted by documents
+```
+
+### Risk Matrix
+
+```
+                        EVIDENCE STRENGTH
+                    Strong   Medium   Weak
+SUBJECT    Public     LOW     LOW    MEDIUM
+TYPE       Limited    LOW    MEDIUM   HIGH
+           Private  MEDIUM    HIGH   HIGHEST
+```
+
+### Output Components
+
+| Component | Purpose |
+|-----------|---------|
+| **Subject Classifications** | Public/private determination for each person |
+| **Claim-by-Claim Analysis** | Risk level, evidence tier, sources for each claim |
+| **Evidence Gaps** | What additional verification is needed |
+| **Hedging Suggestions** | Alternative language to reduce risk |
+| **Pre-Publication Checklist** | Final review before publishing |
+
+---
+
 ## Agent Orchestration Model
 
 ```
