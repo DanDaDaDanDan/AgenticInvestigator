@@ -151,6 +151,73 @@ All must be TRUE to complete:
 
 ---
 
+## Question Generation System (/questions)
+
+The `/questions` command generates investigative questions using **20 frameworks** organized into **6 categories**.
+
+### Framework Categories
+
+| Category | Frameworks | Purpose |
+|----------|------------|---------|
+| **Core Investigation** | 1. Money, 2. Silence, 3. Timeline, 4. Documents, 5. Contradictions, 6. Uncomfortable | Foundation of any investigation |
+| **People & Networks** | 7. Stakeholder Mapping, 8. Network Analysis, 9. Means/Motive/Opportunity, 10. Relationships | Map the human landscape |
+| **Hypothesis & Analysis** | 11. ACH (Competing Hypotheses), 12. Key Assumptions, 13. Patterns | Evaluate competing explanations |
+| **Adversarial** | 14. Counterfactual, 15. Pre-Mortem, 16. Cognitive Bias Check | Stress test conclusions |
+| **Context & Framing** | 17. Second-Order Effects, 18. Meta Questions, 19. Sense-Making | Understand significance |
+| **Root Cause** | 20. 5 Whys | Drill to systemic causes |
+
+### Stage-Based Framework Selection
+
+```
+EARLY INVESTIGATION (Gathering Facts)
+└── Use: Core (1-6) + Stakeholder (7) + Relationships (10) + Sense-Making (19)
+    = 8 frameworks
+
+MID INVESTIGATION (Building Understanding)
+└── Add: Network (8) + Means/Motive (9) + ACH (11) + Assumptions (12)
+        + Patterns (13) + Meta (18) + 5 Whys (20)
+    = 14 frameworks
+
+LATE INVESTIGATION (Stress Testing)
+└── Add: Counterfactual (14) + Pre-Mortem (15) + Bias Check (16)
+        + Second-Order (17)
+    = 18 frameworks (all but duplicates)
+
+WHEN STUCK
+└── Focus: Pre-Mortem (15) + Bias Check (16) + Uncomfortable (6)
+```
+
+### Parallel Question Generation
+
+The command launches 6 parallel MCP calls:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    /questions PARALLEL EXECUTION                     │
+│                                                                     │
+│  Call 1: Core Investigation Questions (Gemini)                      │
+│    → Money, Silence, Timeline, Documents, Contradictions            │
+│                                                                     │
+│  Call 2: Hypothesis & Analysis Questions (Gemini)                   │
+│    → ACH, Key Assumptions, Patterns, Means/Motive/Opportunity       │
+│                                                                     │
+│  Call 3: Adversarial Questions (Gemini)                             │
+│    → Counterfactual, Pre-Mortem, Cognitive Bias, Uncomfortable      │
+│                                                                     │
+│  Call 4: Context & Root Cause Questions (Gemini)                    │
+│    → Second-Order Effects, Meta, Sense-Making, 5 Whys               │
+│                                                                     │
+│  Call 5: Real-Time Questions (XAI)                                  │
+│    → What are people asking now? Unanswered questions?              │
+│                                                                     │
+│  Call 6: Pattern Research (OpenAI)                                  │
+│    → Similar cases, precedents, historical patterns                 │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Agent Orchestration Model
 
 ```
