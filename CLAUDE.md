@@ -144,6 +144,55 @@ Launch ALL of these simultaneously in ONE message:
 
 ---
 
+## The /questions Command: 20 Frameworks
+
+Use `/questions` to generate investigative questions using 20 frameworks in 6 categories:
+
+### Quick Reference
+
+| # | Framework | Category | Key Question |
+|---|-----------|----------|--------------|
+| 1-6 | Money, Silence, Timeline, Documents, Contradictions, Uncomfortable | Core | Who benefits? Who's silent? What's the paper trail? |
+| 7-10 | Stakeholder Mapping, Network Analysis, Means/Motive/Opportunity, Relationships | People | Who has power? Who connects them? |
+| 11-13 | ACH, Key Assumptions, Patterns | Analysis | Which theory fits? What are we assuming? |
+| 14-16 | Counterfactual, Pre-Mortem, Cognitive Bias | Adversarial | What would prove this wrong? If we're wrong, why? |
+| 17-19 | Second-Order Effects, Meta Questions, Sense-Making | Context | What happens next? What does this mean? |
+| 20 | 5 Whys | Root Cause | Why was this possible? |
+
+### When to Use
+
+| Investigation Stage | Frameworks to Apply |
+|--------------------|---------------------|
+| Early (gathering facts) | Core (1-6) + Stakeholder + Relationships + Sense-Making |
+| Mid (building understanding) | Add Network, Means/Motive, ACH, Assumptions, Patterns, Meta, 5 Whys |
+| Late (stress testing) | Add Counterfactual, Pre-Mortem, Cognitive Bias, Second-Order |
+| When stuck | Pre-Mortem, Bias Check, Uncomfortable Questions |
+
+### The Investigator's Mindset (20 Principles)
+
+1. "What are they hiding?" - Assume concealment
+2. "Who benefits?" - Follow the incentives
+3. "What's the paper trail?" - Documents don't lie
+4. "Who's NOT talking?" - Silence speaks
+5. "What happened before/after?" - Context matters
+6. "Who knows whom?" - Relationships explain behavior
+7. "Who has power here?" - Map the stakeholders
+8. "Who connects these people?" - Find the network nodes
+9. "Who had means, motive, opportunity?" - Classic forensics
+10. "Which theory fits the evidence?" - Test hypotheses
+11. "What are we assuming?" - Challenge assumptions
+12. "Has this happened before?" - Find patterns
+13. "What would prove this wrong?" - Steel-man the opposition
+14. "If we're wrong, why?" - Pre-mortem thinking
+15. "What are our blind spots?" - Audit for bias
+16. "What would they refuse to answer?" - Ask the uncomfortable
+17. "What happens next?" - Think second-order
+18. "Why is this story being told now?" - Question the narrative
+19. "Why was this possible?" - Find root causes
+20. "So what?" - Every finding needs significance
+
+---
+
 ## Case File Structure
 
 ```
