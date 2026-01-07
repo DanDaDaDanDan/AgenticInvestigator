@@ -678,11 +678,28 @@ cases/
     │  # VERSION CONTROL
     ├── .git/                         # Case-specific git repository
     │
+    │  # EVIDENCE ARCHIVE (hallucination-proof source verification)
+    ├── evidence/
+    │   ├── web/                      # Web page captures
+    │   │   └── S001/                 # Per-source evidence folder
+    │   │       ├── capture.png       # Full-page screenshot
+    │   │       ├── capture.pdf       # PDF rendering
+    │   │       ├── capture.html      # Raw HTML source
+    │   │       └── metadata.json     # URL, timestamp, SHA-256 hashes
+    │   ├── documents/                # Downloaded documents (PDFs, filings)
+    │   │   └── S015_sec_10k.pdf      # Named with source ID prefix
+    │   ├── api/                      # API response captures (JSON)
+    │   └── media/                    # Videos, images, transcripts
+    │
+    │  # RESEARCH LEADS (AI research outputs - NOT citable)
+    ├── research-leads/               # Gemini/OpenAI deep research outputs
+    │   └── *.md                      # Used to find primary sources only
+    │
     │  # DELIVERABLE (self-contained, shareable)
     ├── summary.md                    # Executive summary + key findings + ALL sources embedded
     │
-    │  # SOURCE REGISTRY (authoritative, append-only)
-    ├── sources.md                    # Master source list with unique IDs [S001], [S002]...
+    │  # SOURCE REGISTRY (authoritative, append-only, with evidence paths)
+    ├── sources.md                    # Master source list with URLs, evidence paths, hashes
     │
     │  # DETAIL FILES (use source IDs for citations)
     ├── timeline.md                   # Full chronological timeline
@@ -690,7 +707,7 @@ cases/
     ├── positions.md                  # ALL positions/sides with arguments and evidence
     ├── fact-check.md                 # Claim verdicts (all positions)
     ├── theories.md                   # Alternative/fringe theories analysis
-    ├── evidence.md                   # Statement vs evidence, chain of knowledge
+    ├── statements.md                 # Statement vs evidence, chain of knowledge
     │
     │  # METADATA
     ├── iterations.md                 # Progress log + verification checkpoints
@@ -706,17 +723,111 @@ cases/
 | File | Purpose | Size Target | Self-Contained? |
 |------|---------|-------------|-----------------|
 | `summary.md` | **THE DELIVERABLE** - shareable report | < 1000 lines | **YES** (has all sources) |
-| `sources.md` | Source registry - every URL, every citation | Unlimited | Reference only |
+| `sources.md` | Source registry with URLs, evidence paths, hashes | Unlimited | Reference only |
+| `evidence/` | **Captured evidence files** (screenshots, PDFs, HTML) | ~50MB/source | Binary archive |
+| `research-leads/` | AI research outputs (NOT citable) | Unlimited | Internal only |
 | `timeline.md` | Chronological events | Unlimited | No (uses source IDs) |
 | `people.md` | Person profiles | Unlimited | No (uses source IDs) |
 | `positions.md` | All positions with arguments | Unlimited | No (uses source IDs) |
 | `fact-check.md` | Claim verdicts (all positions) | Unlimited | No (uses source IDs) |
 | `theories.md` | Alternative theory analysis | Unlimited | No (uses source IDs) |
-| `evidence.md` | Documentary analysis | Unlimited | No (uses source IDs) |
+| `statements.md` | Statement vs evidence analysis | Unlimited | No (uses source IDs) |
 | `iterations.md` | Progress tracking | Unlimited | No |
-| `integrity-check-*.md` | Journalistic integrity assessment | < 500 lines | No |
-| `legal-review-*.md` | Pre-publication legal risk assessment | < 500 lines | No |
-| `articles-*.md` | Publication-ready articles (short + long) | < 2000 lines | **YES** (includes source key) |
+| `integrity-check.md` | Journalistic integrity assessment | < 500 lines | No |
+| `legal-review.md` | Pre-publication legal risk assessment | < 500 lines | No |
+| `articles.md` | Publication-ready articles (short + long) | < 2000 lines | **YES** (includes source key) |
+
+---
+
+## Evidence Capture System
+
+### Purpose
+
+**Hallucination-proof source verification.** Every source has local evidence that proves:
+1. The source existed at research time
+2. The content actually contained the cited claims
+3. Content can be verified even if original URL disappears
+
+### Capture Workflow
+
+```
+Source Found (URL) → IMMEDIATE CAPTURE → Verify Claim → Register Source
+                           ↓
+              ┌────────────┴────────────┐
+              ↓                         ↓
+         Web Page                   Document
+              ↓                         ↓
+    ┌─────────┼─────────┐         Download PDF
+    ↓         ↓         ↓               ↓
+Screenshot  PDF      HTML          Store with
+(full page)          source        source ID
+    ↓         ↓         ↓               ↓
+    └─────────┼─────────┘               │
+              ↓                         │
+         metadata.json ←────────────────┘
+         (URL, timestamp, SHA-256 hashes)
+              ↓
+    Submit to Wayback Machine
+              ↓
+    Register in sources.md with evidence path
+```
+
+### Capture Scripts
+
+| Script | Purpose | Usage |
+|--------|---------|-------|
+| `scripts/capture` | Capture web page or document | `./scripts/capture S001 https://url` |
+| `scripts/capture-url.js` | Node.js Playwright capture | Called by capture script |
+| `scripts/verify-sources.js` | Verify evidence integrity | `node scripts/verify-sources.js case_dir` |
+
+### Evidence Types
+
+| Type | Location | Contents |
+|------|----------|----------|
+| Web pages | `evidence/web/SXXX/` | capture.png, capture.pdf, capture.html, metadata.json |
+| Documents | `evidence/documents/` | SXXX_filename.pdf, SXXX_filename.pdf.meta.json |
+| API responses | `evidence/api/` | SXXX_response.json |
+| Media | `evidence/media/` | SXXX_video.mp4, SXXX_transcript.txt |
+
+### metadata.json Schema
+
+```json
+{
+  "source_id": "S001",
+  "url": "https://example.com/article",
+  "title": "Page Title",
+  "captured_at": "2026-01-07T14:23:00Z",
+  "method": "playwright",
+  "http_status": 200,
+  "files": {
+    "png": { "path": "capture.png", "hash": "sha256:...", "size": 1234567 },
+    "pdf": { "path": "capture.pdf", "hash": "sha256:...", "size": 234567 },
+    "html": { "path": "capture.html", "hash": "sha256:...", "size": 34567 }
+  },
+  "wayback": {
+    "submitted": true,
+    "archiveUrl": "https://web.archive.org/web/..."
+  }
+}
+```
+
+### AI Research Handling
+
+**AI research outputs (Gemini/OpenAI deep research) are NOT sources.**
+
+| What | Where | Citable? |
+|------|-------|----------|
+| Gemini deep research output | `research-leads/gemini-001.md` | **NO** |
+| OpenAI deep research output | `research-leads/openai-001.md` | **NO** |
+| Primary source found via AI | `evidence/web/SXXX/` | **YES** |
+
+**Workflow:**
+1. AI research returns claim: "Company X did Y [from industry source]"
+2. Save AI output to `research-leads/` (for reference only)
+3. Search for primary source (actual URL)
+4. Capture primary source with `./scripts/capture`
+5. Register primary source in sources.md with evidence path
+6. Cite primary source [SXXX], never cite AI research
 
 ---
 

@@ -1,0 +1,26 @@
+{
+  "name": "agenticinvestigator",
+  "version": "1.0.0",
+  "description": "**Investigative journalism framework for Claude Code.** Produces rigorous, balanced reporting on contested topics using parallel multi-model research, cross-model critique, built-in verification, and transparent evidence-based analysis.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DanDaDaDanDan/AgenticInvestigator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DanDaDaDanDan/AgenticInvestigator/issues"
+  },
+  "homepage": "https://github.com/DanDaDaDanDan/AgenticInvestigator#readme",
+  "dependencies": {
+    "playwright": "^1.57.0"
+  }
+}
