@@ -296,7 +296,7 @@ TRANSACTION RED FLAGS
 
 ## Legal Risk Assessment System (/legal-review)
 
-Pre-publication defamation risk analysis.
+Pre-publication defamation and commercial disparagement risk analysis.
 
 ### Subject Classification
 
@@ -306,6 +306,7 @@ Pre-publication defamation risk analysis.
 | **Public Figure** | Actual Malice | Same - celebrities, prominent executives |
 | **Limited Public Figure** | Actual Malice | Same - injected into specific controversy |
 | **Private Figure** | Negligence | Only needs to prove lack of reasonable care |
+| **Product/Brand** | Trade Libel | False statement + pecuniary harm + fault |
 
 ### Evidence Strength Tiers
 
@@ -346,15 +347,44 @@ TYPE       Limited    LOW    MEDIUM   HIGH
            Private  MEDIUM    HIGH   HIGHEST
 ```
 
+### New Assessment Components (2026-01)
+
+| Component | Purpose |
+|-----------|---------|
+| **Dispute Acknowledgment Audit** | Verify each allegation includes subject's dispute |
+| **Advocacy Source Disclosure** | Ensure source limitations disclosed ("snapshot in time") |
+| **Claim Specificity Audit** | Flag vague "linked to" language; require specifics |
+| **Attribution Audit** | Verify criticism attributed to third parties |
+| **Framing Analysis** | Flag "the reality is..." language presenting allegations as fact |
+| **Commercial Disparagement Check** | Separate analysis for product/brand criticism |
+
 ### Output Components
 
 | Component | Purpose |
 |-----------|---------|
 | **Subject Classifications** | Public/private determination for each person |
 | **Claim-by-Claim Analysis** | Risk level, evidence tier, sources for each claim |
+| **Dispute Acknowledgment Status** | Whether subjects' disputes are acknowledged |
+| **Advocacy Source Disclosure Audit** | Whether source limitations are disclosed |
+| **Claim Specificity Audit** | Vague language flagged with fixes |
+| **Attribution Audit** | Direct assertions flagged for conversion |
+| **Framing Analysis** | Problematic framing flagged with revisions |
 | **Evidence Gaps** | What additional verification is needed |
 | **Hedging Suggestions** | Alternative language to reduce risk |
-| **Pre-Publication Checklist** | Final review before publishing |
+| **Pre-Publication Checklist** | Expanded with 7 new categories |
+
+### Key Principles (The Media Lawyer's Mindset)
+
+```
+1.  "Can we prove it's true?"              - Truth is the ultimate defense
+2.  "Who is the subject?"                  - Public vs. private changes everything
+3.  "What's our evidence?"                 - Documents > sources > inference
+4.  "Did we acknowledge their dispute?"    - Subjects rarely agree; acknowledge it
+5.  "Is criticism attributed?"             - Third-party attribution is your shield
+6.  "How specific is our claim?"           - "Linked to" invites challenge
+7.  "Are we framing allegations as fact?"  - "The reality is..." can be fatal
+8.  "Did we disclose source limitations?"  - Transparency paradoxically protects
+```
 
 ---
 
