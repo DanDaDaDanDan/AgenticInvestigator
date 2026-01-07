@@ -668,10 +668,15 @@ Transform investigation findings into publication-ready journalism.
 
 ## Case Directory Structure
 
+**Each case has its own git repository for version control. Commit after every iteration.**
+
 ```
 cases/
 ├── .active                           # Current case ID (plain text)
 └── inv-YYYYMMDD-HHMMSS/
+    │
+    │  # VERSION CONTROL
+    ├── .git/                         # Case-specific git repository
     │
     │  # DELIVERABLE (self-contained, shareable)
     ├── summary.md                    # Executive summary + key findings + ALL sources embedded

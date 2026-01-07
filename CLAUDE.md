@@ -133,6 +133,7 @@ Only stop when ALL conditions are true:
 │    - Update detail files (timeline, people, positions, etc.)        │
 │    - Update summary.md (embed full source list)                     │
 │    - Log iteration in iterations.md                                 │
+│    - Git commit: "Iteration N: [brief description]"                 │
 │                                                                     │
 │  TERMINATION CHECK                                                  │
 │    - no_unexplored_threads                                          │
@@ -227,8 +228,11 @@ Use `/questions` to generate investigative questions using 20 frameworks in 6 ca
 
 ## Case File Structure
 
+**Each case has its own git repository for version control.**
+
 ```
 cases/inv-YYYYMMDD-HHMMSS/
+├── .git/                         # Case-specific git repository
 ├── summary.md                    # THE DELIVERABLE - self-contained, shareable, has ALL sources
 ├── sources.md                    # Master source registry [S001], [S002]... (append-only)
 ├── timeline.md                   # Chronological events
@@ -361,6 +365,7 @@ mcp__mcp-xai__research
 13. **Compare statements across time** - Same person, different dates - track how their story evolved.
 14. **Compare statements across venues** - Public statements vs. testimony vs. internal - note discrepancies.
 15. **Flag all statement contradictions** - When someone's statements conflict, investigate the discrepancy.
+16. **Git repo per case** - Each case has its own git repository. Commit after every iteration.
 
 ---
 

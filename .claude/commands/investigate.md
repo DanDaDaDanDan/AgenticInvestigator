@@ -41,10 +41,13 @@ Only stop when ALL conditions are true:
 
 ## OUTPUT
 
-**Modular file structure with self-contained summary.md deliverable.**
+**Modular file structure with self-contained summary.md deliverable. Each case has its own git repository.**
 
 ```
 cases/inv-YYYYMMDD-HHMMSS/
+│
+│  # VERSION CONTROL
+├── .git/                         # Git repository for case versioning
 │
 │  # DELIVERABLE (self-contained, shareable)
 ├── summary.md                    # Executive summary + key findings + ALL sources embedded
@@ -226,6 +229,8 @@ Use for: Having Gemini critique Claude's findings.
 ```bash
 mkdir -p cases/inv-[YYYYMMDD-HHMMSS]
 echo "inv-[timestamp]" > cases/.active
+cd cases/inv-[YYYYMMDD-HHMMSS]
+git init
 ```
 
 Create initial files:
@@ -233,6 +238,12 @@ Create initial files:
 - `sources.md` - empty source registry
 - `iterations.md` - empty iteration log
 - Other detail files created as needed during investigation
+
+**Initial git commit:**
+```bash
+git add -A
+git commit -m "Initialize case: [topic]"
+```
 
 ---
 
@@ -558,6 +569,9 @@ After each iteration, update the modular files:
 
 4. SUMMARY (always last)
    summary.md     → Update key findings, verdict, embed full source list
+
+5. GIT COMMIT (after each iteration)
+   git add -A && git commit -m "Iteration N: [brief description of findings]"
 ```
 
 ### Source Registration Pattern
@@ -665,6 +679,7 @@ def can_terminate():
 11. **APPEND-ONLY SOURCES** - Never renumber or delete source IDs
 12. **SUMMARY.MD IS A FINAL PRODUCT** - Rewrite completely each time. No ledger artifacts. Publishable quality.
 13. **SUMMARY.MD SELF-CONTAINED** - Must embed full source list, shareable standalone
+14. **GIT VERSIONING PER CASE** - Each case has its own git repo. Commit after every iteration.
 
 ---
 
