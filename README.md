@@ -37,15 +37,18 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 **Modular files** in `cases/inv-YYYYMMDD-HHMMSS/`:
 
 ```
-├── summary.md        # THE DELIVERABLE - self-contained, shareable
-├── sources.md        # Master source registry [S001], [S002]...
-├── timeline.md       # Chronological events
-├── people.md         # Person profiles
-├── positions.md      # ALL sides - each position with arguments and evidence
-├── fact-check.md     # Claim verdicts (all sides)
-├── theories.md       # Fringe/alternative theories analysis
-├── evidence.md       # Statement vs evidence, chain of knowledge
-└── iterations.md     # Progress log + verification checkpoints
+├── summary.md                    # THE DELIVERABLE - self-contained, shareable
+├── sources.md                    # Master source registry [S001], [S002]...
+├── timeline.md                   # Chronological events
+├── people.md                     # Person profiles
+├── positions.md                  # ALL sides - each position with arguments and evidence
+├── fact-check.md                 # Claim verdicts (all sides)
+├── theories.md                   # Fringe/alternative theories analysis
+├── evidence.md                   # Statement vs evidence, chain of knowledge
+├── iterations.md                 # Progress log + verification checkpoints
+├── integrity-check-YYYYMMDD.md   # Journalistic integrity assessment (generated)
+├── legal-review-YYYYMMDD.md      # Pre-publication legal risk assessment (generated)
+└── articles-YYYYMMDD.md          # Publication-ready articles (generated)
 ```
 
 **summary.md is self-contained** - includes complete source list, shareable standalone.
@@ -123,6 +126,10 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 | `/financial [case-id] [entity]` | Add financial focus to existing case |
 | `/legal-review` | Pre-publication legal risk assessment |
 | `/legal-review [case-id]` | Legal review for specific case |
+| `/integrity` | Journalistic integrity & neutrality check |
+| `/integrity [case-id]` | Integrity check for specific case |
+| `/article` | Generate publication-ready articles |
+| `/article [case-id]` | Generate articles for specific case |
 
 ## The /questions Command: 20 Investigative Frameworks
 
@@ -172,6 +179,47 @@ Pre-publication review for defamation exposure:
 
 **Output**: Claim-by-claim risk assessment, hedging suggestions, evidence gaps, pre-publication checklist.
 
+## Journalistic Integrity Check (/integrity)
+
+Automated neutrality and balance assessment:
+
+| Assessment | What It Evaluates |
+|------------|-------------------|
+| **Balance Audit** | Are all perspectives given fair representation? |
+| **Framing Analysis** | Do word choices favor one side? |
+| **Source Diversity** | Are sources appropriately varied and credible? |
+| **Omission Check** | Are key counterarguments missing? |
+| **Emotional Language** | Is language neutral and professional? |
+
+**Output**: Issue-by-issue assessment with severity ratings, specific location citations, and recommended fixes.
+
+## Article Generator (/article)
+
+Transform investigation findings into publication-ready journalism:
+
+| Article Type | Description |
+|--------------|-------------|
+| **Short Overview** | 400-800 words, concise quick-read format |
+| **Full Article** | 2,000-4,000 words, long-form investigative journalism |
+
+**Standards**: Professional newsroom quality (NYT/ProPublica style), preserves all source citations, no editorializing, balanced perspectives, hedging language for unverified claims.
+
+**Output**: Two complete articles ready for publication with source key and editorial notes.
+
+## Investigation Loop Finale
+
+**After completing all research iterations, run these steps in order:**
+
+```
+1. /verify          → Verification checkpoint (completeness)
+2. /integrity       → Journalistic integrity check (balance, neutrality)
+3. Address integrity issues in case files
+4. /legal-review    → Legal risk assessment (defamation, evidence)
+5. Address legal issues in case files
+6. Final publication decision
+7. /article         → Generate publication-ready articles (short + long-form)
+```
+
 ## MCP Servers
 
 | Server | Purpose |
@@ -193,6 +241,8 @@ Pre-publication review for defamation exposure:
 | `.claude/commands/questions.md` | Question generation procedure |
 | `.claude/commands/financial.md` | Financial investigation toolkit |
 | `.claude/commands/legal-review.md` | Legal risk assessment procedure |
+| `.claude/commands/integrity.md` | Integrity check procedure |
+| `.claude/commands/article.md` | Article generation procedure |
 | `docs/investigative_data_sources.md` | 100+ OSINT sources |
 
 ## Philosophy
