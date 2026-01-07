@@ -51,6 +51,23 @@ After any structural change, verify all three files are consistent.
 | `/financial [case-id] [entity]` | Add financial focus to existing case | `.claude/commands/financial.md` |
 | `/legal-review` | Pre-publication legal risk assessment | `.claude/commands/legal-review.md` |
 | `/legal-review [case-id]` | Legal review for specific case | `.claude/commands/legal-review.md` |
+| `/integrity` | Journalistic integrity & neutrality check | `.claude/commands/integrity.md` |
+| `/integrity [case-id]` | Integrity check for specific case | `.claude/commands/integrity.md` |
+
+---
+
+## Investigation Loop Finale
+
+**After completing all research iterations, run these steps in order:**
+
+```
+1. /verify          → Verification checkpoint (completeness)
+2. /integrity       → Journalistic integrity check (balance, neutrality)
+3. Address integrity issues in case files
+4. /legal-review    → Legal risk assessment (defamation, evidence)
+5. Address legal issues in case files
+6. Final publication decision
+```
 
 ---
 
