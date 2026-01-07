@@ -102,10 +102,19 @@ cases/inv-YYYYMMDD-HHMMSS/
 │                                                                                  │
 │    ┌──────────────────────────────────────────────────────────────────────────┐ │
 │    │  PHASE 1: RESEARCH                                                        │ │
-│    │  - Gemini deep research (primary)                                         │ │
-│    │  - OpenAI deep research (critical claims)                                 │ │
+│    │  - Gemini deep research (primary) → save to research-leads/               │ │
+│    │  - OpenAI deep research (critical claims) → save to research-leads/       │ │
 │    │  - XAI real-time search (current events, social media)                    │ │
 │    │  - Official records (use /osint for deep-web database guidance)           │ │
+│    └──────────────────────────────────────────────────────────────────────────┘ │
+│                                    ↓                                             │
+│    ┌──────────────────────────────────────────────────────────────────────────┐ │
+│    │  PHASE 1.5: EVIDENCE CAPTURE (for each source found)                      │ │
+│    │  - Find primary source URL (AI research = leads only, NOT sources)        │ │
+│    │  - IMMEDIATELY capture: ./scripts/capture SXXX https://url                │ │
+│    │  - Verify claim exists in captured content                                │ │
+│    │  - Register in sources.md with evidence path and hash                     │ │
+│    │  - If claim not found → flag as UNVERIFIED or HALLUCINATION               │ │
 │    └──────────────────────────────────────────────────────────────────────────┘ │
 │                                    ↓                                             │
 │    ┌──────────────────────────────────────────────────────────────────────────┐ │
@@ -316,6 +325,112 @@ For each statement found:
 5. **Topic** (what issue they addressed)
 6. **Quote** (exact words when possible)
 7. **Source ID** (register in sources.md)
+
+---
+
+## PHASE 1.5: EVIDENCE CAPTURE
+
+**Capture evidence IMMEDIATELY when sources are found. Do not wait.**
+
+### Why Immediate Capture?
+
+1. **Hallucination detection** - Verify AI claims exist in actual source
+2. **Link rot prevention** - Pages change or disappear
+3. **Audit trail** - Prove what source said at research time
+4. **Legal defense** - Evidence for fact-checking disputes
+
+### Capture Workflow
+
+```
+For EACH source URL found during research:
+
+1. DETERMINE SOURCE ID
+   - Check sources.md for next available ID
+   - e.g., if last is [S047], next is [S048]
+
+2. CAPTURE EVIDENCE
+   - Web page: ./scripts/capture S048 https://example.com/article
+   - Document: ./scripts/capture --document S048 https://example.com/file.pdf
+
+3. VERIFY CLAIM EXISTS
+   - Read captured evidence/web/S048/capture.html or capture.pdf
+   - Confirm the specific claim is actually present
+   - Note exact location (paragraph, page number)
+
+4. REGISTER SOURCE
+   - Add entry to sources.md with:
+     - Full URL
+     - Evidence path
+     - Key claims extracted
+     - Hash from metadata.json
+
+5. HANDLE FAILURES
+   - If claim NOT found in source → mark as UNVERIFIED
+   - If capture fails → note limitation, try alternative
+   - If source unavailable → document in "Unavailable Sources"
+```
+
+### AI Research → Primary Source Workflow
+
+**AI research outputs (Gemini/OpenAI deep research) are LEADS, not sources.**
+
+```
+AI Research says: "MPS Egg Farms has 12-14 million hens [industry source]"
+
+    ↓ DO NOT cite AI research directly
+
+1. Save AI output to research-leads/gemini-001.md (for reference)
+
+2. Search for primary source:
+   - XAI web search: "MPS Egg Farms" "million hens"
+   - Find: wattagnet.com/articles/mps-egg-farms-profile
+
+3. Capture primary source:
+   ./scripts/capture S058 https://wattagnet.com/articles/mps-egg-farms-profile
+
+4. Verify claim in captured content:
+   - Read evidence/web/S058/capture.html
+   - Find: "sixth-largest producer with 12-14 million hens"
+   - Claim VERIFIED ✓
+
+5. Register in sources.md:
+   ### [S058] WATTPoultry - MPS Egg Farms Profile
+   - URL: https://wattagnet.com/...
+   - Evidence: evidence/web/S058/
+   - Key Claims: "6th largest US producer, 12-14 million hens"
+
+6. Cite [S058] in investigation files, NEVER cite AI research
+```
+
+### Evidence Capture Commands
+
+| Scenario | Command |
+|----------|---------|
+| Web page | `./scripts/capture S001 https://example.com/article` |
+| PDF document | `./scripts/capture --document S001 https://example.com/file.pdf` |
+| Named document | `./scripts/capture --document S001 https://sec.gov/filing.pdf 10k_2024.pdf` |
+| Verify all sources | `node scripts/verify-sources.js /path/to/case` |
+
+### Source Registration Format
+
+```markdown
+### [S058] WATTPoultry - MPS Egg Farms Profile
+
+| Field | Value |
+|-------|-------|
+| **Type** | Industry Publication |
+| **URL** | https://wattagnet.com/articles/mps-egg-farms-profile |
+| **Archive** | https://web.archive.org/web/20260107/... |
+| **Captured** | 2026-01-07 14:30:00 UTC |
+| **Evidence** | `evidence/web/S058/` |
+| **Hash** | sha256:a1b2c3d4... |
+| **Credibility** | Secondary (industry trade publication) |
+
+**Key Claims**:
+- MPS Egg Farms is the 6th largest US egg producer
+- Operation includes 12-14 million laying hens
+- Facilities in Indiana and other Midwest states
+```
 
 ---
 

@@ -1,0 +1,177 @@
+#!/bin/bash
+#
+# capture - Wrapper script for capturing URL evidence
+#
+# Usage:
+#   capture <source_id> <url>                    # Uses active case
+#   capture <source_id> <url> <case_dir>         # Explicit case directory
+#   capture --document <source_id> <url> [name]  # Download document (PDF, etc.)
+#
+# Examples:
+#   capture S001 https://example.com/article
+#   capture S056 https://fda.gov/recall /path/to/case
+#   capture --document S015 https://sec.gov/filing.pdf sec_10k_2024.pdf
+#
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Find case directory
+find_case_dir() {
+    # Check for explicit argument
+    if [[ -n "$1" && -d "$1" ]]; then
+        echo "$1"
+        return
+    fi
+
+    # Check for .active file
+    if [[ -f "$PROJECT_DIR/cases/.active" ]]; then
+        local case_id=$(cat "$PROJECT_DIR/cases/.active")
+        local case_dir="$PROJECT_DIR/cases/$case_id"
+        if [[ -d "$case_dir" ]]; then
+            echo "$case_dir"
+            return
+        fi
+    fi
+
+    # Check current directory
+    if [[ -f "./sources.md" ]]; then
+        pwd
+        return
+    fi
+
+    echo ""
+}
+
+# Download document (PDF, etc.)
+download_document() {
+    local source_id="$1"
+    local url="$2"
+    local filename="$3"
+    local case_dir="$4"
+
+    local doc_dir="$case_dir/evidence/documents"
+    mkdir -p "$doc_dir"
+
+    # Generate filename if not provided
+    if [[ -z "$filename" ]]; then
+        filename="${source_id}_$(basename "$url")"
+    else
+        filename="${source_id}_${filename}"
+    fi
+
+    local filepath="$doc_dir/$filename"
+
+    echo -e "${YELLOW}Downloading document...${NC}"
+    curl -sL "$url" -o "$filepath"
+
+    if [[ -f "$filepath" ]]; then
+        local hash=$(shasum -a 256 "$filepath" | cut -d' ' -f1)
+        local size=$(stat -f%z "$filepath" 2>/dev/null || stat -c%s "$filepath" 2>/dev/null)
+
+        echo -e "${GREEN}Downloaded: $filepath${NC}"
+        echo "  Size: $size bytes"
+        echo "  Hash: sha256:$hash"
+
+        # Create metadata sidecar
+        cat > "${filepath}.meta.json" << EOF
+{
+  "source_id": "$source_id",
+  "url": "$url",
+  "filename": "$filename",
+  "downloaded_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "size": $size,
+  "hash": "sha256:$hash"
+}
+EOF
+        echo "  Metadata: ${filepath}.meta.json"
+    else
+        echo -e "${RED}Download failed${NC}"
+        exit 1
+    fi
+}
+
+# Main capture function
+capture_url() {
+    local source_id="$1"
+    local url="$2"
+    local case_dir="$3"
+
+    local evidence_dir="$case_dir/evidence/web/$source_id"
+
+    echo -e "${YELLOW}Capturing $source_id${NC}"
+    echo "  URL: $url"
+    echo "  Evidence: $evidence_dir"
+    echo ""
+
+    # Run the Node.js capture script
+    node "$SCRIPT_DIR/capture-url.js" "$source_id" "$url" "$evidence_dir"
+}
+
+# Parse arguments
+if [[ "$1" == "--document" || "$1" == "-d" ]]; then
+    shift
+    if [[ $# -lt 2 ]]; then
+        echo "Usage: capture --document <source_id> <url> [filename]"
+        exit 1
+    fi
+
+    SOURCE_ID="$1"
+    URL="$2"
+    FILENAME="$3"
+    CASE_DIR=$(find_case_dir "$4")
+
+    if [[ -z "$CASE_DIR" ]]; then
+        echo -e "${RED}Error: Could not find case directory${NC}"
+        echo "Specify case directory or run from within a case folder"
+        exit 1
+    fi
+
+    download_document "$SOURCE_ID" "$URL" "$FILENAME" "$CASE_DIR"
+
+elif [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    echo "capture - Capture URL evidence for source verification"
+    echo ""
+    echo "Usage:"
+    echo "  capture <source_id> <url>                    # Capture web page"
+    echo "  capture <source_id> <url> <case_dir>         # Explicit case directory"
+    echo "  capture --document <source_id> <url> [name]  # Download document"
+    echo ""
+    echo "Examples:"
+    echo "  capture S001 https://example.com/article"
+    echo "  capture --document S015 https://sec.gov/filing.pdf 10k.pdf"
+    echo ""
+    echo "Output:"
+    echo "  evidence/web/<source_id>/capture.png   - Full-page screenshot"
+    echo "  evidence/web/<source_id>/capture.pdf   - PDF rendering"
+    echo "  evidence/web/<source_id>/capture.html  - Raw HTML source"
+    echo "  evidence/web/<source_id>/metadata.json - Capture metadata"
+
+else
+    if [[ $# -lt 2 ]]; then
+        echo "Usage: capture <source_id> <url> [case_dir]"
+        echo "       capture --document <source_id> <url> [filename]"
+        echo "       capture --help"
+        exit 1
+    fi
+
+    SOURCE_ID="$1"
+    URL="$2"
+    CASE_DIR=$(find_case_dir "$3")
+
+    if [[ -z "$CASE_DIR" ]]; then
+        echo -e "${RED}Error: Could not find case directory${NC}"
+        echo "Specify case directory or run from within a case folder"
+        exit 1
+    fi
+
+    capture_url "$SOURCE_ID" "$URL" "$CASE_DIR"
+fi

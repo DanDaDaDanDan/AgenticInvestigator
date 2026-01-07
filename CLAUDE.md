@@ -233,28 +233,56 @@ Use `/questions` to generate investigative questions using 20 frameworks in 6 ca
 ```
 cases/inv-YYYYMMDD-HHMMSS/
 ├── .git/                         # Case-specific git repository
-├── summary.md                    # THE DELIVERABLE - self-contained, shareable, has ALL sources
-├── sources.md                    # Master source registry [S001], [S002]... (append-only)
+├── evidence/                     # EVIDENCE ARCHIVE (hallucination-proof)
+│   ├── web/S001/                 # Screenshots, PDFs, HTML per source
+│   ├── documents/                # Downloaded PDFs (SEC filings, court docs)
+│   ├── api/                      # API response captures
+│   └── media/                    # Videos, transcripts
+├── research-leads/               # AI research outputs (NOT citable)
+├── summary.md                    # THE DELIVERABLE - self-contained, shareable
+├── sources.md                    # Source registry with URLs, evidence paths, hashes
 ├── timeline.md                   # Chronological events
 ├── people.md                     # Person profiles
 ├── positions.md                  # ALL positions with arguments and evidence
 ├── fact-check.md                 # Claim verdicts (all positions)
 ├── theories.md                   # Alternative/fringe theories
-├── evidence.md                   # Statement vs evidence
+├── statements.md                 # Statement vs evidence analysis
 ├── iterations.md                 # Progress log + verification checkpoints
 ├── integrity-check.md            # Journalistic integrity assessment (generated)
 ├── legal-review.md               # Pre-publication legal risk assessment (generated)
 └── articles.md                   # Publication-ready articles (generated)
 ```
 
+### Evidence Capture (CRITICAL)
+
+**Every source must have captured evidence. Capture IMMEDIATELY when found.**
+
+```bash
+# Web page capture
+./scripts/capture S001 https://example.com/article
+
+# Document download
+./scripts/capture --document S015 https://sec.gov/filing.pdf
+
+# Verify all sources have evidence
+node scripts/verify-sources.js /path/to/case
+```
+
+**AI research (Gemini/OpenAI deep research) = LEADS, not sources.**
+- Save AI output to `research-leads/` (for reference only)
+- Find primary source URL for each claim
+- Capture primary source with `./scripts/capture`
+- NEVER cite AI research directly - cite the captured primary source
+
 ### Source Attribution (CRITICAL)
 
-**Every claim must have a source ID. No exceptions.**
+**Every claim must have a source ID with captured evidence. No exceptions.**
 
 ```
 Source format: [S001], [S002], [S003]...
 - Append-only: Never renumber, never delete
 - Cite inline: "The CEO knew by January [S001] [S002]."
+- Each source has evidence in evidence/web/SXXX/ or evidence/documents/
 - summary.md embeds complete source list → shareable standalone
 ```
 
@@ -366,6 +394,10 @@ mcp__mcp-xai__research
 14. **Compare statements across venues** - Public statements vs. testimony vs. internal - note discrepancies.
 15. **Flag all statement contradictions** - When someone's statements conflict, investigate the discrepancy.
 16. **Git repo per case** - Each case has its own git repository. Commit after every iteration.
+17. **Capture evidence IMMEDIATELY** - Use `./scripts/capture` when source is found. Don't wait.
+18. **AI research = leads only** - Gemini/OpenAI deep research goes to research-leads/. Find and capture primary sources.
+19. **Verify claims in evidence** - Read captured HTML/PDF to confirm claim exists before citing.
+20. **Every source needs evidence** - No source ID without captured evidence in evidence/ folder.
 
 ---
 
