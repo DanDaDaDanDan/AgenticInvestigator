@@ -77,16 +77,16 @@ Beyond personal defamation, criticism of **products or brands** can trigger trad
 | **Fault** | At minimum, negligence in making the statement |
 
 **Safe Harbors for Product Criticism**:
-- Attribution to official sources (FDA recalls, USDA findings)
-- Attribution to third-party ratings (Cornucopia, Consumer Reports)
+- Attribution to official sources (FDA recalls, USDA findings, EPA reports)
+- Attribution to third-party ratings (industry watchdogs, Consumer Reports)
 - Attribution to litigation filings
 - Clear opinion framing ("Critics argue...")
 - Verifiable facts (documented recalls, inspection reports)
 
 **Danger Zone**: Direct assertions of product deficiency without attribution
-- ❌ "The eggs are not actually pasture-raised"
-- ✅ "Consumer lawsuits allege the eggs are not actually pasture-raised"
-- ✅ "The FDA recall listed Simple Truth among affected brands"
+- ❌ "The products are not actually [claimed quality]"
+- ✅ "Consumer lawsuits allege the products are not actually [claimed quality]"
+- ✅ "The FDA recall listed [Brand] among affected products"
 
 ---
 
@@ -136,12 +136,12 @@ Sources from advocacy organizations require special handling to maintain credibi
 
 | Source Type | Examples | Disclosure Required |
 |-------------|----------|---------------------|
-| Animal rights groups | DxE, PETA, Mercy for Animals, ASPCA investigations | Mission + methodology limits |
+| Animal rights groups | PETA, Mercy for Animals, Direct Action Everywhere | Mission + methodology limits |
 | Environmental groups | Greenpeace, Sierra Club, EWG | Mission + methodology limits |
-| Industry trade groups | American Egg Board, industry associations | Financial interest |
+| Industry trade groups | Trade associations, industry-funded research | Financial interest |
 | Political organizations | Partisan think tanks, advocacy PACs | Political orientation |
 | Plaintiff attorneys | Class action firms, litigation PR | Financial interest in outcome |
-| Watchdog organizations | Cornucopia Institute, Consumer Reports | Mission + methodology notes |
+| Watchdog organizations | Industry rating organizations, Consumer Reports | Mission + methodology notes |
 
 ### Required Disclosures
 
@@ -151,9 +151,9 @@ For ANY claim based primarily on advocacy source material:
 
 The article MUST identify the organization with context:
 - ❌ "Investigators documented..."
-- ✅ "Direct Action Everywhere (DxE), an animal rights network, documented..."
+- ✅ "[Organization Name], an [animal rights/environmental/industry] group, documented..."
 - ❌ "A watchdog group rates..."
-- ✅ "The Cornucopia Institute, an organic agriculture advocacy organization, rates..."
+- ✅ "[Rating Organization], an [industry type] advocacy organization, rates..."
 
 **2. Methodology Limitations Disclosure**
 
@@ -166,15 +166,15 @@ The article MUST acknowledge investigation limitations:
 **3. Dispute Acknowledgment**
 
 Even without direct contact for THIS article, if the subject is known to dispute allegations:
-- ✅ "MPS Egg Farms has disputed the interpretation of the footage and maintains its operations comply with pasture-raised standards"
+- ✅ "[Company] has disputed the interpretation of the footage and maintains its operations comply with [relevant] standards"
 - ✅ "The company denies the allegations" (if known from other sources)
-- ✅ "X was not contacted for comment" (if not contacted)
-- ✅ "X did not respond to requests for comment" (if contacted but no response)
+- ✅ "[Subject] was not contacted for comment" (if not contacted)
+- ✅ "[Subject] did not respond to requests for comment" (if contacted but no response)
 
 **4. Rating System Caveats**
 
 For third-party ratings, note methodology limitations:
-- ✅ "The Cornucopia Institute, whose methodology may weight against industrial-scale operations, rates..."
+- ✅ "[Rating Organization], whose methodology may weight against [certain factors], rates..."
 - ✅ "According to [rating system], which evaluates [criteria]..."
 
 ### Verification Context
@@ -191,7 +191,7 @@ For third-party ratings, note methodology limitations:
 
 Advocacy investigations are inherently limited. The article SHOULD include language such as:
 
-> "DxE's investigations are conducted without access to internal company records and represent observations at specific points in time rather than comprehensive audits of ongoing operations."
+> "[Organization]'s investigations are conducted without access to internal company records and represent observations at specific points in time rather than comprehensive audits of ongoing operations."
 
 This disclosure:
 - Acknowledges limitations honestly
@@ -299,10 +299,10 @@ For EACH allegation, verify:
 
 | Vague (Higher Risk) | Specific (Lower Risk) |
 |---------------------|----------------------|
-| "suppliers linked to confinement allegations" | "suppliers, such as MPS Egg Farms, where investigators documented confinement at a Wabash County facility in March 2024" |
-| "company associated with safety issues" | "company whose August 2025 Salmonella outbreak resulted in an FDA recall of 20.4 million eggs [S056]" |
-| "farm connected to welfare concerns" | "farm where DxE documented closed pop-holes during a March 2024 investigation [S073]" |
-| "brand tied to industrial practices" | "brand sourcing from MPS Egg Farms, the sixth-largest US producer with 12-14 million hens [S058]" |
+| "suppliers linked to [violation] allegations" | "suppliers, such as [Company], where investigators documented [specific practice] at a [Location] facility in [Date]" |
+| "company associated with safety issues" | "company whose [Date] [incident type] resulted in an FDA recall of [X units] [S0XX]" |
+| "facility connected to [concern] concerns" | "facility where [Organization] documented [specific observation] during a [Date] investigation [S0XX]" |
+| "brand tied to industrial practices" | "brand sourcing from [Company], the [Nth]-largest [industry] producer with [scale metric] [S0XX]" |
 
 **Supply Chain Verification**:
 
@@ -319,11 +319,11 @@ Third-party attribution provides legal safe harbor. Direct assertions of wrongdo
 
 | Attribution Type | Risk Level | Example |
 |-----------------|------------|---------|
-| Official government finding | **LOWEST** | "FDA listed Simple Truth in the recall" |
+| Official government finding | **LOWEST** | "FDA listed [Brand] in the recall" |
 | Court filing/judgment | **LOWEST** | "The lawsuit alleges deceptive marketing" |
-| Third-party rating | **LOW** | "Cornucopia rates them 1 out of 5" |
-| Named source quote | **MEDIUM** | "Former employee John Smith stated..." |
-| Investigator documentation | **MEDIUM** | "DxE footage appeared to show..." |
+| Third-party rating | **LOW** | "[Rating organization] rates them [X] out of [Y]" |
+| Named source quote | **MEDIUM** | "Former employee [Name] stated..." |
+| Investigator documentation | **MEDIUM** | "[Organization] footage appeared to show..." |
 | Secondhand report | **HIGH** | "Sources familiar with the matter say..." |
 | Direct assertion | **HIGHEST** | "The company deceives customers" |
 
@@ -332,10 +332,10 @@ Third-party attribution provides legal safe harbor. Direct assertions of wrongdo
 | Direct Assertion (AVOID) | Attributed Version (USE) |
 |-------------------------|--------------------------|
 | "The marketing is deceptive" | "Consumer lawsuits allege the marketing is deceptive" |
-| "Birds are confined despite claims" | "Investigators documented birds confined at the facility" |
+| "The [practice] violates [standard]" | "Investigators documented [practice] at the facility" |
 | "The company knew and did nothing" | "Documents suggest the company was aware; critics argue the response was inadequate" |
 | "This is false advertising" | "Plaintiffs in class-action litigation claim this constitutes false advertising" |
-| "The eggs aren't really pasture-raised" | "Industry watchdogs rate the sourcing 1 out of 5, citing concerns about outdoor access" |
+| "The products aren't really [claimed quality]" | "Industry watchdogs rate the sourcing [X] out of [Y], citing concerns about [specific issue]" |
 
 **Attribution Checklist**:
 
@@ -375,8 +375,8 @@ Language that presents contested claims as established fact increases legal expo
 
 | Problematic Framing | Improved Framing |
 |---------------------|------------------|
-| "The reality of the egg industry is agoraphobic hens and massive recalls" | "An examination reveals a complex landscape where biological constraints, contested welfare claims, and a recent recall raise questions about the industry" |
-| "Simple Truth eggs come from industrial confinement" | "Investigators have documented confinement practices at facilities that supply Simple Truth, though the company disputes these characterizations" |
+| "The reality of the [industry] is [negative characterization]" | "An examination reveals a complex landscape where [factors], contested claims, and [documented issues] raise questions about the industry" |
+| "[Brand] products come from [negative practice]" | "Investigators have documented [practice] at facilities that supply [Brand], though the company disputes these characterizations" |
 | "The investigation exposed deceptive marketing" | "The investigation documented discrepancies between marketing claims and observed practices; consumer lawsuits allege the marketing is deceptive" |
 
 **The Contested-Claim Test**:
@@ -515,7 +515,7 @@ SEVERITY    Moderate  LOW      MEDIUM   HIGH
 
 | Source | Type | Identity Disclosed? | Limitations Disclosed? | Action Needed |
 |--------|------|---------------------|------------------------|---------------|
-| [DxE, etc.] | [Animal rights/Environmental/etc.] | [Yes/No] | [Yes/No] | [Add disclosure / OK] |
+| [Organization] | [Animal rights/Environmental/Industry/etc.] | [Yes/No] | [Yes/No] | [Add disclosure / OK] |
 
 **Required Disclosures**:
 
@@ -633,10 +633,10 @@ If relying on fair report privilege (reporting on official proceedings):
 - [ ] Litigation status noted where applicable ("litigation remains ongoing")
 
 ### Advocacy Sources (NEW)
-- [ ] All advocacy sources identified with organizational context (e.g., "animal rights network")
+- [ ] All advocacy sources identified with organizational context (e.g., "[type] organization")
 - [ ] Methodology limitations disclosed ("snapshot in time," "no internal access")
 - [ ] Known disputes acknowledged even without direct contact for this article
-- [ ] Rating system caveats noted where applicable (e.g., Cornucopia methodology)
+- [ ] Rating system caveats noted where applicable (e.g., methodology limitations)
 
 ### Framing (NEW)
 - [ ] No "the reality is" / "the truth is" framing of contested claims
