@@ -53,6 +53,8 @@ After any structural change, verify all three files are consistent.
 | `/legal-review [case-id]` | Legal review for specific case | `.claude/commands/legal-review.md` |
 | `/integrity` | Journalistic integrity & neutrality check | `.claude/commands/integrity.md` |
 | `/integrity [case-id]` | Integrity check for specific case | `.claude/commands/integrity.md` |
+| `/article` | Generate journalistic articles from findings | `.claude/commands/article.md` |
+| `/article [case-id]` | Generate articles for specific case | `.claude/commands/article.md` |
 
 ---
 
@@ -67,6 +69,7 @@ After any structural change, verify all three files are consistent.
 4. /legal-review    → Legal risk assessment (defamation, evidence)
 5. Address legal issues in case files
 6. Final publication decision
+7. /article         → Generate publication-ready articles (short + long-form)
 ```
 
 ---
