@@ -46,9 +46,9 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 ├── theories.md                   # Fringe/alternative theories analysis
 ├── evidence.md                   # Statement vs evidence, chain of knowledge
 ├── iterations.md                 # Progress log + verification checkpoints
-├── integrity-check-YYYYMMDD.md   # Journalistic integrity assessment (generated)
-├── legal-review-YYYYMMDD.md      # Pre-publication legal risk assessment (generated)
-└── articles-YYYYMMDD.md          # Publication-ready articles (generated)
+├── integrity-check.md            # Journalistic integrity assessment (generated)
+├── legal-review.md               # Pre-publication legal risk assessment (generated)
+└── articles.md                   # Publication-ready articles (generated)
 ```
 
 **summary.md is self-contained** - includes complete source list, shareable standalone.

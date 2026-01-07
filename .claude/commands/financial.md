@@ -287,7 +287,6 @@ Generate structured output:
 # Financial Investigation: [Entity]
 
 **Case**: [case-id]
-**Generated**: [datetime]
 **Entity Type**: [Person | Company | Topic]
 
 ---

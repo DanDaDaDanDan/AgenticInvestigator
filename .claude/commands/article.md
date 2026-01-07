@@ -171,7 +171,6 @@ Generate the following file:
 # Articles: [Investigation Title]
 
 **Case**: [case-id]
-**Generated**: [datetime]
 **Source**: summary.md
 
 ---
@@ -219,8 +218,10 @@ Generate the following file:
 Save generated articles to:
 
 ```
-cases/[case-id]/articles-[datetime].md
+cases/[case-id]/articles.md
 ```
+
+Git tracks version history, so no timestamp needed in filename.
 
 ---
 

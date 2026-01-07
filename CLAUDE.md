@@ -242,9 +242,9 @@ cases/inv-YYYYMMDD-HHMMSS/
 ├── theories.md                   # Alternative/fringe theories
 ├── evidence.md                   # Statement vs evidence
 ├── iterations.md                 # Progress log + verification checkpoints
-├── integrity-check-YYYYMMDD.md   # Journalistic integrity assessment (generated)
-├── legal-review-YYYYMMDD.md      # Pre-publication legal risk assessment (generated)
-└── articles-YYYYMMDD.md          # Publication-ready articles (generated)
+├── integrity-check.md            # Journalistic integrity assessment (generated)
+├── legal-review.md               # Pre-publication legal risk assessment (generated)
+└── articles.md                   # Publication-ready articles (generated)
 ```
 
 ### Source Attribution (CRITICAL)

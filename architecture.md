@@ -578,11 +578,11 @@ Transform investigation findings into publication-ready journalism.
 | Step | Command | Output File |
 |------|---------|-------------|
 | 1 | `/verify` | Updates `iterations.md` with verification checkpoint |
-| 2 | `/integrity` | `integrity-check-YYYYMMDD.md` |
+| 2 | `/integrity` | `integrity-check.md` |
 | 3 | Manual | Updates to case files based on integrity findings |
-| 4 | `/legal-review` | `legal-review-YYYYMMDD.md` |
+| 4 | `/legal-review` | `legal-review.md` |
 | 5 | Manual | Updates to case files based on legal findings |
-| 7 | `/article` | `articles-YYYYMMDD.md` |
+| 7 | `/article` | `articles.md` |
 
 ---
 
@@ -696,9 +696,9 @@ cases/
     ├── iterations.md                 # Progress log + verification checkpoints
     │
     │  # GENERATED OUTPUTS (created by finalization commands)
-    ├── integrity-check-YYYYMMDD.md   # Journalistic integrity assessment (/integrity)
-    ├── legal-review-YYYYMMDD.md      # Pre-publication legal risk assessment (/legal-review)
-    └── articles-YYYYMMDD.md          # Publication-ready articles (/article)
+    ├── integrity-check.md            # Journalistic integrity assessment (/integrity)
+    ├── legal-review.md               # Pre-publication legal risk assessment (/legal-review)
+    └── articles.md                   # Publication-ready articles (/article)
 ```
 
 ### File Responsibilities

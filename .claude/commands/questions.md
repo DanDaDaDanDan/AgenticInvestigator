@@ -482,7 +482,6 @@ Group all generated questions into the 20 frameworks.
 # Investigation Questions: [Topic]
 
 **Case**: [case-id]
-**Generated**: [datetime]
 **Frameworks Applied**: [N of 20]
 **Questions Generated**: [N]
 

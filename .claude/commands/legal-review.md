@@ -778,8 +778,10 @@ mcp__mcp-openai__deep_research:
 Save legal review to case directory:
 
 ```
-cases/[case-id]/legal-review-[datetime].md
+cases/[case-id]/legal-review.md
 ```
+
+Git tracks version history, so no timestamp needed in filename.
 
 ---
 
