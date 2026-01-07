@@ -64,6 +64,30 @@ These claims carry HIGH defamation risk:
 | Mental health claims | **HIGH** | Private medical information |
 | Drug/alcohol abuse | **HIGH** | Private, stigmatizing |
 
+### Commercial Disparagement (Trade Libel)
+
+Beyond personal defamation, criticism of **products or brands** can trigger trade libel claims.
+
+| Element | What Plaintiff Must Prove |
+|---------|---------------------------|
+| **False statement** | Statement of fact about the product (not opinion) |
+| **Publication** | Statement communicated to third parties |
+| **Disparagement** | Statement discredits the product's quality |
+| **Pecuniary harm** | Actual economic loss resulted |
+| **Fault** | At minimum, negligence in making the statement |
+
+**Safe Harbors for Product Criticism**:
+- Attribution to official sources (FDA recalls, USDA findings)
+- Attribution to third-party ratings (Cornucopia, Consumer Reports)
+- Attribution to litigation filings
+- Clear opinion framing ("Critics argue...")
+- Verifiable facts (documented recalls, inspection reports)
+
+**Danger Zone**: Direct assertions of product deficiency without attribution
+- ❌ "The eggs are not actually pasture-raised"
+- ✅ "Consumer lawsuits allege the eggs are not actually pasture-raised"
+- ✅ "The FDA recall listed Simple Truth among affected brands"
+
 ---
 
 ## EVIDENCE STRENGTH CLASSIFICATION
@@ -101,6 +125,78 @@ These claims carry HIGH defamation risk:
 - Unverified tips
 - Social media posts without confirmation
 - Claims contradicted by documentary evidence
+
+---
+
+## ADVOCACY SOURCE DISCLOSURE REQUIREMENTS
+
+Sources from advocacy organizations require special handling to maintain credibility and reduce legal exposure.
+
+### Identifying Advocacy Sources
+
+| Source Type | Examples | Disclosure Required |
+|-------------|----------|---------------------|
+| Animal rights groups | DxE, PETA, Mercy for Animals, ASPCA investigations | Mission + methodology limits |
+| Environmental groups | Greenpeace, Sierra Club, EWG | Mission + methodology limits |
+| Industry trade groups | American Egg Board, industry associations | Financial interest |
+| Political organizations | Partisan think tanks, advocacy PACs | Political orientation |
+| Plaintiff attorneys | Class action firms, litigation PR | Financial interest in outcome |
+| Watchdog organizations | Cornucopia Institute, Consumer Reports | Mission + methodology notes |
+
+### Required Disclosures
+
+For ANY claim based primarily on advocacy source material:
+
+**1. Source Identity Disclosure**
+
+The article MUST identify the organization with context:
+- ❌ "Investigators documented..."
+- ✅ "Direct Action Everywhere (DxE), an animal rights network, documented..."
+- ❌ "A watchdog group rates..."
+- ✅ "The Cornucopia Institute, an organic agriculture advocacy organization, rates..."
+
+**2. Methodology Limitations Disclosure**
+
+The article MUST acknowledge investigation limitations:
+- "Investigation conducted without access to internal company records"
+- "Represents observations at a specific point in time"
+- "Not a comprehensive audit of ongoing operations"
+- "Footage has not been independently authenticated" (if applicable)
+
+**3. Dispute Acknowledgment**
+
+Even without direct contact for THIS article, if the subject is known to dispute allegations:
+- ✅ "MPS Egg Farms has disputed the interpretation of the footage and maintains its operations comply with pasture-raised standards"
+- ✅ "The company denies the allegations" (if known from other sources)
+- ✅ "X was not contacted for comment" (if not contacted)
+- ✅ "X did not respond to requests for comment" (if contacted but no response)
+
+**4. Rating System Caveats**
+
+For third-party ratings, note methodology limitations:
+- ✅ "The Cornucopia Institute, whose methodology may weight against industrial-scale operations, rates..."
+- ✅ "According to [rating system], which evaluates [criteria]..."
+
+### Verification Context
+
+| What Advocacy Source Provides | What Article Must Note |
+|-------------------------------|------------------------|
+| Footage/photos | Whether independently authenticated |
+| Facility identification | Whether confirmed via other sources (state records, satellite) |
+| Timing claims | Whether corroborated by dated records |
+| Legal interpretation | That it represents the source's interpretation |
+| Causal connections | Whether supply chain definitively established |
+
+### The "Snapshot" Disclosure
+
+Advocacy investigations are inherently limited. The article SHOULD include language such as:
+
+> "DxE's investigations are conducted without access to internal company records and represent observations at specific points in time rather than comprehensive audits of ongoing operations."
+
+This disclosure:
+- Acknowledges limitations honestly
+- Reduces legal exposure
+- Paradoxically INCREASES credibility by showing transparency
 
 ---
 
@@ -176,6 +272,119 @@ For each source supporting the claim:
 | **Multiple secondhand** | 2+ sources who heard from principals | MEDIUM |
 | **Single credible source** | One source with direct knowledge | WEAK |
 | **Anonymous only** | No on-record corroboration | INSUFFICIENT |
+
+### E. Claim Specificity Audit
+
+Broad characterizations are legally weaker than precise claims. Vague language invites challenge.
+
+**FLAG these vague connectors**:
+
+| Phrase | Problem | Required Fix |
+|--------|---------|--------------|
+| "linked to" | Implies connection without proving it | Specify the documented link |
+| "associated with" | Vague association | Name specific, proven association |
+| "connected to" | Undefined connection | Define the connection with evidence |
+| "tied to" | Ambiguous relationship | Clarify relationship with sources |
+| "implicated in" | Suggests wrongdoing without proof | State what's actually documented |
+
+**Specificity Requirements**:
+
+For EACH allegation, verify:
+- [ ] Specific facility/location named (not just company name)
+- [ ] Specific date or time period stated
+- [ ] Specific practice documented (not general characterization)
+- [ ] Supply chain connection established with evidence (if claiming brand sources from facility)
+
+**Example Transformations**:
+
+| Vague (Higher Risk) | Specific (Lower Risk) |
+|---------------------|----------------------|
+| "suppliers linked to confinement allegations" | "suppliers, such as MPS Egg Farms, where investigators documented confinement at a Wabash County facility in March 2024" |
+| "company associated with safety issues" | "company whose August 2025 Salmonella outbreak resulted in an FDA recall of 20.4 million eggs [S056]" |
+| "farm connected to welfare concerns" | "farm where DxE documented closed pop-holes during a March 2024 investigation [S073]" |
+| "brand tied to industrial practices" | "brand sourcing from MPS Egg Farms, the sixth-largest US producer with 12-14 million hens [S058]" |
+
+**Supply Chain Verification**:
+
+If claiming products from Facility X are sold under Brand Y:
+- [ ] Documentary evidence of supply relationship exists
+- [ ] OR qualified with "suppliers for" rather than definitive sourcing claim
+- [ ] OR noted as alleged/claimed rather than established fact
+
+### F. Attribution Audit
+
+Third-party attribution provides legal safe harbor. Direct assertions of wrongdoing do not.
+
+**For EACH negative claim, classify**:
+
+| Attribution Type | Risk Level | Example |
+|-----------------|------------|---------|
+| Official government finding | **LOWEST** | "FDA listed Simple Truth in the recall" |
+| Court filing/judgment | **LOWEST** | "The lawsuit alleges deceptive marketing" |
+| Third-party rating | **LOW** | "Cornucopia rates them 1 out of 5" |
+| Named source quote | **MEDIUM** | "Former employee John Smith stated..." |
+| Investigator documentation | **MEDIUM** | "DxE footage appeared to show..." |
+| Secondhand report | **HIGH** | "Sources familiar with the matter say..." |
+| Direct assertion | **HIGHEST** | "The company deceives customers" |
+
+**Required Transformations**:
+
+| Direct Assertion (AVOID) | Attributed Version (USE) |
+|-------------------------|--------------------------|
+| "The marketing is deceptive" | "Consumer lawsuits allege the marketing is deceptive" |
+| "Birds are confined despite claims" | "Investigators documented birds confined at the facility" |
+| "The company knew and did nothing" | "Documents suggest the company was aware; critics argue the response was inadequate" |
+| "This is false advertising" | "Plaintiffs in class-action litigation claim this constitutes false advertising" |
+| "The eggs aren't really pasture-raised" | "Industry watchdogs rate the sourcing 1 out of 5, citing concerns about outdoor access" |
+
+**Attribution Checklist**:
+
+For each critical/negative claim:
+- [ ] Claim is attributed to a specific, named source
+- [ ] Source is identified with appropriate context (organization type, potential bias)
+- [ ] "According to," "alleges," "documented," "claims," or similar framing used
+- [ ] NOT stated as direct assertion of fact by the publication
+- [ ] Subject's dispute acknowledged (if known)
+
+### G. Framing Analysis
+
+Language that presents contested claims as established fact increases legal exposure and undermines credibility.
+
+**FLAG these definitiveness markers**:
+
+| Phrase | Problem | Alternative |
+|--------|---------|-------------|
+| "the reality is..." | Presents allegation as established fact | "investigators have documented..." |
+| "the truth is..." | Assumes conclusion is settled | "evidence suggests..." |
+| "in reality..." | Dismisses subject's position as false | "according to [source]..." |
+| "clearly..." | Assumes obviousness without proof | "the evidence indicates..." |
+| "obviously..." | Prejudges conclusion | "records show..." |
+| "undeniably..." | Forecloses legitimate dispute | "multiple sources confirm..." |
+| "proves that..." | Overstates evidentiary weight | "supports the claim that..." |
+| "exposed..." | Implies wrongdoing as fact | "documented..." or "revealed..." |
+
+**Check All Summary Elements**:
+
+- [ ] **Headline**: Does it state allegations as established fact?
+- [ ] **Deck/Subhead**: Does it frame contested claims as "the reality"?
+- [ ] **Lede**: Does it present one side's characterization as truth?
+- [ ] **Nut graf**: Does it assume conclusions rather than present questions?
+- [ ] **Conclusion**: Does it render verdict beyond what evidence supports?
+
+**Framing Fixes**:
+
+| Problematic Framing | Improved Framing |
+|---------------------|------------------|
+| "The reality of the egg industry is agoraphobic hens and massive recalls" | "An examination reveals a complex landscape where biological constraints, contested welfare claims, and a recent recall raise questions about the industry" |
+| "Simple Truth eggs come from industrial confinement" | "Investigators have documented confinement practices at facilities that supply Simple Truth, though the company disputes these characterizations" |
+| "The investigation exposed deceptive marketing" | "The investigation documented discrepancies between marketing claims and observed practices; consumer lawsuits allege the marketing is deceptive" |
+
+**The Contested-Claim Test**:
+
+For any claim where the subject disagrees, ask:
+> "Does our language acknowledge this is contested, or does it present our conclusion as settled fact?"
+
+If the latter, revise to include dispute acknowledgment.
 
 ---
 
@@ -285,6 +494,81 @@ SEVERITY    Moderate  LOW      MEDIUM   HIGH
 
 ---
 
+## Dispute Acknowledgment Status
+
+| Subject | Allegation | Dispute Known? | Acknowledged in Article? | Action Needed |
+|---------|------------|----------------|--------------------------|---------------|
+| [Name/Entity] | [Brief claim] | [Yes/No/Unknown] | [Yes/No] | [Add acknowledgment / OK] |
+
+**Subjects Not Contacted**:
+- [ ] [Name] - "X was not contacted for comment" disclosure needed
+
+**Subjects Who Did Not Respond**:
+- [ ] [Name] - "X did not respond to requests for comment" disclosure needed
+
+**Known Disputes from Other Sources**:
+- [ ] [Name] disputes [allegation] per [source] - acknowledgment needed in article
+
+---
+
+## Advocacy Source Disclosure Audit
+
+| Source | Type | Identity Disclosed? | Limitations Disclosed? | Action Needed |
+|--------|------|---------------------|------------------------|---------------|
+| [DxE, etc.] | [Animal rights/Environmental/etc.] | [Yes/No] | [Yes/No] | [Add disclosure / OK] |
+
+**Required Disclosures**:
+
+| Source | Required Language | Present in Article? |
+|--------|-------------------|---------------------|
+| [Source] | "[Organization type] context" | [Yes/No] |
+| [Source] | "Snapshot in time" limitation | [Yes/No] |
+| [Source] | "No internal access" limitation | [Yes/No] |
+| [Source] | Rating methodology caveat | [Yes/No] |
+
+---
+
+## Claim Specificity Audit
+
+| Vague Language Found | Location | Recommended Fix |
+|---------------------|----------|-----------------|
+| "[linked to / associated with / etc.]" | [Section/paragraph] | "[Specific replacement]" |
+
+**Supply Chain Verification**:
+
+| Claimed Connection | Evidence Level | Recommendation |
+|-------------------|----------------|----------------|
+| [Brand] sources from [Facility] | [Documented/Alleged/Unclear] | [OK / Qualify with "suppliers for" / Remove] |
+
+---
+
+## Attribution Audit
+
+| Claim | Current Attribution | Risk Level | Recommended Attribution |
+|-------|---------------------|------------|------------------------|
+| [Negative claim] | [Direct assertion / Third-party] | [HIGH/MEDIUM/LOW] | [Keep / Revise to "..."] |
+
+**Direct Assertions Requiring Conversion**:
+
+| Direct Assertion | Recommended Attributed Version |
+|------------------|-------------------------------|
+| "[Current language]" | "[Attributed version]" |
+
+---
+
+## Framing Analysis
+
+| Problematic Framing | Location | Recommended Revision |
+|--------------------|----------|---------------------|
+| "[the reality is... / the truth is... / etc.]" | [Headline/Deck/Lede/etc.] | "[Improved framing]" |
+
+**Headline/Deck Check**:
+- [ ] Headline states allegations as fact: [Yes/No]
+- [ ] Deck frames contested claims as "reality": [Yes/No]
+- [ ] Lede presents one side as truth: [Yes/No]
+
+---
+
 ## Evidence Gaps
 
 ### Critical Gaps (Must address before publication)
@@ -339,12 +623,51 @@ If relying on fair report privilege (reporting on official proceedings):
 - [ ] Fair report privilege properly invoked where applicable
 - [ ] Opinion clearly distinguished from fact
 
+### Dispute & Attribution (NEW)
+- [ ] Each major allegation includes subject's dispute/response acknowledgment
+- [ ] If subject not contacted: "X was not contacted for comment" stated
+- [ ] If no response received: "X did not respond to requests for comment" stated
+- [ ] If dispute known from other sources: dispute acknowledged in article
+- [ ] All critical claims attributed to third parties (not direct assertions)
+- [ ] No unattributed "linked to" / "associated with" / "connected to" language
+- [ ] Litigation status noted where applicable ("litigation remains ongoing")
+
+### Advocacy Sources (NEW)
+- [ ] All advocacy sources identified with organizational context (e.g., "animal rights network")
+- [ ] Methodology limitations disclosed ("snapshot in time," "no internal access")
+- [ ] Known disputes acknowledged even without direct contact for this article
+- [ ] Rating system caveats noted where applicable (e.g., Cornucopia methodology)
+
+### Framing (NEW)
+- [ ] No "the reality is" / "the truth is" framing of contested claims
+- [ ] Headlines and decks don't state allegations as established fact
+- [ ] Contested claims presented as contested throughout article
+- [ ] Subject's position acknowledged, not dismissed
+
+### Commercial Disparagement (if products/brands criticized) (NEW)
+- [ ] Product criticism attributed to official sources, ratings, or litigation
+- [ ] No direct assertions of product deficiency without attribution
+- [ ] Verifiable facts (recalls, inspections) distinguished from allegations
+- [ ] Brand/product subjects' disputes acknowledged
+
+### Claim Specificity (NEW)
+- [ ] Allegations reference specific facilities, dates, and documented practices
+- [ ] Supply chain connections established with evidence or qualified appropriately
+- [ ] Vague characterizations replaced with documented specifics
+
 ### Editorial
 - [ ] All claims sourced with [SXXX] IDs
 - [ ] Response sought from all subjects of criticism
 - [ ] Responses fairly represented
 - [ ] Context provided for all allegations
 - [ ] No misleading juxtaposition or implication
+
+### Methodology Disclosure (NEW)
+- [ ] Article includes methodology section
+- [ ] Advocacy source limitations disclosed in methodology
+- [ ] Subject contact status disclosed ("not contacted" / "did not respond")
+- [ ] Rating system methodology caveats noted (if applicable)
+- [ ] Scope limitations acknowledged ("snapshot," "not comprehensive audit")
 
 ### Documentation
 - [ ] All source documents preserved
@@ -472,6 +795,11 @@ cases/[case-id]/legal-review-[datetime].md
 8. **"Is it fair?"** - Would a reasonable person see this as balanced?
 9. **"What are we implying?"** - Juxtaposition can be defamatory
 10. **"Is it worth the risk?"** - Some claims aren't worth the exposure
+11. **"Did we acknowledge their dispute?"** - Subjects rarely agree; acknowledge it
+12. **"Is criticism attributed?"** - Third-party attribution is your legal shield
+13. **"How specific is our claim?"** - "Linked to" invites challenge; specifics defend
+14. **"Are we framing allegations as fact?"** - "The reality is..." can be fatal
+15. **"Did we disclose source limitations?"** - Transparency paradoxically protects
 
 ---
 
@@ -486,6 +814,13 @@ cases/[case-id]/legal-review-[datetime].md
 | Assuming documents speak for themselves | Context matters legally | Explain significance carefully |
 | Circular sourcing | One source, not multiple | Verify sources are independent |
 | Republishing defamation | No immunity for repeating | Verify before republishing |
+| Not acknowledging known disputes | Appears one-sided, loses credibility | Include dispute even without direct contact |
+| Direct assertions without attribution | No safe harbor protection | Attribute to lawsuits, ratings, sources |
+| Vague "linked to" characterizations | Implies more than you can prove | Use specific facilities, dates, practices |
+| Framing allegations as "the reality" | Presents contested claims as settled | Use "investigators documented," "evidence suggests" |
+| Not disclosing advocacy source limits | Hides bias, reduces credibility | Note "snapshot in time," "no internal access" |
+| Treating products like people | Trade libel has different elements | Check commercial disparagement standards |
+| Omitting methodology limitations | Appears to hide weaknesses | Disclose source limitations in methodology |
 
 ---
 
