@@ -358,6 +358,204 @@ TYPE       Limited    LOW    MEDIUM   HIGH
 
 ---
 
+## Journalistic Integrity System (/integrity)
+
+Automated neutrality and balance assessment for investigation findings.
+
+### Assessment Categories
+
+| Category | What It Evaluates |
+|----------|-------------------|
+| **Balance Audit** | Are all perspectives given fair representation? |
+| **Framing Analysis** | Do word choices subtly favor one side? |
+| **Source Diversity** | Are sources appropriately varied and credible? |
+| **Omission Check** | Are key counterarguments or context missing? |
+| **Emotional Language** | Is language neutral and professional? |
+| **Attribution Standards** | Are claims properly attributed to sources? |
+
+### Severity Ratings
+
+```
+CRITICAL  → Must fix before publication (clear bias, major omissions)
+HIGH      → Should fix (significant framing issues, weak balance)
+MEDIUM    → Consider fixing (subtle issues, minor gaps)
+LOW       → Optional (stylistic suggestions)
+```
+
+### Output Format
+
+```markdown
+# Integrity Check: [Case ID]
+
+## Executive Summary
+Overall integrity score and key issues.
+
+## Issues Found
+
+### Issue 1: [Category] - [Severity]
+- **Location**: [file:section or quote]
+- **Problem**: [what's wrong]
+- **Impact**: [how it affects neutrality]
+- **Recommendation**: [specific fix]
+
+## Issue Summary Table
+| # | Category | Severity | Location | Status |
+|---|----------|----------|----------|--------|
+
+## Recommendations by Priority
+1. Critical fixes
+2. High priority
+3. Medium priority
+```
+
+---
+
+## Article Generation System (/article)
+
+Transform investigation findings into publication-ready journalism.
+
+### Article Types
+
+| Type | Length | Purpose | Audience |
+|------|--------|---------|----------|
+| **Short Overview** | 400-800 words | Quick-read summary | Time-pressed readers |
+| **Full Article** | 2,000-4,000 words | Complete investigation | In-depth readers |
+
+### Article 1: Short Overview Structure
+
+```
+1. LEDE (1-2 sentences)
+   └── Hook with most newsworthy finding
+
+2. NUT GRAF (1-2 sentences)
+   └── Why this matters, what's at stake
+
+3. KEY FINDINGS (3-5 paragraphs)
+   └── Essential facts in order of importance
+
+4. CONTEXT (1-2 paragraphs)
+   └── Background needed to understand story
+
+5. BOTTOM LINE (1 paragraph)
+   └── What readers should take away
+```
+
+### Article 2: Full Article Structure
+
+```
+1. HEADLINE + DECK
+   └── Clear, accurate, compelling (no clickbait)
+
+2. LEDE (1-2 paragraphs)
+   └── Draw reader in with compelling aspect
+
+3. NUT GRAF (1 paragraph)
+   └── Thesis - why this story matters now
+
+4. SUPPORTING EVIDENCE (multiple sections)
+   └── Organized by theme, not chronology
+
+5. COUNTERARGUMENTS/ALTERNATIVE VIEWS
+   └── Present opposing perspectives fairly
+
+6. CONTEXT AND BACKGROUND
+   └── Historical and industry context
+
+7. IMPLICATIONS
+   └── What this means going forward
+
+8. METHODOLOGY NOTE
+   └── Brief explanation of investigation process
+```
+
+### Journalistic Standards
+
+| Do | Don't |
+|----|-------|
+| "According to [source]..." | "It's obvious that..." |
+| "The investigation found..." | "We discovered..." |
+| "Critics argue..." / "Proponents say..." | "The truth is..." |
+| "Records show..." | "Clearly..." |
+| "Appears to show..." (unverified) | Absolute claims without evidence |
+| Use specific attribution | Vague attribution ("sources say") |
+
+### Generation Process
+
+```
+1. LOAD SOURCE MATERIAL
+   ├── summary.md (PRIMARY - all content comes from here)
+   ├── sources.md (for source verification)
+   └── fact-check.md (for accuracy verification)
+
+2. EXTRACT KEY ELEMENTS
+   ├── Central finding/thesis
+   ├── Key verified facts
+   ├── Stakes (who affected, how)
+   ├── Context (background needed)
+   ├── Multiple perspectives
+   ├── Limitations (unknowns, contested)
+   └── All [SXXX] source citations
+
+3. GENERATE ARTICLES (Gemini gemini-3-pro, thinking_level: high)
+   ├── Article 1: Short Overview
+   └── Article 2: Full Professional Article
+
+4. QUALITY CHECK
+   ├── No new facts beyond summary.md
+   ├── All source citations [SXXX] preserved
+   ├── Contested claims presented as contested
+   ├── Multiple perspectives represented
+   ├── No editorializing
+   └── Appropriate hedging language
+```
+
+---
+
+## Investigation Loop Finale
+
+**After completing all research iterations, run these steps in order:**
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    INVESTIGATION LOOP FINALE                         │
+│                                                                     │
+│  Step 1: /verify                                                    │
+│    └── Verification checkpoint (completeness, all threads explored) │
+│                                                                     │
+│  Step 2: /integrity                                                 │
+│    └── Journalistic integrity check (balance, neutrality, framing)  │
+│                                                                     │
+│  Step 3: Address integrity issues                                   │
+│    └── Update case files based on integrity findings                │
+│                                                                     │
+│  Step 4: /legal-review                                              │
+│    └── Pre-publication legal risk assessment (defamation, evidence) │
+│                                                                     │
+│  Step 5: Address legal issues                                       │
+│    └── Update case files based on legal findings                    │
+│                                                                     │
+│  Step 6: Final publication decision                                 │
+│    └── Review all assessments, decide publish/hold/revise           │
+│                                                                     │
+│  Step 7: /article                                                   │
+│    └── Generate publication-ready articles (short + long-form)      │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Finale Output Files
+
+| Step | Command | Output File |
+|------|---------|-------------|
+| 1 | `/verify` | Updates `iterations.md` with verification checkpoint |
+| 2 | `/integrity` | `integrity-check-YYYYMMDD.md` |
+| 3 | Manual | Updates to case files based on integrity findings |
+| 4 | `/legal-review` | `legal-review-YYYYMMDD.md` |
+| 5 | Manual | Updates to case files based on legal findings |
+| 7 | `/article` | `articles-YYYYMMDD.md` |
+
+---
+
 ## Agent Orchestration Model
 
 ```
@@ -460,7 +658,12 @@ cases/
     ├── evidence.md                   # Statement vs evidence, chain of knowledge
     │
     │  # METADATA
-    └── iterations.md                 # Progress log + verification checkpoints
+    ├── iterations.md                 # Progress log + verification checkpoints
+    │
+    │  # GENERATED OUTPUTS (created by finalization commands)
+    ├── integrity-check-YYYYMMDD.md   # Journalistic integrity assessment (/integrity)
+    ├── legal-review-YYYYMMDD.md      # Pre-publication legal risk assessment (/legal-review)
+    └── articles-YYYYMMDD.md          # Publication-ready articles (/article)
 ```
 
 ### File Responsibilities
@@ -476,6 +679,9 @@ cases/
 | `theories.md` | Alternative theory analysis | Unlimited | No (uses source IDs) |
 | `evidence.md` | Documentary analysis | Unlimited | No (uses source IDs) |
 | `iterations.md` | Progress tracking | Unlimited | No |
+| `integrity-check-*.md` | Journalistic integrity assessment | < 500 lines | No |
+| `legal-review-*.md` | Pre-publication legal risk assessment | < 500 lines | No |
+| `articles-*.md` | Publication-ready articles (short + long) | < 2000 lines | **YES** (includes source key) |
 
 ---
 

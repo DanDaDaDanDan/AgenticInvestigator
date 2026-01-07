@@ -229,15 +229,18 @@ Use `/questions` to generate investigative questions using 20 frameworks in 6 ca
 
 ```
 cases/inv-YYYYMMDD-HHMMSS/
-├── summary.md        # THE DELIVERABLE - self-contained, shareable, has ALL sources
-├── sources.md        # Master source registry [S001], [S002]... (append-only)
-├── timeline.md       # Chronological events
-├── people.md         # Person profiles
-├── positions.md      # ALL positions with arguments and evidence
-├── fact-check.md     # Claim verdicts (all positions)
-├── theories.md       # Alternative/fringe theories
-├── evidence.md       # Statement vs evidence
-└── iterations.md     # Progress log + verification checkpoints
+├── summary.md                    # THE DELIVERABLE - self-contained, shareable, has ALL sources
+├── sources.md                    # Master source registry [S001], [S002]... (append-only)
+├── timeline.md                   # Chronological events
+├── people.md                     # Person profiles
+├── positions.md                  # ALL positions with arguments and evidence
+├── fact-check.md                 # Claim verdicts (all positions)
+├── theories.md                   # Alternative/fringe theories
+├── evidence.md                   # Statement vs evidence
+├── iterations.md                 # Progress log + verification checkpoints
+├── integrity-check-YYYYMMDD.md   # Journalistic integrity assessment (generated)
+├── legal-review-YYYYMMDD.md      # Pre-publication legal risk assessment (generated)
+└── articles-YYYYMMDD.md          # Publication-ready articles (generated)
 ```
 
 ### Source Attribution (CRITICAL)
@@ -395,4 +398,6 @@ mcp__mcp-xai__research
 | Questions generator | `.claude/commands/questions.md` |
 | Financial toolkit | `.claude/commands/financial.md` |
 | Legal risk assessment | `.claude/commands/legal-review.md` |
+| Integrity check | `.claude/commands/integrity.md` |
+| Article generator | `.claude/commands/article.md` |
 | Deep-web data sources | `docs/investigative_data_sources.md` |
