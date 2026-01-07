@@ -423,5 +423,7 @@ This command should be run:
 Save integrity report to case directory:
 
 ```
-cases/[case-id]/integrity-check-[datetime].md
+cases/[case-id]/integrity-check.md
 ```
+
+Git tracks version history, so no timestamp needed in filename.
