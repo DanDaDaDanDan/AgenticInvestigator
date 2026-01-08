@@ -38,7 +38,7 @@ You are the **orchestrator** for a deep investigative journalism research projec
 ```
 cases/[topic-slug]/
 ├── _state.json                   # ORCHESTRATOR STATE (machine-readable)
-├── _extraction.json              # Current extraction results (claims, people, dates)
+├── _extraction.json              # Current extraction results (claims, people, entities, dates)
 ├── .git/                         # Git repository
 ├── evidence/                     # Evidence archive
 ├── research-leads/               # AI research outputs (NOT citable)
@@ -46,6 +46,7 @@ cases/[topic-slug]/
 ├── sources.md                    # Source registry
 ├── timeline.md                   # Chronological events
 ├── people.md                     # Person profiles
+├── organizations.md              # Company/entity profiles (corporations, agencies, NGOs)
 ├── positions.md                  # All positions with arguments
 ├── fact-check.md                 # Claim verdicts
 ├── theories.md                   # Alternative theories
@@ -66,6 +67,7 @@ cases/[topic-slug]/
   "current_phase": "VERIFICATION",
   "next_source_id": "S048",
   "people_count": 12,
+  "entities_count": 8,
   "sources_count": 47,
   "gaps": [
     "Investigate regulatory oversight claims",
@@ -89,10 +91,31 @@ Holds current iteration's extracted findings. Overwritten each extraction phase.
   "people": [
     {
       "name": "John Smith",
-      "mentioned_role": "CEO",
+      "mentioned_role": "CEO of Acme Corp",
       "source_file": "iteration-005-gemini.md",
       "needs_investigation": true,
-      "role_timeline_hints": ["appointed 2020", "resigned 2024"]
+      "role_timeline_hints": ["appointed 2020", "resigned 2024"],
+      "affiliated_entities": ["Acme Corp", "Acme Holdings LLC"]
+    }
+  ],
+  "entities": [
+    {
+      "name": "Acme Corp",
+      "type": "corporation",
+      "jurisdiction": "Delaware",
+      "source_file": "iteration-005-gemini.md",
+      "needs_investigation": true,
+      "parent_entity": "Acme Holdings LLC",
+      "subsidiaries_mentioned": ["Acme International", "Acme Services"],
+      "key_relationships": ["supplier to BigRetail Inc", "acquired StartupX in 2021"]
+    },
+    {
+      "name": "Securities and Exchange Commission",
+      "type": "government_agency",
+      "jurisdiction": "US Federal",
+      "source_file": "iteration-005-xai.md",
+      "needs_investigation": false,
+      "role_in_story": "Investigating Acme Corp for securities fraud"
     }
   ],
   "claims": [
@@ -100,19 +123,22 @@ Holds current iteration's extracted findings. Overwritten each extraction phase.
       "text": "Company knew about safety issues in 2019",
       "position": "Critics",
       "needs_verification": true,
-      "source_file": "iteration-005-xai.md"
+      "source_file": "iteration-005-xai.md",
+      "subject_entity": "Acme Corp"
     }
   ],
   "events": [
     {
       "date": "2019-03-10",
       "event": "Internal memo circulated",
-      "source_file": "iteration-005-gemini.md"
+      "source_file": "iteration-005-gemini.md",
+      "entities_involved": ["Acme Corp"]
     }
   ],
   "statements": [
     {
       "speaker": "John Smith",
+      "speaker_role": "CEO of Acme Corp",
       "date": "2020-01-15",
       "venue": "Congressional testimony",
       "summary": "Denied knowledge of issues",
@@ -122,7 +148,8 @@ Holds current iteration's extracted findings. Overwritten each extraction phase.
   "contradictions": [
     {
       "description": "CEO's 2020 testimony vs 2019 internal memo",
-      "sources": ["iteration-005-gemini.md", "iteration-005-xai.md"]
+      "sources": ["iteration-005-gemini.md", "iteration-005-xai.md"],
+      "entities_involved": ["Acme Corp"]
     }
   ],
   "sources_to_capture": [
@@ -136,6 +163,8 @@ Holds current iteration's extracted findings. Overwritten each extraction phase.
   ]
 }
 ```
+
+**Entity Types**: `corporation`, `subsidiary`, `holding_company`, `shell_company`, `government_agency`, `regulatory_body`, `ngo`, `trade_association`, `law_firm`, `accounting_firm`, `other`
 
 ---
 
@@ -372,6 +401,7 @@ Task tool:
          "current_phase": "SETUP",
          "next_source_id": "S001",
          "people_count": 0,
+         "entities_count": 0,
          "sources_count": 0,
          "gaps": [],
          "last_verification": null,
@@ -383,6 +413,7 @@ Task tool:
     5. Create initial files:
        - summary.md (template header)
        - sources.md (empty registry)
+       - organizations.md (empty entity registry)
        - iterations.md (empty log)
 
     6. Update cases/.active with slug
@@ -552,25 +583,38 @@ Task tool:
        PEOPLE:
        - Name, mentioned role, which research file
        - Role timeline data if mentioned (joined when, left when, promotions)
+       - Affiliated entities (companies they work for)
        - Add to people needing investigation
+
+       ENTITIES (corporations, agencies, organizations):
+       - Name, type (corporation/agency/ngo/etc.), jurisdiction
+       - Parent company if mentioned
+       - Subsidiaries if mentioned
+       - Key relationships (suppliers, customers, regulators)
+       - Role in story (subject, regulator, victim, etc.)
+       - Add to entities needing investigation
 
        CLAIMS:
        - Claim text, source position, needs verification
+       - Subject entity (which organization the claim is about)
        - Categorize by position/perspective (ALL positions, not just main narrative)
        - Mark claims from EVERY side for fact-checking
 
        DATES/EVENTS:
        - Date, event description, source
+       - Entities involved
        - Add to timeline
        - Note any STATEMENT dates (who said what, when)
 
        CONTRADICTIONS:
        - What contradicts what
        - Which sources
+       - Entities involved
        - Note STATEMENT CONTRADICTIONS (same person, different story)
 
        STATEMENTS:
        - Who said it, when, where (venue: public/testimony/internal/social)
+       - Speaker's role/affiliation at time of statement
        - For comparing across time and venues later
 
        SOURCES TO CAPTURE:
@@ -583,18 +627,19 @@ Task tool:
 
     4. Update _state.json:
        - Update people_count estimate
+       - Update entities_count estimate
        - Update current_phase to "EXTRACTION"
-       - Add gaps for uninvestigated people/claims/statements
+       - Add gaps for uninvestigated people/entities/claims/statements
 
     OUTPUT FILE: _extraction.json
-    RETURN: Counts only - N people, N claims, N sources, N statements, N contradictions
+    RETURN: Counts only - N people, N entities, N claims, N sources, N statements, N contradictions
 ```
 
 ---
 
 ## PHASE 3: INVESTIGATION
 
-**Dispatch Investigation Agents in parallel for each person/claim.**
+**Dispatch Investigation Agents in parallel for each person/entity/claim.**
 
 ### Person Investigation Agent Prompt Template
 
@@ -672,6 +717,101 @@ Task tool:
 
     OUTPUT FILES: people.md, sources.md, evidence/
     RETURN: Brief status - what found, statement count, sources added, contradictions found
+```
+
+### Entity Investigation Agent Prompt Template
+
+```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Investigate [entity name]"
+  prompt: |
+    TASK: Investigate entity/organization
+
+    CASE: cases/[case-id]/
+    ENTITY: [name]
+    ENTITY_TYPE: [corporation/agency/ngo/etc.]
+    ITERATION: [N]
+
+    CRITICAL RULES:
+    - CAPTURE EVIDENCE IMMEDIATELY when you find a source URL
+    - Source IDs: [S001], [S002]... from _state.json.next_source_id
+    - After assigning ID, capture THEN update next_source_id
+    - VERIFY claim exists in captured evidence before citing
+    - Check for CIRCULAR REPORTING (outlets citing each other = 1 source)
+    - Map corporate structure thoroughly - shell companies hide ownership
+
+    ACTIONS:
+    1. Research entity background:
+       - Run mcp__mcp-gemini__deep_research
+         query: "[entity name] company history structure subsidiaries ownership"
+       - Run mcp__mcp-xai__research
+         prompt: "[entity name] corporate filings news lawsuits investigations"
+         sources: ["web", "news"]
+
+    2. CAPTURE EVIDENCE for each source URL found:
+       - Run: ./scripts/capture [SXXX] [URL]
+       - Read captured file to VERIFY claim text exists
+       - If claim not found → mark as UNVERIFIED
+
+    3. Corporate structure research using these queries:
+       QUERY TEMPLATES (run all applicable):
+       - "[entity name] SEC EDGAR filings 10-K 10-Q"
+       - "[entity name] subsidiaries parent company ownership"
+       - "[entity name] Delaware Secretary of State"
+       - "[entity name] beneficial owner ultimate ownership"
+       - "[entity name] acquired merger acquisition"
+       - "[entity name] lawsuit litigation court case"
+       - "[entity name] regulatory action fine penalty"
+       - "[entity name] investigation probe"
+
+       DATA SOURCES TO CHECK:
+       - SEC EDGAR (10-K, 10-Q, 8-K, DEF 14A proxy)
+       - State Secretary of State (incorporation records)
+       - OpenCorporates (global corporate registry)
+       - ICIJ Offshore Leaks (shell company connections)
+       - Court records (PACER, state courts)
+       - Regulatory databases (FTC, EPA, OSHA, state AGs)
+
+    4. Document corporate timeline:
+       - Founded when, where, by whom
+       - Key acquisitions/divestitures with dates
+       - Leadership changes (CEO, CFO, board)
+       - Major events (IPO, bankruptcy, restructuring)
+       - Regulatory actions, lawsuits, settlements
+
+    5. Map ownership structure:
+       - Parent company (if subsidiary)
+       - Subsidiaries and their jurisdictions
+       - Beneficial owners (who really controls it)
+       - Major shareholders
+       - Related entities (shared directors, addresses)
+
+    6. Document relationships:
+       - Key customers, suppliers, partners
+       - Competitors
+       - Regulators with jurisdiction
+       - Law firms, auditors, consultants used
+
+    7. Update organizations.md:
+       - Add/update entity profile with [SXXX] citations
+       - Include corporate timeline with dates
+       - Include ownership structure
+       - Include key relationships
+       - Note any red flags (secrecy jurisdictions, complex structures)
+
+    8. Register sources in sources.md:
+       - Read _state.json for next_source_id
+       - Add sources with evidence paths
+       - Increment next_source_id for each new source
+
+    9. Update _state.json:
+       - Increment entities_count if new entity
+       - Update next_source_id
+       - Remove from gaps if addressed
+
+    OUTPUT FILES: organizations.md, sources.md, evidence/
+    RETURN: Brief status - entity type, subsidiaries found, ownership mapped, sources added, red flags
 ```
 
 ### Claim Verification Agent Prompt Template
@@ -833,6 +973,7 @@ Task tool:
     4. Evaluate COMPLETE verification checklist:
        Core Investigation:
        □ All people investigated
+       □ All entities/organizations investigated
        □ All claims categorized by position
        □ Timeline complete
        □ Source provenance traced
@@ -841,6 +982,13 @@ Task tool:
        □ All major claims fact-checked (ALL sides)
        □ No unexamined major claims
        □ All sources have captured evidence
+
+       Entity/Corporate Coverage:
+       □ All key entities profiled in organizations.md
+       □ Corporate structures mapped (parent/subsidiary relationships)
+       □ Ownership structures documented (who really controls)
+       □ Key entity relationships documented (suppliers, customers, regulators)
+       □ Entity timelines complete (founding, acquisitions, key events)
 
        Statement & Temporal Coverage:
        □ Key persons have statement history documented
@@ -905,6 +1053,7 @@ Task tool:
     1. Read all detail files:
        - timeline.md
        - people.md
+       - organizations.md
        - positions.md
        - fact-check.md
        - theories.md

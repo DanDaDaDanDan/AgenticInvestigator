@@ -827,6 +827,7 @@ Create these auxiliary files for orchestrator state tracking:
   "current_phase": "VERIFICATION",
   "next_source_id": "S048",
   "people_count": 12,
+  "entities_count": 8,
   "sources_count": 47,
   "gaps": [
     "Regulatory oversight claims",
@@ -1013,6 +1014,7 @@ cases/
     │  # DETAIL FILES (use source IDs for citations)
     ├── timeline.md                   # Full chronological timeline
     ├── people.md                     # All person profiles
+    ├── organizations.md              # Company/entity profiles (corporations, agencies, NGOs)
     ├── positions.md                  # ALL positions/sides with arguments and evidence
     ├── fact-check.md                 # Claim verdicts (all positions)
     ├── theories.md                   # Alternative/fringe theories analysis
@@ -1032,13 +1034,14 @@ cases/
 | File | Purpose | Size Target | Self-Contained? |
 |------|---------|-------------|-----------------|
 | `_state.json` | **ORCHESTRATOR STATE** - case status, iteration, gaps | ~30 lines | Machine-readable |
-| `_extraction.json` | Current extraction results (claims, people, dates) | ~200 lines | Machine-readable |
+| `_extraction.json` | Current extraction results (claims, people, entities, dates) | ~200 lines | Machine-readable |
 | `summary.md` | **THE DELIVERABLE** - shareable report | < 1000 lines | **YES** (has all sources) |
 | `sources.md` | Source registry with URLs, evidence paths, hashes | Unlimited | Reference only |
 | `evidence/` | **Captured evidence files** (screenshots, PDFs, HTML) | ~50MB/source | Binary archive |
 | `research-leads/` | AI research outputs (NOT citable) | Unlimited | Internal only |
 | `timeline.md` | Chronological events | Unlimited | No (uses source IDs) |
 | `people.md` | Person profiles | Unlimited | No (uses source IDs) |
+| `organizations.md` | Company/entity profiles | Unlimited | No (uses source IDs) |
 | `positions.md` | All positions with arguments | Unlimited | No (uses source IDs) |
 | `fact-check.md` | Claim verdicts (all positions) | Unlimited | No (uses source IDs) |
 | `theories.md` | Alternative theory analysis | Unlimited | No (uses source IDs) |
