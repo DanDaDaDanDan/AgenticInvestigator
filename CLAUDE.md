@@ -50,16 +50,40 @@ When modifying system behavior, keep in sync:
 
 ## Investigation Finale
 
-After research iterations:
+**The finale is a loop.** Addressing issues requires re-verification.
 
 ```
-1. /verify     → Verification checkpoint
-2. /integrity  → Journalistic integrity
-3. Address issues
-4. /legal-review → Legal assessment
-5. Address issues
-6. /article    → Generate articles
+FINALE LOOP (entry: verification_passed && gaps.length == 0)
+
+1. /questions   → Late-stage adversarial frameworks
+                  If critical new questions → back to INVESTIGATION LOOP
+
+2. /verify      → Full verification
+                  If FAILS → back to INVESTIGATION LOOP
+
+3. /integrity   → Journalistic integrity check
+                  If MAJOR issues → address → go to step 2
+
+4. /legal-review → Legal risk assessment
+                   If HIGH risks → address → go to step 2
+
+5. ALL CLEAR    → /article (generate articles)
 ```
+
+**Why loop?** Fixing legal/integrity issues may introduce new unverified claims.
+
+---
+
+## /questions Integration
+
+Run `/questions` at key points to prevent tunnel vision:
+
+| Trigger | Frameworks |
+|---------|------------|
+| `iteration == 1` | Early: Core (Money, Silence, Timeline, Documents, Contradictions, Relationships) |
+| `iteration % 4 == 0` | Mid: Add ACH, Assumptions, Patterns, Meta, 5 Whys |
+| Verification fails with unclear gaps | Stuck: Pre-Mortem, Bias Check, Uncomfortable Questions |
+| Entering finale | Late: Counterfactual, Pre-Mortem, Cognitive Bias, Second-Order |
 
 ---
 

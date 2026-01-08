@@ -44,6 +44,10 @@ AgenticInvestigator is an orchestrated multi-agent system that investigates cont
 │    Parse research-leads/ → _extraction.json                                  │
 │    Extract: people, entities, claims, events, statements, contradictions    │
 │                                                                              │
+│  PHASE 2.5: QUESTIONS (conditional)                                          │
+│    Run /questions when triggered (see conditions below)                      │
+│    Generates new investigation angles via 20 frameworks                      │
+│                                                                              │
 │  PHASE 3: INVESTIGATION                                                      │
 │    For each person/entity/claim → investigate in parallel                    │
 │    Capture evidence, verify claims, update detail files                      │
@@ -58,11 +62,24 @@ AgenticInvestigator is an orchestrated multi-agent system that investigates cont
 │    Git commit                                                                │
 │                                                                              │
 │  TERMINATION CHECK                                                           │
-│    verification_passed && gaps.length == 0 → COMPLETE                        │
+│    verification_passed && gaps.length == 0 → FINALE LOOP                     │
 │    else → CONTINUE                                                           │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+### /questions Trigger Conditions
+
+Run `/questions` when ANY of these are true:
+
+| Condition | Frameworks to Apply |
+|-----------|---------------------|
+| `iteration == 1` | Early: Core (1-6), Stakeholder, Relationships, Sense-Making |
+| `iteration % 4 == 0` | Mid: Add ACH, Assumptions, Patterns, Meta, 5 Whys |
+| `verification_passed == false && gaps lack clear paths` | Stuck: Pre-Mortem, Bias Check, Uncomfortable Questions |
+| Claiming saturation/completion | Late: Counterfactual, Pre-Mortem, Cognitive Bias, Second-Order |
+
+**Purpose**: Prevent tunnel vision, surface blind spots, ensure systematic framework coverage.
 
 ---
 
@@ -155,7 +172,7 @@ cases/[topic-slug]/
 ```
 
 **Status values:** `IN_PROGRESS`, `COMPLETE`, `PAUSED`, `ERROR`
-**Phase values:** `SETUP`, `RESEARCH`, `EXTRACTION`, `INVESTIGATION`, `VERIFICATION`, `SYNTHESIS`, `COMPLETE`
+**Phase values:** `SETUP`, `RESEARCH`, `EXTRACTION`, `QUESTIONS`, `INVESTIGATION`, `VERIFICATION`, `SYNTHESIS`, `FINALE`, `COMPLETE`
 
 ### _extraction.json Schema
 
@@ -177,16 +194,29 @@ cases/[topic-slug]/
 ## Phase State Machine
 
 ```
-SETUP → RESEARCH → EXTRACTION → INVESTIGATION → VERIFICATION
-                                                    ↓
-                    ↑←←← gaps.length > 0 ←←←←←←←←←←←|
-                    ↑                                ↓
-RESEARCH ←←←←←←←←←←←| (!passed && gaps.length == 0) |
-                                                    ↓
-                    SYNTHESIS ←←←←←←←←←←←←←←←←←←←←←←| (passed)
-                        ↓
-                        → RESEARCH (new iteration)
-                        → COMPLETE (if passed && no gaps)
+SETUP → RESEARCH → EXTRACTION → QUESTIONS? → INVESTIGATION → VERIFICATION
+                                    │                             ↓
+                                    │          ↑←←← gaps > 0 ←←←←←|
+                    (conditional:   │          ↑                   ↓
+                     iter==1,       │  RESEARCH ←← (!passed)       |
+                     iter%4==0,     │                              ↓
+                     stuck)         │      SYNTHESIS ←←←←←←←←←←←←←| (passed && gaps==0)
+                                    │          ↓
+                                    │          → RESEARCH (new iteration)
+                                    │          → FINALE (if passed && no gaps)
+                                    │
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  FINALE LOOP                                                                 │
+│                                                                              │
+│  QUESTIONS (late) → VERIFY → INTEGRITY → LEGAL-REVIEW → COMPLETE            │
+│       ↓                ↓          ↓            ↓                             │
+│   critical?         fails?     MAJOR?       HIGH?                            │
+│       ↓                ↓          ↓            ↓                             │
+│   → back to        → back to   address     address                           │
+│     RESEARCH         RESEARCH  → VERIFY    → VERIFY                          │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -345,17 +375,61 @@ node scripts/verify-claims.js cases/[case-id]
 
 ## Investigation Loop Finale
 
-After research iterations complete:
+**The finale is itself a loop.** Addressing issues may introduce new problems that require re-verification.
 
 ```
-1. /verify          → Verification checkpoint
-2. /integrity       → Journalistic integrity check
-3. Address integrity issues
-4. /legal-review    → Legal risk assessment
-5. Address legal issues
-6. Final publication decision
-7. /article         → Generate articles
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              FINALE LOOP                                     │
+│                                                                              │
+│  ENTRY: verification_passed && gaps.length == 0                              │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │  STEP 1: /questions (late stage - adversarial frameworks)              │  │
+│  │    Apply: Counterfactual, Pre-Mortem, Cognitive Bias, Uncomfortable    │  │
+│  │    Purpose: Final blind spot check before publication                   │  │
+│  │    If new critical questions → return to INVESTIGATION LOOP             │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
+│                                    ↓                                         │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │  STEP 2: /verify                                                       │  │
+│  │    Full verification checkpoint                                         │  │
+│  │    If FAILS → return to INVESTIGATION LOOP                              │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
+│                                    ↓                                         │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │  STEP 3: /integrity                                                    │  │
+│  │    Journalistic integrity check                                         │  │
+│  │    If MAJOR issues → address them → go to STEP 2                        │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
+│                                    ↓                                         │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │  STEP 4: /legal-review                                                 │  │
+│  │    Legal risk assessment                                                │  │
+│  │    If HIGH risks → address them → go to STEP 2                          │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
+│                                    ↓                                         │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │  STEP 5: ALL CLEAR                                                     │  │
+│  │    - verification_passed == true                                        │  │
+│  │    - integrity issues: none or minor only                               │  │
+│  │    - legal risks: acceptable                                            │  │
+│  │    → /article (generate publication-ready articles)                     │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+### Finale Loop Rules
+
+| After... | If... | Then... |
+|----------|-------|---------|
+| /questions | Critical new questions found | Exit to INVESTIGATION LOOP |
+| /verify | Fails | Exit to INVESTIGATION LOOP |
+| /integrity | MAJOR issues | Address → re-run /verify |
+| /legal-review | HIGH risks | Address → re-run /verify |
+| /legal-review | All clear | Proceed to /article |
+
+**Why loop?** Addressing legal issues may change claims. Fixing integrity issues may introduce new unverified statements. Every change requires re-verification.
 
 ---
 

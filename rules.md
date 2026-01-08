@@ -79,6 +79,35 @@ Only one agent updates each field to prevent race conditions:
 
 ---
 
+## Finale Loop Rules
+
+**The finale is a loop.** Entry condition: `verification_passed && gaps.length == 0`
+
+| Step | Check | If Issues |
+|------|-------|-----------|
+| /questions (late) | Critical new questions? | → Back to INVESTIGATION LOOP |
+| /verify | Passes? | If NO → Back to INVESTIGATION LOOP |
+| /integrity | MAJOR issues? | Address → re-run /verify |
+| /legal-review | HIGH risks? | Address → re-run /verify |
+| ALL CLEAR | All above pass | → /article |
+
+**Why loop?** Addressing legal/integrity issues changes content. Every change requires re-verification.
+
+---
+
+## /questions Trigger Rules
+
+Run `/questions` at these points (not every iteration):
+
+| Condition | Purpose |
+|-----------|---------|
+| `iteration == 1` | Map the investigative territory |
+| `iteration % 4 == 0` | Periodic fresh perspective |
+| Verification fails with unclear gaps | Unstick the investigation |
+| Entering finale loop | Final blind spot check |
+
+---
+
 ## Termination Signals
 
 **You ARE likely done when:**
