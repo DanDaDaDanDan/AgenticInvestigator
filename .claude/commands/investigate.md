@@ -43,8 +43,10 @@ Only stop when ALL conditions are true:
 
 **Modular file structure with self-contained summary.md deliverable. Each case has its own git repository.**
 
+**Case naming**: Folder name is a slug derived from the topic (e.g., `boeing-737-max`, `ftx-collapse`).
+
 ```
-cases/inv-YYYYMMDD-HHMMSS/
+cases/[topic-slug]/
 │
 │  # VERSION CONTROL
 ├── .git/                         # Git repository for case versioning
@@ -265,10 +267,15 @@ Use for: Having Gemini critique Claude's findings.
 
 ### STEP 0B: CREATE CASE
 
+**Generate slug from topic:**
+- `"Boeing 737 MAX crashes"` → `boeing-737-max-crashes`
+- `"Corporate fraud at Acme Corp"` → `corporate-fraud-acme-corp`
+- Lowercase, replace spaces with hyphens, remove special characters
+
 ```bash
-mkdir -p cases/inv-[YYYYMMDD-HHMMSS]
-echo "inv-[timestamp]" > cases/.active
-cd cases/inv-[YYYYMMDD-HHMMSS]
+mkdir -p cases/[topic-slug]
+echo "[topic-slug]" > cases/.active
+cd cases/[topic-slug]
 git init
 ```
 

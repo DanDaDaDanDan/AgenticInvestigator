@@ -230,8 +230,10 @@ Use `/questions` to generate investigative questions using 20 frameworks in 6 ca
 
 **Each case has its own git repository for version control.**
 
+**Case naming**: Folder name is a slug derived from the topic (e.g., `boeing-737-max`, `ftx-collapse`).
+
 ```
-cases/inv-YYYYMMDD-HHMMSS/
+cases/[topic-slug]/
 ├── .git/                         # Case-specific git repository
 ├── evidence/                     # EVIDENCE ARCHIVE (hallucination-proof)
 │   ├── web/S001/                 # Screenshots, PDFs, HTML per source

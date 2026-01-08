@@ -26,7 +26,7 @@ Create a **hallucination-proof, legally-defensible evidence system** where:
 ### Case Directory Structure (Enhanced)
 
 ```
-cases/inv-YYYYMMDD-HHMMSS/
+cases/[topic-slug]/
 ├── .git/
 │
 ├── evidence/                         # NEW: Evidence archive
@@ -65,7 +65,7 @@ cases/inv-YYYYMMDD-HHMMSS/
 ```markdown
 # Source Registry
 
-**Case**: inv-YYYYMMDD-HHMMSS
+**Case**: [topic-slug]
 **Total Sources**: 47
 **Captured**: 42 | Pending: 3 | Unavailable: 2
 
