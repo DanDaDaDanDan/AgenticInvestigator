@@ -1,8 +1,22 @@
-# Legal Risk Assessment
+# Legal Risk Assessment (Orchestrator Mode)
 
-You are running the **legal risk assessment** - a pre-publication review to identify defamation exposure, evidence gaps, and claims requiring additional verification.
+You are the **orchestrator** running a legal risk assessment. You dispatch legal analysis agents - you do NOT run analysis directly.
 
-This command helps journalists and editors make informed publication decisions by systematically assessing each claim's legal risk.
+---
+
+## CRITICAL: ORCHESTRATOR-ONLY
+
+**You do NOT:**
+- Call MCP tools directly
+- Read full file contents
+- Process legal analysis
+- Write to files directly
+
+**You ONLY:**
+- Read _state.json for current status
+- Dispatch legal analysis agents (parallel)
+- Wait for completion
+- Read brief status from agents
 
 ---
 
@@ -709,66 +723,161 @@ All publication decisions should be reviewed by qualified legal counsel.
 
 ---
 
-## PARALLEL ANALYSIS CALLS
+## ORCHESTRATOR FLOW
 
-**Launch ALL of these simultaneously:**
-
-### Call 1: Subject Classification Analysis (Gemini)
 ```
-mcp__mcp-gemini__generate_text:
-  thinking_level: "high"
-  system_prompt: |
-    You are a media law expert specializing in defamation law.
-    Classify each subject as Public Official, All-Purpose Public Figure,
-    Limited-Purpose Public Figure, or Private Figure.
-    Provide specific legal reasoning for each classification.
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         LEGAL REVIEW ORCHESTRATOR                            │
+│                                                                              │
+│  STEP 1: READ STATE                                                          │
+│    - Read _state.json (small file, OK to read fully)                         │
+│                                                                              │
+│  STEP 2: DISPATCH LEGAL AGENTS (parallel, ONE message)                       │
+│    - Agent 1: Subject classification                                         │
+│    - Agent 2: Claim risk assessment                                          │
+│    - Agent 3: Evidence gap analysis                                          │
+│    - Agent 4: Case law research                                              │
+│                                                                              │
+│  STEP 3: WAIT FOR COMPLETION                                                 │
+│    - All agents write to legal-review.md                                     │
+│    - All agents return brief status                                          │
+│                                                                              │
+│  STEP 4: READ RESULTS                                                        │
+│    - Report overall risk level to user                                       │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## DISPATCH LEGAL AGENTS
+
+**Dispatch ALL in ONE message for parallel execution:**
+
+### Agent 1: Subject Classification
+
+```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Subject classification analysis"
   prompt: |
-    SUBJECTS FROM INVESTIGATION:
-    [people.md content]
+    TASK: Classify subjects (public/private figure status)
 
-    For each person, classify and explain why.
+    CASE: cases/[case-id]/
+
+    ACTIONS:
+    1. Read people.md
+
+    2. Run analysis:
+       mcp__mcp-gemini__generate_text
+         thinking_level: "high"
+         system_prompt: "You are a media law expert..."
+         prompt: "[content] - Classify each subject"
+
+    3. Compile classifications with legal reasoning
+
+    4. Write to legal-review.md (Subject Classifications section)
+
+    OUTPUT FILE: legal-review.md
+    RETURN: Subject count by classification
 ```
 
-### Call 2: Claim Risk Assessment (Gemini)
+### Agent 2: Claim Risk Assessment
+
 ```
-mcp__mcp-gemini__generate_text:
-  thinking_level: "high"
-  system_prompt: |
-    You are a media lawyer reviewing claims for defamation risk.
-    For each claim, assess: claim type, severity, evidence strength,
-    and overall defamation risk.
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Claim risk assessment"
   prompt: |
-    CLAIMS TO ASSESS:
-    [Extract claims from summary.md]
+    TASK: Assess defamation risk for each claim
 
-    EVIDENCE:
-    [fact-check.md and sources.md summary]
+    CASE: cases/[case-id]/
 
-    Assess each claim's legal risk.
+    ACTIONS:
+    1. Read summary.md, fact-check.md, sources.md
+
+    2. Run analysis:
+       mcp__mcp-gemini__generate_text
+         thinking_level: "high"
+         system_prompt: "You are a media lawyer..."
+         prompt: "[content] - Assess each claim's risk"
+
+    3. Compile claim-by-claim analysis
+
+    4. Append to legal-review.md (Claim Analysis section)
+
+    OUTPUT FILE: legal-review.md
+    RETURN: Risk distribution (HIGH/MEDIUM/LOW counts)
 ```
 
-### Call 3: Evidence Gap Analysis (Gemini)
+### Agent 3: Evidence Gap Analysis
+
 ```
-mcp__mcp-gemini__generate_text:
-  thinking_level: "high"
-  system_prompt: |
-    You are an investigative editor reviewing evidence sufficiency.
-    Identify gaps where claims lack adequate support for publication.
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Evidence gap analysis"
   prompt: |
-    CLAIMS AND EVIDENCE:
-    [summary.md with sources]
+    TASK: Identify evidence gaps for claims
 
-    What evidence gaps exist? What additional verification is needed?
+    CASE: cases/[case-id]/
+
+    ACTIONS:
+    1. Read summary.md with sources
+
+    2. Run analysis:
+       mcp__mcp-gemini__generate_text
+         thinking_level: "high"
+         system_prompt: "You are an investigative editor..."
+         prompt: "[content] - Find evidence gaps"
+
+    3. Compile gap list by priority
+
+    4. Append to legal-review.md (Evidence Gaps section)
+
+    OUTPUT FILE: legal-review.md
+    RETURN: Critical gap count, important gap count
 ```
 
-### Call 4: Case Law Research (OpenAI)
-```
-mcp__mcp-openai__deep_research:
-  query: |
-    Defamation case law for claims involving:
-    [Key claim types from investigation]
+### Agent 4: Case Law Research
 
-    What precedents apply? What have courts required for similar claims?
+```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Case law research"
+  prompt: |
+    TASK: Research relevant defamation precedents
+
+    CASE: cases/[case-id]/
+
+    ACTIONS:
+    1. Read summary.md to identify claim types
+
+    2. Run research:
+       mcp__mcp-openai__deep_research
+         query: "Defamation case law for [claim types]"
+
+    3. Compile relevant precedents
+
+    4. Append to legal-review.md (Case Law section)
+
+    OUTPUT FILE: legal-review.md
+    RETURN: Precedent count, key cases summary
+```
+
+---
+
+## PARALLEL DISPATCH EXAMPLE
+
+```
+ONE MESSAGE with these Task tool calls:
+
+Task 1: Subject classification agent
+Task 2: Claim risk assessment agent
+Task 3: Evidence gap analysis agent
+Task 4: Case law research agent
+
+All agents write to legal-review.md.
+Orchestrator waits for all to complete.
 ```
 
 ---

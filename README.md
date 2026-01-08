@@ -62,59 +62,95 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 
 **Evidence capture is mandatory** - Every source has local screenshots/PDFs proving content existed.
 
+## Architecture: Orchestrator + Sub-Agents
+
+**The main Claude Code instance ONLY orchestrates. All actual work is done by sub-agents via the Task tool.**
+
+This prevents context bloat in the main loop and ensures all findings are persisted to files.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         MAIN LOOP (Orchestrator Only)                        │
+│                                                                              │
+│  The orchestrator NEVER:                                                     │
+│    ✗ Calls MCP research tools directly                                       │
+│    ✗ Reads full file contents                                               │
+│    ✗ Processes or analyzes research results                                  │
+│                                                                              │
+│  The orchestrator ONLY:                                                      │
+│    ✓ Reads _state.json and file headers (brief)                              │
+│    ✓ Dispatches sub-agents via Task tool                                     │
+│    ✓ Tracks iteration count and termination                                  │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │              │                │               │              │
+         ▼              ▼                ▼               ▼              ▼
+   ┌──────────┐  ┌────────────┐  ┌────────────┐  ┌──────────┐  ┌──────────┐
+   │ Research │  │ Extraction │  │Investigation│  │Verification│ │Synthesis │
+   │  Agent   │  │   Agent    │  │   Agent    │  │  Agent   │  │  Agent   │
+   └──────────┘  └────────────┘  └────────────┘  └──────────┘  └──────────┘
+         │              │                │               │              │
+         ▼              ▼                ▼               ▼              ▼
+   research-leads/  _extraction.json  people.md     iterations.md   summary.md
+                                      fact-check.md  _state.json    sources.md
+```
+
+### State Tracking
+
+Each case has a `_state.json` for orchestrator state:
+
+```json
+{
+  "case_id": "topic-slug",
+  "status": "IN_PROGRESS",
+  "current_iteration": 5,
+  "current_phase": "VERIFICATION",
+  "gaps": ["gap1", "gap2"],
+  "verification_passed": false
+}
+```
+
+Sub-agents update this file. Orchestrator reads it.
+
 ## How It Works
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                 THE VERIFIED INVESTIGATION LOOP                  │
+│              THE VERIFIED INVESTIGATION LOOP                     │
+│                  (Orchestrator dispatches sub-agents)            │
 │                                                                  │
-│  PHASE 1: RESEARCH                                               │
-│    - Gemini deep research (fast, broad)                          │
-│    - OpenAI deep research (max depth, critical claims)           │
-│    - XAI real-time search (X/Twitter, web, news)                 │
-│    - Statement searches (testimony, interviews, earnings calls)  │
+│  PHASE 1: RESEARCH → Dispatch Research Agents (parallel)         │
+│    [Agent] Gemini deep research → research-leads/                │
+│    [Agent] OpenAI deep research → research-leads/                │
+│    [Agent] XAI real-time search → research-leads/                │
+│    [Agent] Statement searches → research-leads/                  │
 │                                                                  │
-│  PHASE 1.5: EVIDENCE CAPTURE (for each source found)             │
-│    - Find primary source URL (AI research = leads only)          │
-│    - IMMEDIATELY capture: ./scripts/capture SXXX https://url     │
-│    - Verify claim exists in captured content                     │
-│    - Register in sources.md with evidence path                   │
+│  PHASE 1.5: EVIDENCE CAPTURE                                     │
+│    [Agent] Capture primary sources → evidence/                   │
+│    [Agent] Verify claims exist → sources.md                      │
 │                                                                  │
-│  PHASE 2: EXTRACTION                                             │
-│    - Extract claims, people, dates, contradictions               │
-│    - Categorize by position/perspective                          │
+│  PHASE 2: EXTRACTION → Dispatch Extraction Agent                 │
+│    [Agent] Parse research-leads/ → _extraction.json              │
+│    [Agent] Update _state.json with items found                   │
 │                                                                  │
-│  PHASE 3: INVESTIGATION                                          │
-│    - For EVERY person → investigate background                   │
-│    - For EVERY person → collect ALL statements (proactive)       │
-│    - For EVERY person → document role timeline                   │
-│    - For EVERY claim → verify with multiple sources              │
-│    - For EVERY contradiction → investigate discrepancy           │
-│    - Compare statements across time and venues                   │
+│  PHASE 3: INVESTIGATION → Dispatch Investigation Agents          │
+│    [Agent] Person backgrounds → people.md                        │
+│    [Agent] Claim verification → fact-check.md                    │
+│    [Agent] Timeline events → timeline.md                         │
 │                                                                  │
-│  PHASE 4: VERIFICATION CHECKPOINT (periodic)                     │
-│    - Anti-hallucination check (verify claims exist in evidence)  │
-│    - Cross-model critique (Gemini critiques Claude)              │
-│    - Identify unexplored claims from ALL positions               │
-│    - Identify alternative theories to address                    │
-│    - Check statement coverage and contradictions                 │
-│    - Identify gaps and continue until exhausted                  │
+│  PHASE 4: VERIFICATION → Dispatch Verification Agents            │
+│    [Agent] Anti-hallucination check → iterations.md              │
+│    [Agent] Cross-model critique → iterations.md                  │
+│    [Agent] Gap analysis → _state.json                            │
 │                                                                  │
-│  PHASE 5: SYNTHESIS                                              │
-│    - Register sources in sources.md (append-only)                │
-│    - Update detail files (timeline, people, cases, etc.)         │
-│    - Update summary.md with embedded source list                 │
-│    - Log iteration in iterations.md                              │
+│  PHASE 5: SYNTHESIS → Dispatch Synthesis Agent                   │
+│    [Agent] Compile findings → summary.md (complete rewrite)      │
+│    [Agent] Git commit                                            │
 │                                                                  │
-│  TERMINATION CHECK                                               │
-│    ALL must be true:                                             │
-│    ✓ no unexplored threads                                       │
-│    ✓ all positions documented                                    │
-│    ✓ alternative theories addressed                              │
-│    ✓ all major claims fact-checked                               │
-│    ✓ statement histories complete                                │
-│    ✓ statement evolution analyzed                                │
-│    ✓ verification checklist passed                               │
+│  TERMINATION CHECK (orchestrator reads _state.json)              │
+│    - verification_passed == true                                 │
+│    - gaps.length == 0                                            │
+│    - status == "COMPLETE"                                        │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```

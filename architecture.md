@@ -609,28 +609,285 @@ Transform investigation findings into publication-ready journalism.
 
 ---
 
-## Agent Orchestration Model
+## Agent Orchestration Model (Sub-Agent Architecture)
+
+**CRITICAL DESIGN PRINCIPLE**: The main Claude Code instance ONLY orchestrates. All actual work is done by sub-agents via the Task tool. This prevents context bloat in the main loop and ensures all findings are persisted to files.
+
+### The Orchestrator Pattern
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                              CLAUDE (Orchestrator)                          │
-│  - Runs the investigation loop until exhausted                              │
-│  - Dispatches to deep research engines                                      │
-│  - Runs inner loops on all points found                                     │
-│  - Runs verification checkpoints                                            │
-│  - Maintains sources.md (append-only source registry)                       │
-│  - Updates modular detail files after each iteration                        │
-│  - Synthesizes summary.md with embedded sources                             │
-│  - Tracks progress in iterations.md                                         │
+│                         MAIN LOOP (Orchestrator Only)                        │
+│                                                                              │
+│  The orchestrator NEVER:                                                     │
+│    ✗ Does direct research (no MCP calls except status checks)               │
+│    ✗ Accumulates research content in conversation                           │
+│    ✗ Writes large content to files directly                                 │
+│    ✗ Reads and processes full research results                              │
+│                                                                              │
+│  The orchestrator ONLY:                                                      │
+│    ✓ Reads state from files (brief headers, status fields)                  │
+│    ✓ Decides which phase/step to execute next                               │
+│    ✓ Dispatches sub-agents with clear task descriptions                     │
+│    ✓ Tracks sub-agent completion                                            │
+│    ✓ Reads brief status from files to decide next steps                     │
+│    ✓ Manages iteration count and termination conditions                     │
+│                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
          │                    │                    │                    │
          ▼                    ▼                    ▼                    ▼
 ┌─────────────┐      ┌─────────────┐      ┌─────────────┐      ┌─────────────┐
-│   Gemini    │      │   OpenAI    │      │     XAI     │      │   Gemini    │
-│ Deep Rsrch  │      │ Deep Rsrch  │      │  Research   │      │  Critique   │
-│  (MCP)      │      │   (MCP)     │      │   (MCP)     │      │  (MCP)      │
-│  Primary    │      │  Max Depth  │      │  Real-Time  │      │ Verification│
+│  Research   │      │ Extraction  │      │Investigation│      │  Synthesis  │
+│   Agent     │      │   Agent     │      │   Agent     │      │   Agent     │
+│ (Task tool) │      │ (Task tool) │      │ (Task tool) │      │ (Task tool) │
 └─────────────┘      └─────────────┘      └─────────────┘      └─────────────┘
+         │                    │                    │                    │
+         ▼                    ▼                    ▼                    ▼
+    research-leads/      extraction.json      people.md           summary.md
+                                              fact-check.md       sources.md
+                                              timeline.md
+```
+
+### Sub-Agent Types and Responsibilities
+
+| Agent Type | Task tool subagent_type | Responsibilities | Writes To |
+|------------|-------------------------|------------------|-----------|
+| **Research Agent** | `general-purpose` | Execute MCP research (Gemini/OpenAI/XAI), save raw output | `research-leads/` |
+| **Extraction Agent** | `general-purpose` | Parse research-leads/, extract claims/people/dates | `_extraction.json` |
+| **Investigation Agent** | `general-purpose` | Investigate specific people/claims, verify facts | `people.md`, `fact-check.md`, `timeline.md` |
+| **Evidence Agent** | `Bash` | Run capture scripts, verify evidence | `evidence/`, `sources.md` |
+| **Verification Agent** | `general-purpose` | Run verification checkpoint, cross-model critique | `iterations.md` (append checkpoint) |
+| **Synthesis Agent** | `general-purpose` | Synthesize all detail files into summary.md | `summary.md` |
+| **Financial Agent** | `general-purpose` | Financial investigation research and analysis | `financial-*.md` |
+| **Questions Agent** | `general-purpose` | Generate investigative questions using frameworks | `questions.md` or stdout |
+| **Integrity Agent** | `general-purpose` | Journalistic integrity assessment | `integrity-check.md` |
+| **Legal Agent** | `general-purpose` | Pre-publication legal risk assessment | `legal-review.md` |
+| **Article Agent** | `general-purpose` | Generate publication-ready articles | `articles.md` |
+
+### Sub-Agent Contract
+
+**Every sub-agent MUST:**
+
+1. **Receive clear task**: Specific file paths, what to investigate, where to write
+2. **Do the work**: Use MCP tools, read files, perform analysis
+3. **Write ALL findings to files**: Never return large content bodies
+4. **Return brief status**: "Completed [task], wrote N items to [file]"
+
+**Example sub-agent dispatch:**
+
+```
+Task tool call:
+  subagent_type: "general-purpose"
+  description: "Research Boeing 737 MAX"
+  prompt: |
+    TASK: Deep research on Boeing 737 MAX investigation
+
+    CASE: cases/boeing-737-max/
+
+    ACTIONS:
+    1. Run Gemini deep_research on "Boeing 737 MAX crashes investigation timeline"
+    2. Run XAI research on recent news and X/Twitter discourse
+    3. Save ALL raw output to research-leads/iteration-003-research.md
+    4. Do NOT return the research content - it's in the file
+
+    OUTPUT: Write to research-leads/iteration-003-research.md
+    RETURN: Brief status - what you found, how many sources, any errors
+```
+
+**Sub-agent response (what gets returned to orchestrator):**
+
+```
+Completed research for iteration 3.
+- Gemini: 15 potential sources identified
+- XAI: 8 recent news articles, 12 X/Twitter discussions
+- Written to: research-leads/iteration-003-research.md
+- Key finding flags: 2 new people, 3 timeline discrepancies
+```
+
+### Orchestrator Flow (Main Loop)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         ORCHESTRATOR MAIN LOOP                               │
+│                                                                              │
+│  STEP 1: READ STATE                                                          │
+│    - Read cases/.active for current case                                     │
+│    - Read summary.md header (status, iteration count)                        │
+│    - Read iterations.md last entry (gaps, next steps)                        │
+│    - Read sources.md header (next source ID)                                 │
+│                                                                              │
+│  STEP 2: DECIDE PHASE                                                        │
+│    - If iteration 0: Phase 1 (initial research)                              │
+│    - If gaps exist: Address gaps (targeted research)                         │
+│    - If no gaps: Run verification checkpoint                                 │
+│    - If verification passes: Complete                                        │
+│                                                                              │
+│  STEP 3: DISPATCH SUB-AGENTS (in parallel where possible)                   │
+│    - Launch appropriate agents for current phase                             │
+│    - Agents write to files, return brief status                              │
+│    - Wait for completion                                                     │
+│                                                                              │
+│  STEP 4: CHECK RESULTS                                                       │
+│    - Read brief status from file headers/summaries                           │
+│    - Do NOT read full file contents into main context                        │
+│    - Update iteration count                                                  │
+│                                                                              │
+│  STEP 5: LOOP OR TERMINATE                                                   │
+│    - If termination conditions met: Mark complete                            │
+│    - Else: Loop to STEP 1                                                    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### File Headers for State Reading
+
+Each key file should have a machine-readable header that the orchestrator can quickly read:
+
+**summary.md header:**
+```markdown
+# Investigation: Boeing 737 MAX
+
+**Status**: IN_PROGRESS | COMPLETE
+**Iteration**: 5
+**Last Updated**: 2026-01-08T10:30:00Z
+**Sources**: 47
+**People**: 12
+**Open Gaps**: 3
+```
+
+**iterations.md last entry:**
+```markdown
+## Iteration 5 - 2026-01-08T10:30:00Z
+
+**Phase**: VERIFICATION
+**Gaps Found**: 3
+**Next Steps**:
+1. Investigate regulatory oversight claims
+2. Fact-check whistleblower testimony
+3. Address coverup theory
+```
+
+**sources.md header:**
+```markdown
+# Source Registry
+
+**Case**: boeing-737-max
+**Total Sources**: 47
+**Next ID**: S048
+```
+
+### Parallel Sub-Agent Dispatch
+
+**CRITICAL**: Launch independent sub-agents in ONE message for parallel execution.
+
+```
+PHASE 1 - RESEARCH (dispatch in ONE message):
+
+Task 1: Research Agent - Gemini deep research
+Task 2: Research Agent - OpenAI deep research (critical claims)
+Task 3: Research Agent - XAI real-time search
+Task 4: Research Agent - X/Twitter discourse
+Task 5: Research Agent - Official records
+
+All write to research-leads/, orchestrator waits for all to complete.
+```
+
+```
+PHASE 3 - INVESTIGATION (dispatch in ONE message):
+
+Task 1: Investigation Agent - Person A background
+Task 2: Investigation Agent - Person B background
+Task 3: Investigation Agent - Verify claim X
+Task 4: Investigation Agent - Verify claim Y
+
+All write to respective detail files.
+```
+
+### Context Management Rules
+
+| What | Orchestrator Does | Orchestrator Does NOT |
+|------|-------------------|----------------------|
+| File headers | Reads (20-30 lines) | Read full file contents |
+| Research results | Gets brief status from agent | Read into main context |
+| Sub-agent output | Gets completion confirmation | Accumulate in conversation |
+| State tracking | Reads from files | Track in memory |
+| Findings | Knows they're in files | Process or analyze |
+
+### State Files (Machine-Readable)
+
+Create these auxiliary files for orchestrator state tracking:
+
+**_state.json** (case root):
+```json
+{
+  "case_id": "boeing-737-max",
+  "status": "IN_PROGRESS",
+  "current_iteration": 5,
+  "current_phase": "VERIFICATION",
+  "next_source_id": "S048",
+  "gaps": [
+    "Regulatory oversight claims",
+    "Whistleblower testimony",
+    "Coverup theory"
+  ],
+  "last_verification": "2026-01-08T10:30:00Z",
+  "verification_passed": false
+}
+```
+
+This file is updated by sub-agents after each phase and read by orchestrator.
+
+### Sub-Agent Prompt Templates
+
+**Research Agent Prompt Template:**
+```
+TASK: Deep research on [TOPIC]
+CASE: cases/[case-id]/
+ITERATION: [N]
+
+ACTIONS:
+1. Run [MCP tool] with query: "[query]"
+2. Save raw output to research-leads/iteration-[N]-[source].md
+3. Extract key items: [people found], [sources found], [dates found]
+4. Update _state.json with extraction summary
+
+OUTPUT FILE: research-leads/iteration-[N]-[source].md
+RETURN: Brief status only (counts, key findings, errors)
+```
+
+**Investigation Agent Prompt Template:**
+```
+TASK: Investigate [PERSON/CLAIM]
+CASE: cases/[case-id]/
+ITERATION: [N]
+
+CONTEXT: Read from [relevant files]
+
+ACTIONS:
+1. Research [specific investigation tasks]
+2. Update [target files] with findings
+3. Register any new sources in sources.md with next ID from _state.json
+4. Update _state.json with changes
+
+OUTPUT FILES: [list of files to update]
+RETURN: Brief status only (what found, files updated, new gaps identified)
+```
+
+**Synthesis Agent Prompt Template:**
+```
+TASK: Synthesize findings into summary.md
+CASE: cases/[case-id]/
+ITERATION: [N]
+
+ACTIONS:
+1. Read all detail files (timeline.md, people.md, positions.md, etc.)
+2. Read sources.md for complete source list
+3. Completely rewrite summary.md as polished final document
+4. Embed full source list in summary.md
+5. Update _state.json with new status
+
+OUTPUT FILE: summary.md (complete rewrite)
+RETURN: Brief status (summary length, source count, key sections updated)
 ```
 
 ### Deep Research Engines

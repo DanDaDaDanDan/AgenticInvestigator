@@ -1,9 +1,22 @@
-# Investigation Verification
+# Investigation Verification (Orchestrator Mode)
 
-You are running a **verification checkpoint** on an investigation. This can be called:
-- **Automatically** by /investigate periodically
-- **Manually** to re-verify an existing case
-- **Before completion** to ensure the investigation meets quality standards
+You are the **orchestrator** running a verification checkpoint. You dispatch verification agents - you do NOT run verification directly.
+
+---
+
+## CRITICAL: ORCHESTRATOR-ONLY
+
+**You do NOT:**
+- Call MCP tools directly
+- Read full file contents
+- Process verification results
+- Write to files directly
+
+**You ONLY:**
+- Read _state.json for current status
+- Dispatch verification sub-agents
+- Wait for completion
+- Read brief status from agents
 
 ---
 
@@ -22,214 +35,265 @@ The verification checkpoint ensures investigations are:
 1. **Complete** - All threads explored, all positions covered
 2. **Honest** - Not deceiving ourselves about coverage
 3. **Balanced** - Claims from ALL positions fact-checked
-4. **Thorough** - Alternative theories addressed, not ignored
-5. **Temporally Rich** - Statement histories documented, role evolution tracked
+4. **Thorough** - Alternative theories addressed
+5. **Evidence-backed** - Claims verified against captured evidence
 
 ---
 
-## STEP 1: LOAD CASE
+## ORCHESTRATOR FLOW
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       VERIFICATION ORCHESTRATOR                              │
+│                                                                              │
+│  STEP 1: READ STATE                                                          │
+│    - Read _state.json (small file, OK to read fully)                         │
+│    - Note current_iteration, verification_passed, gaps                       │
+│                                                                              │
+│  STEP 2: DISPATCH VERIFICATION AGENTS (parallel)                             │
+│    - Agent 1: Anti-hallucination check (verify claims in evidence)           │
+│    - Agent 2: Cross-model critique (Gemini reviews summary)                  │
+│    - Agent 3: Position audit (check all positions fact-checked)              │
+│    - Agent 4: Gap analysis (identify missing coverage)                       │
+│                                                                              │
+│  STEP 3: WAIT FOR COMPLETION                                                 │
+│    - All agents write to iterations.md and _state.json                       │
+│    - All agents return brief status                                          │
+│                                                                              │
+│  STEP 4: READ RESULTS                                                        │
+│    - Re-read _state.json for verification_passed and gaps                    │
+│    - Report PASS/FAIL to user                                                │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## STEP 1: READ STATE
+
+Orchestrator reads _state.json directly (it's small):
 
 ```python
-if case_id provided:
-    load(cases/[case-id]/summary.md)
-    load(cases/[case-id]/iterations.md)
-    load(cases/[case-id]/sources.md)
+state = read("cases/[case-id]/_state.json")
+# Note: current_iteration, verification_passed, gaps
+```
+
+---
+
+## STEP 2: DISPATCH VERIFICATION AGENTS
+
+**Dispatch ALL in ONE message for parallel execution:**
+
+### Agent 1: Anti-Hallucination Check
+
+```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Anti-hallucination verification"
+  prompt: |
+    TASK: Verify claims against captured evidence
+
+    CASE: cases/[case-id]/
+    ITERATION: [N]
+
+    ACTIONS:
+    1. Run verification script:
+       node scripts/verify-claims.js cases/[case-id]
+
+    2. Analyze results:
+       - VERIFIED claims: OK
+       - NOT_FOUND claims: Flag as hallucination risk
+       - CONTRADICTED claims: Urgent - must fix
+       - NO_EVIDENCE claims: Need to capture source
+
+    3. Compile issues list
+
+    4. Update iterations.md:
+       - Add anti-hallucination section to checkpoint
+
+    5. Update _state.json:
+       - Add any issues to gaps array
+       - If CONTRADICTED found: set verification_passed = false
+
+    OUTPUT FILES: iterations.md
+    RETURN: Pass/fail, CONTRADICTED count, NOT_FOUND count
+```
+
+### Agent 2: Cross-Model Critique
+
+```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Cross-model critique"
+  prompt: |
+    TASK: Gemini critiques the investigation
+
+    CASE: cases/[case-id]/
+    ITERATION: [N]
+
+    ACTIONS:
+    1. Read summary.md (full content for critique)
+
+    2. Run critique:
+       mcp__mcp-gemini__generate_text
+         thinking_level: "high"
+         system_prompt: |
+           You are a RUTHLESS investigative critic. Find:
+           - Claims lacking evidence
+           - Logical gaps
+           - Biased sourcing
+           - What would DISPROVE conclusions
+           - What's suspiciously ABSENT
+           - Unexplored claims from ANY position
+           - Alternative theories not addressed
+           - People mentioned but not investigated
+         prompt: "[summary.md content] - Critique ruthlessly"
+
+    3. Extract specific gaps from critique
+
+    4. Update iterations.md:
+       - Add cross-model critique section
+       - Include gap list
+
+    5. Update _state.json:
+       - Add gaps to gaps array
+
+    OUTPUT FILES: iterations.md
+    RETURN: Gap count, critical issues summary
+```
+
+### Agent 3: Position Audit
+
+```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Position audit"
+  prompt: |
+    TASK: Audit all positions for coverage
+
+    CASE: cases/[case-id]/
+    ITERATION: [N]
+
+    ACTIONS:
+    1. Read positions.md and fact-check.md
+
+    2. Search for claims from ALL positions:
+       mcp__mcp-xai__research
+         prompt: "All claims and arguments about [topic] from all perspectives"
+         sources: ["x", "web", "news"]
+
+    3. Compare found claims to fact-check.md:
+       - VERIFIED/DEBUNKED/PARTIAL: OK
+       - UNEXAMINED: Add to gaps
+
+    4. Check each position's coverage:
+       - Arguments documented?
+       - Key claims fact-checked?
+       - Steelmanned?
+
+    5. Update iterations.md:
+       - Add position audit section
+       - List unexamined claims by position
+
+    6. Update _state.json:
+       - Add unexamined claims to gaps
+
+    OUTPUT FILES: iterations.md
+    RETURN: Position count, unexamined claim count
+```
+
+### Agent 4: Gap Analysis
+
+```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Gap analysis"
+  prompt: |
+    TASK: Comprehensive gap analysis
+
+    CASE: cases/[case-id]/
+    ITERATION: [N]
+
+    ACTIONS:
+    1. Read all detail files (headers/summaries):
+       - people.md
+       - timeline.md
+       - positions.md
+       - fact-check.md
+       - theories.md
+       - statements.md
+
+    2. Evaluate verification checklist:
+       □ All people investigated
+       □ All claims categorized by position
+       □ Timeline complete
+       □ Source provenance traced
+       □ All positions documented
+       □ Alternative theories addressed
+       □ All major claims fact-checked
+       □ Statement histories complete
+       □ Statement evolution analyzed
+       □ Venue comparison done
+       □ Contradictions investigated
+
+    3. For each PARTIAL/NO item, add specific gap
+
+    4. Compile final gap list with priorities
+
+    5. Update iterations.md:
+       - Add verification checklist table
+       - Add gap list with priorities
+
+    6. Update _state.json:
+       - Set gaps array (comprehensive list)
+       - Set verification_passed (true if all YES, false otherwise)
+       - Set last_verification timestamp
+
+    OUTPUT FILES: iterations.md, _state.json
+    RETURN: PASS/FAIL verdict, gap count, checklist summary
+```
+
+---
+
+## STEP 3: PARALLEL DISPATCH EXAMPLE
+
+```
+ONE MESSAGE with these Task tool calls:
+
+Task 1: Anti-hallucination check agent
+Task 2: Cross-model critique agent
+Task 3: Position audit agent
+Task 4: Gap analysis agent
+
+All agents update iterations.md and _state.json.
+Orchestrator waits for all to complete.
+```
+
+---
+
+## STEP 4: READ RESULTS AND REPORT
+
+After all agents complete, orchestrator reads _state.json:
+
+```python
+state = read("cases/[case-id]/_state.json")
+
+if state.verification_passed:
+    report("VERIFICATION PASSED - Investigation meets completeness standards")
 else:
-    case_id = read(cases/.active)
-    load(cases/[case_id]/summary.md)
-    load(cases/[case_id]/iterations.md)
-    load(cases/[case_id]/sources.md)
+    report(f"VERIFICATION FAILED - {len(state.gaps)} gaps identified")
+    report("Gaps to address:")
+    for gap in state.gaps:
+        report(f"  - {gap}")
 ```
 
 ---
 
-## STEP 2: CLAIM-TO-EVIDENCE VERIFICATION (Anti-Hallucination Check)
-
-**CRITICAL**: Verify that every claim attributed to a source actually exists in the captured evidence.
-
-Run the verification script:
-```bash
-node scripts/verify-claims.js cases/[case-id]
-```
-
-This checks:
-- Every claim with a source citation [S001], [S002], etc.
-- Reads the captured evidence for that source
-- Uses AI to verify the claim actually appears in the evidence
-- Reports: VERIFIED, NOT_FOUND, PARTIAL, CONTRADICTED
-
-### Interpreting Results
-
-| Verdict | Meaning | Action Required |
-|---------|---------|-----------------|
-| VERIFIED | Claim found in evidence | None |
-| NOT_FOUND | Claim NOT in evidence (hallucination risk) | Find evidence or revise claim |
-| PARTIAL | Claim partially supported | Review and clarify |
-| CONTRADICTED | Evidence says opposite | Urgent: fix the claim |
-| NO_EVIDENCE | No captured evidence for source | Capture the source |
-
-### If Problems Found
-
-1. **NOT_FOUND claims**: Either find evidence and capture it, or remove/revise the claim
-2. **CONTRADICTED claims**: Urgent - the claim is wrong, must fix
-3. **NO_EVIDENCE sources**: Run `./scripts/capture [SXXX] [url]` to capture missing sources
-
-**Do NOT proceed with verification if CONTRADICTED claims exist.**
-
----
-
-## STEP 3: CROSS-MODEL CRITIQUE
-
-Use Gemini to critique the investigation with high thinking:
-
-```
-mcp__mcp-gemini__generate_text:
-  thinking_level: "high"
-  system_prompt: |
-    You are a RUTHLESS investigative critic. Your job is to find EVERYTHING
-    that's wrong, missing, or incomplete in this investigation.
-
-    You are NOT here to praise. You are here to find gaps.
-
-    Look for:
-    - Claims that lack sufficient evidence
-    - Logical gaps in reasoning
-    - Biases in sourcing (too much from one position)
-    - What would DISPROVE the current conclusions
-    - What evidence is suspiciously ABSENT
-    - Unexplored claims from ANY position
-    - Alternative theories that haven't been addressed
-    - Arguments from any position that haven't been steelmanned
-    - People mentioned but not investigated
-    - Claims asserted but not verified
-    - Contradictions identified but not resolved
-
-    STATEMENT & TEMPORAL GAPS (check these specifically):
-    - Key persons missing statement history
-    - Statements not compared across time (same person, different dates)
-    - Statements not compared across venues (public vs. testimony vs. internal)
-    - Role changes not documented (when did they join/leave/get promoted?)
-    - Position evolution not tracked (how did their stance change?)
-    - Testimony/depositions not sought for key figures
-    - Social media history not checked
-
-    Be specific. Name names. Cite missing evidence.
-
-  prompt: |
-    CRITICALLY REVIEW THIS INVESTIGATION:
-
-    [Full summary.md content]
-
-    Also review the detail file summaries:
-    - positions.md summary (all positions)
-    - theories.md summary
-    - fact-check.md summary
-
-    PROVIDE:
-
-    1. SPECIFIC GAPS (list each one)
-       - What specific claims are unverified?
-       - What specific people weren't investigated?
-       - What specific claims weren't fact-checked?
-
-    2. UNEXPLORED CLAIMS BY POSITION
-       For each position, what claims exist that weren't examined?
-
-    3. ALTERNATIVE THEORIES NOT ADDRESSED
-       What fringe claims are circulating that should be investigated?
-
-    4. BIAS ASSESSMENT
-       Is the investigation balanced? What position is overrepresented?
-
-    5. VERDICT
-       PASS (checklist complete, no major gaps) or FAIL (continue investigating)
-```
-
----
-
-## STEP 4: POSITION AUDIT
-
-### 3A: List All Claims By Position
-
-Search for claims from ALL positions/stakeholders:
-
-```
-mcp__mcp-xai__research:
-  prompt: |
-    Find ALL claims and arguments about [TOPIC].
-    Include mainstream AND fringe claims.
-    Include claims from ALL parties and stakeholders.
-    Group by position/perspective.
-  sources: ["x", "web", "news"]
-```
-
-For each claim found, check if it's addressed in fact-check.md:
-- VERIFIED - claim investigated and found true
-- DEBUNKED - claim investigated and found false
-- PARTIAL - claim partially true
-- UNEXAMINED - claim not addressed (GAP!)
-
-### 3B: Check Each Position's Coverage
-
-For each identified position, verify:
-- Arguments documented in positions.md
-- Key claims fact-checked
-- Strongest version built (steelmanned)
-
-```
-For each position:
-  - Is it documented? YES/NO
-  - Are key claims fact-checked? YES/PARTIAL/NO
-  - Is it steelmanned? YES/NO
-```
-
-### 3C: List All Alternative Theories
-
-Search for fringe theories:
-
-```
-mcp__mcp-xai__x_search:
-  query: "[TOPIC] theory OR conspiracy OR alternative explanation"
-  prompt: "Find all alternative theories and fringe claims about this topic"
-```
-
-For each theory, check if addressed:
-- DEBUNKED - theory investigated and found baseless
-- UNPROVEN - theory investigated, no evidence supports it
-- PARTIAL - some element has truth
-- UNEXAMINED - theory not addressed (GAP!)
-
----
-
-## STEP 5: VERIFICATION CHECKLIST
-
-```
-All must be TRUE to pass:
-
-# Core Investigation
-□ All people investigated
-□ All claims categorized by position
-□ Timeline complete
-□ Source provenance traced
-□ All positions documented
-□ Alternative theories addressed
-□ Cross-model critique passed
-□ All major claims fact-checked (all sides)
-□ No unexamined major claims
-
-# Statement & Temporal Coverage
-□ Key persons have statement history documented
-□ Role timelines documented for key figures
-□ Statement evolution analyzed (same person, different times)
-□ Statement venue comparison done (public vs. testimony vs. internal)
-□ All statement contradictions flagged and investigated
-```
-
-### Checklist Evaluation
+## VERIFICATION CHECKLIST REFERENCE
 
 | Category | YES | PARTIAL | NO |
 |----------|-----|---------|-----|
-| People investigated | All named people researched | Most (>80%) | Many gaps |
+| All people investigated | All named people researched | Most (>80%) | Many gaps |
 | Claims categorized | All have position + verdict | Most (>80%) | Many untagged |
 | Timeline complete | No gaps, all major events | Minor gaps | Major gaps |
 | Sources traced | Primary sources for key claims | Most traced | Many untraced |
@@ -237,137 +301,10 @@ All must be TRUE to pass:
 | Alternative theories addressed | All investigated with verdicts | Most addressed | Many ignored |
 | Cross-model critique | Critique found no major gaps | Minor gaps | Major gaps |
 | Claims fact-checked | All positions' claims verified | Mostly checked | Many unchecked |
-| No unexamined claims | Nothing major left | Few minor items | Major items remain |
-| **Statement history** | All key persons have history | Most (>80%) | Many missing |
-| **Role timelines** | All key figures have role history | Most (>80%) | Many missing |
-| **Statement evolution** | Compared across time | Some compared | Not compared |
-| **Venue comparison** | Public vs testimony compared | Some compared | Not compared |
-| **Statement contradictions** | All flagged and investigated | Some investigated | Not investigated |
-
----
-
-## STEP 6: GENERATE GAP LIST
-
-If any checklist items are FALSE or PARTIAL:
-
-```markdown
-## Verification Gaps
-
-### Checklist Status
-[List which items are YES/PARTIAL/NO]
-
-### Critical Gaps (Must Address):
-1. [Specific gap]
-   - What's missing: [detail]
-   - Action needed: [research to do]
-   - Why it matters: [importance]
-
-2. [Specific gap]
-   - What's missing: [detail]
-   - Action needed: [research to do]
-   - Why it matters: [importance]
-
-### Unexamined Claims By Position:
-| Position | Claim | Source | Priority |
-|----------|-------|--------|----------|
-| Position 1 | [claim] | [who says it] | HIGH/MEDIUM/LOW |
-| Position 2 | [claim] | [who says it] | HIGH/MEDIUM/LOW |
-
-### Unaddressed Alternative Theories:
-| Theory | Source | Priority |
-|--------|--------|----------|
-| [theory] | [where circulating] | HIGH/MEDIUM/LOW |
-```
-
----
-
-## STEP 7: VERDICT
-
-### If PASS (all checklist items YES AND no critical gaps):
-
-```markdown
-## Verification Result: PASS ✓
-
-**Checklist**: All items YES
-**Cross-Model Critique**: Passed
-**Gaps**: None critical
-
-The investigation meets completeness standards:
-- ✓ All people investigated
-- ✓ All claims categorized by position
-- ✓ Timeline complete
-- ✓ All positions documented
-- ✓ Alternative theories addressed
-- ✓ All major claims fact-checked (all sides)
-
-**Recommendation**: Investigation may be marked COMPLETE.
-```
-
-### If FAIL (any checklist items PARTIAL/NO OR critical gaps exist):
-
-```markdown
-## Verification Result: FAIL ✗
-
-**Checklist**: [N] items PARTIAL/NO
-**Cross-Model Critique**: Found [N] gaps
-**Gaps**: [N] critical items remain
-
-The investigation does NOT meet completeness standards.
-
-### Must Address Before Completion:
-1. [Gap with specific action]
-2. [Gap with specific action]
-3. [Gap with specific action]
-
-**Recommendation**: Continue investigating. Address gaps above. Re-verify when complete.
-```
-
----
-
-## STEP 8: UPDATE CASE
-
-### Add Verification Log Entry
-
-Append to iterations.md:
-
-```markdown
----
-
-## Verification Checkpoint - [datetime]
-
-**Triggered by**: [/verify command | Periodic checkpoint | Saturation claim]
-
-### Cross-Model Critique Summary
-[Key findings from Gemini critique]
-
-### Verification Checklist
-
-| Category | Status | Notes |
-|----------|--------|-------|
-| All people investigated | YES/PARTIAL/NO | [note] |
-| Claims categorized by position | YES/PARTIAL/NO | [note] |
-| Timeline complete | YES/PARTIAL/NO | [note] |
-| Source provenance traced | YES/PARTIAL/NO | [note] |
-| All positions documented | YES/PARTIAL/NO | [note] |
-| Alternative theories addressed | YES/PARTIAL/NO | [note] |
-| Cross-model critique passed | YES/PARTIAL/NO | [note] |
-| All major claims fact-checked | YES/PARTIAL/NO | [note] |
-| No unexamined major claims | YES/PARTIAL/NO | [note] |
-| **Statement history documented** | YES/PARTIAL/NO | [note] |
-| **Role timelines documented** | YES/PARTIAL/NO | [note] |
-| **Statement evolution analyzed** | YES/PARTIAL/NO | [note] |
-| **Venue comparison done** | YES/PARTIAL/NO | [note] |
-| **Statement contradictions flagged** | YES/PARTIAL/NO | [note] |
-
-### Verdict: [PASS/FAIL]
-
-### Gaps Identified (if FAIL):
-1. [Gap]
-2. [Gap]
-
-### Next Steps:
-[What to research next if FAIL, or "Complete" if PASS]
-```
+| Statement history | All key persons have history | Most (>80%) | Many missing |
+| Statement evolution | Compared across time | Some compared | Not compared |
+| Venue comparison | Public vs testimony compared | Some compared | Not compared |
+| Contradictions | All flagged and investigated | Some investigated | Not investigated |
 
 ---
 
@@ -376,76 +313,10 @@ Append to iterations.md:
 Do NOT:
 - Give benefit of the doubt on gaps
 - Mark PARTIAL as YES
-- Skip the cross-model critique
+- Skip cross-model critique
 - Cherry-pick which claims to check
-- Ignore alternative theories because they seem "obviously false"
-- Assume only two positions exist
+- Ignore alternative theories
 - Mark PASS when gaps clearly exist
+- Read full file contents "to double-check"
 
-The verification checkpoint exists to catch self-deception. Be ruthless.
-
----
-
-## WHEN TO USE /verify
-
-| Situation | Action |
-|-----------|--------|
-| Periodically during /investigate | Checkpoint |
-| Claiming investigation is "saturated" | Must verify before stopping |
-| Resuming a case | Check last verification status |
-| User requests status | Run verification to get current status |
-| Before marking COMPLETE | Final verification required |
-
----
-
-## EXAMPLE OUTPUT
-
-```markdown
-## Verification Checkpoint - 2026-01-05 14:30
-
-**Triggered by**: Manual /verify command
-
-### Cross-Model Critique Summary (Gemini)
-"The investigation thoroughly covers the main events and timeline. However, several gaps remain:
-1. Position 3 claims about regulatory oversight failures - UNEXAMINED
-2. The leaked internal memo - mentioned but context incomplete
-3. Systemic failure claims - dismissed without investigation
-4. Coverup alternative theory - mentioned but not fully investigated
-5. Position 2 argument about prior approvals - claimed but not verified"
-
-### Verification Checklist
-
-| Category | Status | Notes |
-|----------|--------|-------|
-| All people investigated | YES | All key people researched |
-| Claims categorized by position | PARTIAL | 2 minor claims untagged |
-| Timeline complete | YES | Full period mapped |
-| Source provenance traced | PARTIAL | Some secondary sources untraced |
-| All positions documented | NO | Position 3 underdeveloped |
-| Alternative theories addressed | NO | 4 theories unaddressed |
-| Cross-model critique passed | NO | Found 5 significant gaps |
-| All major claims fact-checked | PARTIAL | Many claims unchecked |
-| No unexamined major claims | NO | Several major items remain |
-| **Statement history documented** | PARTIAL | CEO covered, CFO incomplete |
-| **Role timelines documented** | YES | All key figures have role history |
-| **Statement evolution analyzed** | NO | Not yet compared across time |
-| **Venue comparison done** | NO | Need to compare testimony vs. public |
-| **Statement contradictions flagged** | PARTIAL | Some identified, not all investigated |
-
-### Verdict: FAIL
-
-### Gaps Identified:
-1. Regulatory oversight claims (Position 3) - fact-check needed
-2. Leaked memo context - get full timeline
-3. Systemic failure claims - investigate with evidence
-4. Coverup alternative theory - investigate with evidence
-5. Political motivation theory - investigate with facts
-6. Prior approval argument (Position 2) - verify with documentation
-7. Performance metrics comparison - verify with data
-8. CFO statement history incomplete - search for testimony, interviews
-9. Statement evolution not analyzed - compare CEO statements over time
-10. Venue comparison needed - compare public statements to congressional testimony
-
-### Next Steps:
-Address all 10 gaps. Re-verify when complete.
-```
+The verification checkpoint catches self-deception. Let sub-agents do the work.

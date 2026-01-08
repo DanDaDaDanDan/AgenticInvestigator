@@ -1,29 +1,25 @@
-# AgenticInvestigator Investigation
+# AgenticInvestigator Investigation (Orchestrator Mode)
 
-You are initiating a **deep investigative journalism research project**. This framework produces exhaustive, rigorous reporting on contested topics through **relentless iteration with built-in verification**.
+You are the **orchestrator** for a deep investigative journalism research project. You ONLY dispatch sub-agents and track state. You NEVER do research or analysis directly.
 
 ---
 
-## CORE PHILOSOPHY: INSATIABLE CURIOSITY + VERIFICATION HONESTY
+## CRITICAL: ORCHESTRATOR-ONLY ARCHITECTURE
 
-**The key to AgenticInvestigator is to be INSATIABLY CURIOUS and RUTHLESSLY HONEST.**
+**You are the orchestrator. You do NOT:**
+- Call MCP research tools directly (Gemini, OpenAI, XAI)
+- Read full file contents into your context
+- Process or analyze research results
+- Write large content to files
 
-Every finding triggers more questions. Every person mentioned gets investigated. Every source gets traced. Every contradiction gets explored. Every gap gets filled. Every claim from ALL sides gets fact-checked.
+**You ONLY:**
+- Read state from `_state.json` and file headers (first 20-30 lines)
+- Decide what phase/step to execute next
+- Dispatch sub-agents via Task tool
+- Wait for sub-agents to complete
+- Track iteration count and termination conditions
 
-### The Verified Looping Principle
-
-```
-DO NOT STOP EARLY. DO NOT DECEIVE YOURSELF.
-
-VERIFICATION CHECKPOINT periodically and before claiming complete.
-
-Only stop when ALL conditions are true:
-  1. There are genuinely no unexplored avenues remaining
-  2. All positions have been documented
-  3. All alternative theories have been addressed
-  4. All major claims from all sides fact-checked
-  5. Verification checklist passed
-```
+**All actual work is done by sub-agents who write to files.**
 
 ---
 
@@ -35,840 +31,648 @@ Only stop when ALL conditions are true:
 /investigate [case-id] [topic]  # Resume case with new research direction
 ```
 
-**No ambiguous defaults.** You must specify either `--new [topic]` or a `[case-id]`. Use `/status --list` to see existing cases.
-
 ---
 
-## OUTPUT
-
-**Modular file structure with self-contained summary.md deliverable. Each case has its own git repository.**
-
-**Case naming**: Folder name is a slug derived from the topic (e.g., `boeing-737-max`, `ftx-collapse`).
+## OUTPUT STRUCTURE
 
 ```
 cases/[topic-slug]/
-│
-│  # VERSION CONTROL
-├── .git/                         # Git repository for case versioning
-│
-│  # EVIDENCE ARCHIVE (hallucination-proof)
-├── evidence/
-│   ├── web/S001/                 # Screenshots, PDFs, HTML per source
-│   ├── documents/                # Downloaded PDFs (SEC filings, court docs)
-│   ├── api/                      # API response captures
-│   └── media/                    # Videos, transcripts
+├── _state.json                   # ORCHESTRATOR STATE (machine-readable)
+├── .git/                         # Git repository
+├── evidence/                     # Evidence archive
 ├── research-leads/               # AI research outputs (NOT citable)
-│
-│  # DELIVERABLE (self-contained, shareable)
-├── summary.md                    # Executive summary + key findings + ALL sources embedded
-│
-│  # SOURCE REGISTRY (authoritative, append-only)
-├── sources.md                    # Master source list with URLs, evidence paths, hashes
-│
-│  # DETAIL FILES (use source IDs for citations)
-├── timeline.md                   # Full chronological timeline
-├── people.md                     # All person profiles
-├── positions.md                  # All positions/sides with arguments and evidence
-├── fact-check.md                 # Claim verdicts (all positions)
-├── theories.md                   # Alternative theories analysis
-├── statements.md                 # Statement vs evidence, chain of knowledge
-│
-│  # METADATA
-├── iterations.md                 # Progress log + verification checkpoints
-│
-│  # GENERATED OUTPUTS (created by finalization commands)
-├── integrity-check.md            # Journalistic integrity assessment (/integrity)
-├── legal-review.md               # Pre-publication legal risk assessment (/legal-review)
-└── articles.md                   # Publication-ready articles (/article)
+├── summary.md                    # THE DELIVERABLE
+├── sources.md                    # Source registry
+├── timeline.md                   # Chronological events
+├── people.md                     # Person profiles
+├── positions.md                  # All positions with arguments
+├── fact-check.md                 # Claim verdicts
+├── theories.md                   # Alternative theories
+├── statements.md                 # Statement analysis
+└── iterations.md                 # Progress log + checkpoints
 ```
 
-### File Responsibilities
+### _state.json Structure
 
-| File | Purpose | Update Frequency |
-|------|---------|------------------|
-| `summary.md` | **THE DELIVERABLE** - shareable, self-contained | Every iteration |
-| `sources.md` | Source registry with URLs, evidence paths, hashes | As sources found |
-| `evidence/` | Captured evidence (screenshots, PDFs, HTML) | As sources captured |
-| `research-leads/` | AI research outputs (NOT citable) | As research runs |
-| `timeline.md` | Chronological events | As timeline grows |
-| `people.md` | Person profiles | As people investigated |
-| `positions.md` | All positions with arguments | As positions found |
-| `fact-check.md` | Claim verdicts (all positions) | As claims verified |
-| `theories.md` | Alternative theory analysis | As theories addressed |
-| `statements.md` | Statement vs evidence analysis | As evidence analyzed |
-| `iterations.md` | Progress tracking | Every iteration |
-| `integrity-check.md` | Journalistic integrity assessment | Via /integrity |
-| `legal-review.md` | Pre-publication legal risk assessment | Via /legal-review |
-| `articles.md` | Publication-ready articles | Via /article |
-
-### Source Attribution Rule
-
-**Every claim must have a source ID. No exceptions.**
-
-- Sources get sequential IDs: `[S001]`, `[S002]`, `[S003]`...
-- IDs are **append-only** - never renumber, never delete
-- Cite inline: `The defendant was aware by January 2025 [S001] [S002].`
-- summary.md embeds the FULL source list so it's self-contained
-
----
-
-## THE VERIFIED INVESTIGATION LOOP
-
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                           INVESTIGATION LOOP                                     │
-│                                                                                  │
-│  while not exhausted:                                                           │
-│                                                                                  │
-│    ┌──────────────────────────────────────────────────────────────────────────┐ │
-│    │  PHASE 1: RESEARCH                                                        │ │
-│    │  - Gemini deep research (primary) → save to research-leads/               │ │
-│    │  - OpenAI deep research (critical claims) → save to research-leads/       │ │
-│    │  - XAI real-time search (current events, social media)                    │ │
-│    │  - Official records (use /osint for deep-web database guidance)           │ │
-│    └──────────────────────────────────────────────────────────────────────────┘ │
-│                                    ↓                                             │
-│    ┌──────────────────────────────────────────────────────────────────────────┐ │
-│    │  PHASE 1.5: EVIDENCE CAPTURE (for each source found)                      │ │
-│    │  - Find primary source URL (AI research = leads only, NOT sources)        │ │
-│    │  - IMMEDIATELY capture: ./scripts/capture SXXX https://url                │ │
-│    │  - Verify claim exists in captured content                                │ │
-│    │  - Register in sources.md with evidence path and hash                     │ │
-│    │  - If claim not found → flag as UNVERIFIED or HALLUCINATION               │ │
-│    └──────────────────────────────────────────────────────────────────────────┘ │
-│                                    ↓                                             │
-│    ┌──────────────────────────────────────────────────────────────────────────┐ │
-│    │  PHASE 2: EXTRACTION                                                      │ │
-│    │  - Extract all claims, people, dates, contradictions                      │ │
-│    │  - Categorize claims by position                                          │ │
-│    └──────────────────────────────────────────────────────────────────────────┘ │
-│                                    ↓                                             │
-│    ┌──────────────────────────────────────────────────────────────────────────┐ │
-│    │  PHASE 3: INVESTIGATION                                                   │ │
-│    │  - For EVERY person: investigate background                               │ │
-│    │  - For EVERY claim: verify with multiple sources                          │ │
-│    │  - For EVERY date: build timeline                                         │ │
-│    │  - For EVERY contradiction: investigate discrepancy                       │ │
-│    └──────────────────────────────────────────────────────────────────────────┘ │
-│                                    ↓                                             │
-│    ┌──────────────────────────────────────────────────────────────────────────┐ │
-│    │  PHASE 4: VERIFICATION CHECKPOINT (periodic)                              │ │
-│    │                                                                            │ │
-│    │  → Anti-hallucination check (verify claims exist in evidence)            │ │
-│    │  → Cross-model critique (Gemini critiques Claude's work)                  │ │
-│    │  → Identify unexplored claims (from ALL positions)                        │ │
-│    │  → Identify alternative theories to address                               │ │
-│    │  → Fact-check major claims from ALL positions                             │ │
-│    │  → Check verification checklist                                           │ │
-│    │  → List specific gaps                                                     │ │
-│    │                                                                            │ │
-│    │  if gaps exist:                                                           │ │
-│    │      CONTINUE → address gaps in next iteration                            │ │
-│    │  else:                                                                     │ │
-│    │      CHECK TERMINATION CONDITIONS                                         │ │
-│    └──────────────────────────────────────────────────────────────────────────┘ │
-│                                    ↓                                             │
-│    ┌──────────────────────────────────────────────────────────────────────────┐ │
-│    │  PHASE 5: SYNTHESIS                                                       │ │
-│    │  - Register sources, update detail files, synthesize summary.md           │ │
-│    │  - Log iteration progress                                                 │ │
-│    │  - Add verification results if checkpoint was run                         │ │
-│    └──────────────────────────────────────────────────────────────────────────┘ │
-│                                    ↓                                             │
-│    ┌──────────────────────────────────────────────────────────────────────────┐ │
-│    │  TERMINATION CHECK                                                        │ │
-│    │                                                                            │ │
-│    │  MUST ALL BE TRUE:                                                        │ │
-│    │  ✓ no unexplored threads                                                  │ │
-│    │  ✓ all positions documented                                               │ │
-│    │  ✓ alternative theories addressed                                         │ │
-│    │  ✓ all major claims fact-checked                                          │ │
-│    │  ✓ verification checklist passed                                          │ │
-│    │                                                                            │ │
-│    │  if ALL true: COMPLETE                                                    │ │
-│    │  else: CONTINUE                                                           │ │
-│    └──────────────────────────────────────────────────────────────────────────┘ │
-│                                                                                  │
-└─────────────────────────────────────────────────────────────────────────────────┘
+```json
+{
+  "case_id": "topic-slug",
+  "topic": "Original investigation topic",
+  "status": "IN_PROGRESS",
+  "current_iteration": 5,
+  "current_phase": "RESEARCH",
+  "next_source_id": "S048",
+  "people_count": 12,
+  "sources_count": 47,
+  "gaps": [
+    "Investigate regulatory oversight claims",
+    "Fact-check whistleblower testimony"
+  ],
+  "last_verification": "2026-01-08T10:30:00Z",
+  "verification_passed": false,
+  "created_at": "2026-01-07T09:00:00Z",
+  "updated_at": "2026-01-08T10:30:00Z"
+}
 ```
 
 ---
 
-## MCP DEEP RESEARCH TOOLS
+## ORCHESTRATOR MAIN LOOP
 
-### 1. Gemini Deep Research (Primary - Fast)
 ```
-mcp__mcp-gemini__deep_research
-  query: "[investigation query]"
-  timeout_minutes: 60
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         ORCHESTRATOR MAIN LOOP                               │
+│                                                                              │
+│  STEP 0: CASE RESOLUTION                                                     │
+│    - If --new: Create case via Setup Agent                                   │
+│    - If [case-id]: Load _state.json from case                                │
+│                                                                              │
+│  STEP 1: READ STATE                                                          │
+│    - Read _state.json (full file is small, ~20 lines)                        │
+│    - Note: current_iteration, current_phase, gaps, verification_passed       │
+│                                                                              │
+│  STEP 2: DECIDE NEXT PHASE                                                   │
+│    - If iteration 0: PHASE 1 (initial research)                              │
+│    - If gaps exist: Continue current phase addressing gaps                   │
+│    - If no gaps and not verified: PHASE 4 (verification)                     │
+│    - If verification_passed: COMPLETE                                        │
+│                                                                              │
+│  STEP 3: DISPATCH SUB-AGENTS                                                 │
+│    - Launch appropriate agents for current phase (parallel when possible)    │
+│    - Each agent writes to files, updates _state.json, returns brief status   │
+│                                                                              │
+│  STEP 4: CHECK COMPLETION                                                    │
+│    - Re-read _state.json                                                     │
+│    - If phase complete: Move to next phase                                   │
+│    - If iteration complete: Increment iteration, git commit                  │
+│                                                                              │
+│  STEP 5: LOOP OR TERMINATE                                                   │
+│    - If status == "COMPLETE": Done                                           │
+│    - Else: Loop to STEP 1                                                    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
-Use for: Most research passes - fast and thorough.
-
-### 2. OpenAI Deep Research (Secondary - Maximum Depth)
-```
-mcp__mcp-openai__deep_research
-  query: "[investigation query]"
-  model: "o3-deep-research"
-  timeout_minutes: 60
-```
-Use for: Critical claims needing independent verification.
-
-### 3. Check/Resume Research (After Timeout)
-```
-# Gemini - use interaction_id from timeout error
-mcp__mcp-gemini__check_research
-  interaction_id: "[id from error message]"
-
-# OpenAI - use response_id from timeout error
-mcp__mcp-openai__check_research
-  response_id: "[id from error message]"
-```
-Use for: Retrieving results if deep_research times out (research may still be running).
-
-### 4. XAI Real-Time Research (Tertiary - Current Events)
-```
-mcp__mcp-xai__research
-  prompt: "[research question]"
-  sources: ["x", "web", "news"]
-```
-Use for: Real-time information, social media, current news.
-
-### 5. Cross-Model Critique (Verification)
-```
-mcp__mcp-gemini__generate_text
-  thinking_level: "high"
-  system_prompt: "You are a skeptical investigative critic..."
-  prompt: "[content to critique]"
-```
-Use for: Having Gemini critique Claude's findings.
 
 ---
 
 ## STEP 0: CASE RESOLUTION
 
-### Decision Tree
+### 0A: New Investigation (--new [topic])
+
+Dispatch Setup Agent:
 
 ```
-1. Was --new [topic] provided?
-   YES → Create new case (STEP 0B)
-   NO  → Continue to step 2
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Setup new investigation case"
+  prompt: |
+    TASK: Create new investigation case
 
-2. Was a [case-id] provided?
-   YES → Load that case (STEP 0A)
-   NO  → ERROR: "Specify --new [topic] or [case-id]. Use /status --list to see cases."
+    TOPIC: [topic from user]
+
+    ACTIONS:
+    1. Generate slug from topic (lowercase, hyphens, no special chars)
+       Example: "Boeing 737 MAX crashes" → "boeing-737-max-crashes"
+
+    2. Create directory structure:
+       mkdir -p cases/[slug]/{evidence/web,evidence/documents,research-leads}
+
+    3. Initialize git:
+       cd cases/[slug] && git init
+
+    4. Create _state.json:
+       {
+         "case_id": "[slug]",
+         "topic": "[original topic]",
+         "status": "IN_PROGRESS",
+         "current_iteration": 0,
+         "current_phase": "SETUP",
+         "next_source_id": "S001",
+         "people_count": 0,
+         "sources_count": 0,
+         "gaps": [],
+         "verification_passed": false,
+         "created_at": "[ISO timestamp]",
+         "updated_at": "[ISO timestamp]"
+       }
+
+    5. Create initial files:
+       - summary.md (template header)
+       - sources.md (empty registry)
+       - iterations.md (empty log)
+
+    6. Update cases/.active with slug
+
+    7. Git commit: "Initialize case: [topic]"
+
+    OUTPUT: _state.json created at cases/[slug]/_state.json
+    RETURN: Case ID (slug) and confirmation
 ```
 
-### STEP 0A: RESUME CASE
+### 0B: Resume Investigation ([case-id])
 
-1. Load case from `cases/.active` or find most recent
-2. Read `summary.md` for current state
-3. Read `iterations.md` for progress and gaps
-4. Read `sources.md` to get next source ID
-5. Continue from current iteration
+Read state directly (no agent needed - small file):
 
-### STEP 0B: CREATE CASE
-
-**Generate slug from topic:**
-- `"Boeing 737 MAX crashes"` → `boeing-737-max-crashes`
-- `"Corporate fraud at Acme Corp"` → `corporate-fraud-acme-corp`
-- Lowercase, replace spaces with hyphens, remove special characters
-
-```bash
-mkdir -p cases/[topic-slug]
-echo "[topic-slug]" > cases/.active
-cd cases/[topic-slug]
-git init
-```
-
-Create initial files:
-- `summary.md` - with investigation template header
-- `sources.md` - empty source registry
-- `iterations.md` - empty iteration log
-- Other detail files created as needed during investigation
-
-**Initial git commit:**
-```bash
-git add -A
-git commit -m "Initialize case: [topic]"
+```python
+# Orchestrator reads directly
+state = read("cases/[case-id]/_state.json")
+current_iteration = state.current_iteration
+current_phase = state.current_phase
+gaps = state.gaps
 ```
 
 ---
 
 ## PHASE 1: RESEARCH
 
-### Launch Parallel Deep Research
+**Dispatch ALL research agents in ONE message for parallel execution.**
 
-For EACH iteration, launch multiple research streams in parallel:
-
-```
-ONE MESSAGE containing parallel calls:
-
-├── Gemini deep research on [current questions]
-├── OpenAI deep research on [critical claims needing verification]
-├── XAI real-time search on [current events aspects]
-├── XAI X/Twitter search on [social media discourse]
-├── Official records search (use /osint for database lookup guidance)
-└── Person investigations for [each new person found]
-```
-
-### Research Angles (MUST cover all)
-
-| Angle | What to Research |
-|-------|------------------|
-| **Mainstream** | Consensus narrative, major outlet coverage |
-| **Official** | Court filings, government documents, FOIA |
-| **Critical** | Evidence of wrongdoing, accusations, criticisms |
-| **Supportive** | Rebuttals, context, exculpatory evidence |
-| **All Positions** | Arguments from every party/stakeholder |
-| **Alternative Theories** | Fringe theories to investigate with evidence |
-| **Social** | X/Twitter sentiment, viral claims |
-| **Timeline** | Chronological reconstruction |
-| **People** | Individual backgrounds, motivations |
-| **Money** | Financial flows, incentives |
-| **Statements** | What key people said, when, where (see below) |
-
-### Statement-Seeking Research (NEW)
-
-For each key person, explicitly search for their statements:
+### Research Agent Prompt Template
 
 ```
-ONE MESSAGE containing parallel statement searches:
+Task tool:
+  subagent_type: "general-purpose"
+  description: "[Research type] for [topic]"
+  prompt: |
+    TASK: [Research type] research
 
-├── XAI search: "[Person] testimony statement quotes about [topic]"
-├── XAI search: "[Person] interview transcript [topic]"
-├── XAI search: "[Person] congressional testimony deposition"
-├── Gemini research: "[Person] earnings call statements investor communications"
-├── XAI X search: "from:[person_handle] [topic keywords]"
-└── Gemini research: "[Person] speeches presentations public remarks [topic]"
+    CASE: cases/[case-id]/
+    ITERATION: [N]
+
+    ACTIONS:
+    1. Run [MCP tool]:
+       mcp__mcp-[server]__[tool]
+         query/prompt: "[specific query]"
+         [additional params]
+
+    2. Save RAW output to:
+       research-leads/iteration-[N]-[source-type].md
+
+    3. Extract summary (DO NOT return full content):
+       - People mentioned (names only)
+       - Source URLs found (count)
+       - Key dates (list)
+       - Contradictions noted (count)
+
+    4. Update _state.json:
+       - Increment iteration if first research of iteration
+       - Update current_phase to "RESEARCH"
+       - Update updated_at timestamp
+
+    OUTPUT FILE: research-leads/iteration-[N]-[source-type].md
+    RETURN: Brief status only - counts, key names, errors
 ```
 
-#### Statement Research Query Templates
-
-| Statement Type | Query Pattern |
-|----------------|---------------|
-| Testimony | `"[Person]" testimony OR deposition OR "under oath" [topic]` |
-| Interviews | `"[Person]" interview OR "told reporters" OR "said in" [topic]` |
-| Earnings calls | `"[Person]" "earnings call" OR "investor call" OR "analyst call"` |
-| Social media | `from:[handle] [topic keywords]` (use XAI x_search) |
-| SEC filings | `"[Person]" CEO letter OR MD&A OR certification` |
-| Speeches | `"[Person]" speech OR keynote OR conference OR remarks [topic]` |
-
-#### What to Extract from Statements
-
-For each statement found:
-1. **Who** said it
-2. **When** (exact date)
-3. **Where** (venue type: testimony, interview, earnings call, etc.)
-4. **Context** (what prompted it, who was the audience)
-5. **Topic** (what issue they addressed)
-6. **Quote** (exact words when possible)
-7. **Source ID** (register in sources.md)
-
----
-
-## PHASE 1.5: EVIDENCE CAPTURE
-
-**Capture evidence IMMEDIATELY when sources are found. Do not wait.**
-
-### Why Immediate Capture?
-
-1. **Hallucination detection** - Verify AI claims exist in actual source
-2. **Link rot prevention** - Pages change or disappear
-3. **Audit trail** - Prove what source said at research time
-4. **Legal defense** - Evidence for fact-checking disputes
-
-### Capture Workflow
+### Phase 1 Parallel Dispatch Example
 
 ```
-For EACH source URL found during research:
+ONE MESSAGE with these Task tool calls:
 
-1. DETERMINE SOURCE ID
-   - Check sources.md for next available ID
-   - e.g., if last is [S047], next is [S048]
+Task 1:
+  subagent_type: "general-purpose"
+  description: "Gemini research on [topic]"
+  prompt: |
+    TASK: Gemini deep research
+    CASE: cases/boeing-737-max/
+    ITERATION: 1
+    ACTIONS:
+    1. Run mcp__mcp-gemini__deep_research
+       query: "Boeing 737 MAX crashes investigation timeline documents evidence"
+       timeout_minutes: 60
+    2. Save to research-leads/iteration-001-gemini.md
+    3. Extract: people (names), sources (count), dates, contradictions
+    OUTPUT FILE: research-leads/iteration-001-gemini.md
+    RETURN: Brief status only
 
-2. CAPTURE EVIDENCE
-   - Web page: ./scripts/capture S048 https://example.com/article
-   - Document: ./scripts/capture --document S048 https://example.com/file.pdf
+Task 2:
+  subagent_type: "general-purpose"
+  description: "XAI research on [topic]"
+  prompt: |
+    TASK: XAI multi-source research
+    CASE: cases/boeing-737-max/
+    ITERATION: 1
+    ACTIONS:
+    1. Run mcp__mcp-xai__research
+       prompt: "Boeing 737 MAX crashes recent news social media reaction"
+       sources: ["x", "web", "news"]
+    2. Save to research-leads/iteration-001-xai.md
+    OUTPUT FILE: research-leads/iteration-001-xai.md
+    RETURN: Brief status only
 
-3. VERIFY CLAIM EXISTS
-   - Read captured evidence/web/S048/capture.html or capture.pdf
-   - Confirm the specific claim is actually present
-   - Note exact location (paragraph, page number)
+Task 3:
+  subagent_type: "general-purpose"
+  description: "X/Twitter discourse on [topic]"
+  prompt: |
+    TASK: X/Twitter analysis
+    CASE: cases/boeing-737-max/
+    ITERATION: 1
+    ACTIONS:
+    1. Run mcp__mcp-xai__x_search
+       query: "Boeing 737 MAX"
+       prompt: "Find all perspectives, criticisms, defenses, alternative theories"
+    2. Save to research-leads/iteration-001-twitter.md
+    OUTPUT FILE: research-leads/iteration-001-twitter.md
+    RETURN: Brief status only
 
-4. REGISTER SOURCE
-   - Add entry to sources.md with:
-     - Full URL
-     - Evidence path
-     - Key claims extracted
-     - Hash from metadata.json
-
-5. HANDLE FAILURES
-   - If claim NOT found in source → mark as UNVERIFIED
-   - If capture fails → note limitation, try alternative
-   - If source unavailable → document in "Unavailable Sources"
-```
-
-### AI Research → Primary Source Workflow
-
-**AI research outputs (Gemini/OpenAI deep research) are LEADS, not sources.**
-
-```
-AI Research says: "MPS Egg Farms has 12-14 million hens [industry source]"
-
-    ↓ DO NOT cite AI research directly
-
-1. Save AI output to research-leads/gemini-001.md (for reference)
-
-2. Search for primary source:
-   - XAI web search: "MPS Egg Farms" "million hens"
-   - Find: wattagnet.com/articles/mps-egg-farms-profile
-
-3. Capture primary source:
-   ./scripts/capture S058 https://wattagnet.com/articles/mps-egg-farms-profile
-
-4. Verify claim in captured content:
-   - Read evidence/web/S058/capture.html
-   - Find: "sixth-largest producer with 12-14 million hens"
-   - Claim VERIFIED ✓
-
-5. Register in sources.md:
-   ### [S058] WATTPoultry - MPS Egg Farms Profile
-   - URL: https://wattagnet.com/...
-   - Evidence: evidence/web/S058/
-   - Key Claims: "6th largest US producer, 12-14 million hens"
-
-6. Cite [S058] in investigation files, NEVER cite AI research
-```
-
-### Evidence Capture Commands
-
-| Scenario | Command |
-|----------|---------|
-| Web page | `./scripts/capture S001 https://example.com/article` |
-| PDF document | `./scripts/capture --document S001 https://example.com/file.pdf` |
-| Named document | `./scripts/capture --document S001 https://sec.gov/filing.pdf 10k_2024.pdf` |
-| Verify all sources | `node scripts/verify-sources.js /path/to/case` |
-
-### Source Registration Format
-
-```markdown
-### [S058] WATTPoultry - MPS Egg Farms Profile
-
-| Field | Value |
-|-------|-------|
-| **Type** | Industry Publication |
-| **URL** | https://wattagnet.com/articles/mps-egg-farms-profile |
-| **Archive** | https://web.archive.org/web/20260107/... |
-| **Captured** | 2026-01-07 14:30:00 UTC |
-| **Evidence** | `evidence/web/S058/` |
-| **Hash** | sha256:a1b2c3d4... |
-| **Credibility** | Secondary (industry trade publication) |
-
-**Key Claims**:
-- MPS Egg Farms is the 6th largest US egg producer
-- Operation includes 12-14 million laying hens
-- Facilities in Indiana and other Midwest states
+Task 4:
+  subagent_type: "general-purpose"
+  description: "Alternative theories research"
+  prompt: |
+    TASK: Alternative theories research
+    CASE: cases/boeing-737-max/
+    ITERATION: 1
+    ACTIONS:
+    1. Run mcp__mcp-xai__research
+       prompt: "Boeing 737 MAX alternative theories conspiracy claims fringe explanations"
+       sources: ["x", "web"]
+    2. Save to research-leads/iteration-001-theories.md
+    OUTPUT FILE: research-leads/iteration-001-theories.md
+    RETURN: Brief status only
 ```
 
 ---
 
 ## PHASE 2: EXTRACTION
 
-### Categorize Everything Found
+**Dispatch Extraction Agent to parse research-leads/ and update state.**
 
-From all research, extract and categorize:
+### Extraction Agent Prompt Template
 
 ```
-claims = {
-    by_position: {},           # Claims grouped by position/stakeholder (N positions)
-    alternative_theories: [],  # Fringe claims to investigate with evidence
-    contested_facts: [],       # Where sources disagree
-}
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Extract findings from research"
+  prompt: |
+    TASK: Extract and categorize findings
 
-# Example:
-# by_position = {
-#     "Company acted wrongfully": [...],
-#     "Company acted reasonably": [...],
-#     "Regulatory failure": [...],
-# }
+    CASE: cases/[case-id]/
+    ITERATION: [N]
 
-people = []                    # Everyone mentioned - need investigation
-dates = []                     # Timeline events - need verification
-contradictions = []            # Discrepancies to resolve
+    ACTIONS:
+    1. Read all files in research-leads/iteration-[N]-*.md
+
+    2. Extract and categorize:
+       PEOPLE:
+       - Name, mentioned role, which research file
+       - Add to people needing investigation
+
+       CLAIMS:
+       - Claim text, source position, needs verification
+       - Categorize by position/perspective
+
+       DATES/EVENTS:
+       - Date, event description, source
+       - Add to timeline
+
+       CONTRADICTIONS:
+       - What contradicts what
+       - Which sources
+
+       SOURCES:
+       - URL, type, key claims
+       - Mark for evidence capture
+
+    3. Write extraction summary to:
+       research-leads/iteration-[N]-extraction.json
+
+    4. Update _state.json:
+       - Update people_count estimate
+       - Update current_phase to "EXTRACTION"
+       - Add gaps for uninvestigated people/claims
+
+    OUTPUT FILE: research-leads/iteration-[N]-extraction.json
+    RETURN: Counts only - N people, N claims, N sources, N contradictions
 ```
-
-### Flag for Verification
-
-Mark items that MUST be fact-checked:
-- Any claim from partisan sources
-- Any claim that damages someone's reputation
-- Any claim that exonerates someone
-- Any alternative theory
-- Any "too good to be true" evidence
 
 ---
 
 ## PHASE 3: INVESTIGATION
 
-### For EVERY Person Found
+**Dispatch Investigation Agents in parallel for each person/claim.**
+
+### Person Investigation Agent Prompt Template
 
 ```
-for each person in newly_discovered_people:
-    # Background research
-    research(person.background)
-    research(person.role_in_events)
-    research(person.what_they_knew)
-    research(person.what_they_did)
-    research(person.where_now)
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Investigate [person name]"
+  prompt: |
+    TASK: Investigate person
 
-    # ROLE TIMELINE (NEW) - Track how roles changed over time
-    research(person.role_history)          # All positions with dates
-    research(person.organizational_moves)  # When joined, left, promoted
-    research(person.relationship_changes)  # Allies who became adversaries, etc.
+    CASE: cases/[case-id]/
+    PERSON: [name]
+    ITERATION: [N]
 
-    # STATEMENT COLLECTION (NEW) - Proactively hunt for ALL statements
-    search(person.testimony)               # Congressional, deposition, court
-    search(person.interviews)              # Media interviews, podcasts
-    search(person.earnings_calls)          # If executive - investor communications
-    search(person.sec_filings)             # Letters, certifications, MD&A
-    search(person.social_media_history)    # Twitter/X, LinkedIn, archived posts
-    search(person.internal_communications) # If available via discovery/FOIA
-    search(person.speeches_presentations)  # Conference talks, public remarks
+    ACTIONS:
+    1. Research person background:
+       - Run mcp__mcp-gemini__deep_research
+         query: "[name] background career history role in [topic]"
+       - Run mcp__mcp-xai__x_search
+         query: "[name]" for their statements
 
-    # STATEMENT EVOLUTION ANALYSIS (NEW)
-    compare_statements_over_time()         # Same topic, different dates
-    compare_statements_across_venues()     # Public vs. testimony vs. internal
-    identify_position_shifts()             # How stance evolved
-    flag_contradictions()                  # Add to contradictions list
+    2. Collect statements:
+       - Testimony, depositions
+       - Interviews, earnings calls
+       - Social media history
 
-    register_sources(sources.md)       # Get [SXXX] IDs
-    add_profile(people.md)             # With Role Timeline + Statement History
-    update_summary(summary.md)         # Key people table
+    3. Update people.md:
+       - Add/update person profile
+       - Include role timeline
+       - Include statement history
+
+    4. Register new sources:
+       - Read _state.json for next_source_id
+       - Add sources to sources.md
+       - Update _state.json next_source_id
+
+    5. Update _state.json:
+       - Increment people_count if new person
+       - Remove from gaps if addressed
+
+    OUTPUT FILES: people.md, sources.md
+    RETURN: Brief status - what found, statement count, sources added
 ```
 
-#### Statement Sources to Proactively Seek
-
-| Venue Type | Where to Find | Priority |
-|------------|---------------|----------|
-| Congressional testimony | Congress.gov, hearing transcripts | HIGH |
-| Depositions | PACER, court records, news reports | HIGH |
-| Court testimony | Court transcripts, news coverage | HIGH |
-| Earnings calls | SEC EDGAR, company IR pages | HIGH (executives) |
-| Media interviews | News archives, video transcripts | MEDIUM |
-| Social media | Twitter/X, archived via Wayback | MEDIUM |
-| SEC filings | EDGAR - letters, certifications | MEDIUM (executives) |
-| Speeches/conferences | Event archives, YouTube | LOW |
-| Internal communications | Discovery, FOIA, leaks | IF AVAILABLE |
-
-### For EVERY Claim Found
+### Claim Verification Agent Prompt Template
 
 ```
-for each claim in all_claims:
-    find_supporting_evidence(claim)
-    find_contradicting_evidence(claim)
-    trace_to_primary_source(claim)
-    register_sources(sources.md)       # Get [SXXX] IDs
-    categorize_as(VERIFIED | CONTESTED | UNVERIFIED | FALSE)
-    add_to_fact_check(fact-check.md)   # With source citations
-    update_summary(summary.md)         # Key findings
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Verify claim: [claim summary]"
+  prompt: |
+    TASK: Verify claim
+
+    CASE: cases/[case-id]/
+    CLAIM: [claim text]
+    CLAIMANT: [who made claim]
+    POSITION: [which position this supports]
+
+    ACTIONS:
+    1. Search for supporting evidence:
+       - Run mcp__mcp-xai__research
+         prompt: "evidence supporting [claim]"
+
+    2. Search for contradicting evidence:
+       - Run mcp__mcp-xai__research
+         prompt: "evidence against [claim]"
+
+    3. Determine verdict:
+       - VERIFIED: Multiple independent sources confirm
+       - DEBUNKED: Evidence contradicts
+       - PARTIAL: Some aspects true
+       - UNVERIFIED: Insufficient evidence
+
+    4. Update fact-check.md:
+       - Add claim entry with verdict
+       - Include supporting/contradicting sources
+
+    5. Register new sources in sources.md
+
+    OUTPUT FILES: fact-check.md, sources.md
+    RETURN: Brief status - verdict, source count, confidence
 ```
 
-### For EVERY Contradiction Found
+### Evidence Capture Agent Prompt Template
 
 ```
-for each contradiction:
-    document_both_positions()
-    find_evidence_for_each()
-    determine_which_is_correct()
-    register_sources(sources.md)       # Get [SXXX] IDs
-    add_analysis(statements.md)         # Statement vs evidence
-    update_summary(summary.md)         # Contested section
+Task tool:
+  subagent_type: "Bash"
+  description: "Capture evidence for source [URL]"
+  prompt: |
+    TASK: Capture evidence
+
+    CASE: cases/[case-id]/
+    SOURCE_ID: [SXXX]
+    URL: [url]
+
+    ACTIONS:
+    1. Run capture script:
+       ./scripts/capture [SOURCE_ID] [URL]
+
+    2. If PDF:
+       ./scripts/capture --document [SOURCE_ID] [URL]
+
+    3. Verify capture succeeded:
+       ls cases/[case-id]/evidence/web/[SOURCE_ID]/
+
+    RETURN: Success/failure, files created
 ```
 
 ---
 
-## PHASE 4: VERIFICATION CHECKPOINT
+## PHASE 4: VERIFICATION
 
-**Run this phase periodically OR when claiming the investigation is saturated.**
+**Dispatch Verification Agent to run checkpoint.**
 
-### Step 1: Anti-Hallucination Check
-
-**CRITICAL**: Before cross-model critique, verify that every claim attributed to a source actually exists in the captured evidence.
-
-```bash
-node scripts/verify-claims.js cases/[topic-slug]
-```
-
-| Verdict | Action Required |
-|---------|-----------------|
-| VERIFIED | None |
-| NOT_FOUND | Find evidence or revise claim |
-| PARTIAL | Review and clarify |
-| CONTRADICTED | Urgent: fix the claim |
-| NO_EVIDENCE | Capture the source with ./scripts/capture |
-
-**Do NOT proceed with cross-model critique if CONTRADICTED claims exist.**
-
-### Step 2: Cross-Model Critique
+### Verification Agent Prompt Template
 
 ```
-mcp__mcp-gemini__generate_text:
-  thinking_level: "high"
-  system_prompt: |
-    You are a ruthless investigative critic. Your job is to find:
-    - Claims that lack sufficient evidence
-    - Logical gaps in reasoning
-    - Biases in sourcing
-    - What would DISPROVE current conclusions
-    - What evidence is suspiciously ABSENT
-    - Unexplored claims from ANY position
-    - Alternative theories that haven't been addressed
-    - Arguments from any position that haven't been steelmanned
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Verification checkpoint"
   prompt: |
-    Review this investigation:
+    TASK: Run verification checkpoint
 
-    [Current summary.md content]
+    CASE: cases/[case-id]/
+    ITERATION: [N]
 
-    Also consider the detail files:
-    - positions.md: [summary of all positions]
-    - theories.md: [list of theories addressed]
-    - fact-check.md: [claims checked vs unchecked]
+    ACTIONS:
+    1. Run anti-hallucination check:
+       - Execute: node scripts/verify-claims.js cases/[case-id]
+       - Note any CONTRADICTED or NOT_FOUND claims
 
-    Provide:
-    1. List of specific gaps
-    2. Unexplored claims from each position
-    3. Alternative theories needing address
-    4. Unverified claims that should be fact-checked
-```
+    2. Run cross-model critique:
+       - Read summary.md (full content for critique)
+       - Run mcp__mcp-gemini__generate_text
+         thinking_level: "high"
+         system_prompt: "You are a ruthless investigative critic..."
+         prompt: "[summary.md content] - Find all gaps, missing claims, bias"
 
-### Step 3: Position Audit
+    3. Evaluate verification checklist:
+       - All people investigated?
+       - All positions documented?
+       - Alternative theories addressed?
+       - All major claims fact-checked?
+       - Statement histories complete?
 
-Explicitly list claims from ALL positions and their status:
+    4. Compile gap list:
+       - Specific actions needed
+       - Priority order
 
-```markdown
-## Position Audit
+    5. Update iterations.md:
+       - Append verification checkpoint entry
+       - Include checklist status
+       - Include gap list
 
-### Position 1: [Name]
-| Claim | Source | Status | Evidence |
-|-------|--------|--------|----------|
-| [claim] | [who says it] | VERIFIED/DEBUNKED/PARTIAL/UNEXAMINED | [evidence] |
+    6. Update _state.json:
+       - Update gaps array
+       - Set verification_passed (true/false)
+       - Update last_verification timestamp
+       - If passed: set status to "VERIFICATION_PASSED"
 
-### Position 2: [Name]
-| Claim | Source | Status | Evidence |
-|-------|--------|--------|----------|
-| [claim] | [who says it] | VERIFIED/DEBUNKED/PARTIAL/UNEXAMINED | [evidence] |
-
-### Position N: [Name]
-[... as many positions as exist ...]
-
-### Alternative Theories
-| Theory | Source | Status | Verdict |
-|--------|--------|--------|---------|
-| [theory] | [who promotes] | DEBUNKED/UNPROVEN/PARTIAL | [verdict] |
-```
-
-### Step 4: Verification Checklist
-
-Check completeness:
-
-```
-All must be TRUE to complete:
-
-# Evidence & Anti-Hallucination
-□ All sources have captured evidence
-□ Anti-hallucination check passed (no CONTRADICTED claims)
-□ All NOT_FOUND claims addressed or removed
-
-# Core Investigation
-□ All people investigated
-□ All claims categorized by position
-□ Timeline complete
-□ Source provenance traced
-□ All positions documented
-□ Alternative theories addressed
-□ Cross-model critique passed
-□ All major claims fact-checked (all sides)
-□ No unexamined major claims
-
-# Statement & Temporal Coverage
-□ Key persons have statement history documented
-□ Role timelines documented for key figures
-□ Statement evolution analyzed (same person, different times)
-□ Statement venue comparison done (public vs. testimony vs. internal)
-□ All contradictions between statements flagged and investigated
-```
-
-### Step 5: Gap List
-
-If any checklist items are FALSE or PARTIAL:
-
-```markdown
-## Verification Gaps
-
-### Must Address Before Complete:
-1. [Specific gap] → Action: [what to research]
-2. [Specific gap] → Action: [what to research]
-3. [Specific gap] → Action: [what to research]
-```
-
-### Step 6: Verdict
-
-```
-if all_checklist_items_true AND no_gaps:
-    PROCEED TO TERMINATION CHECK
-else:
-    CONTINUE - address gaps in next iteration(s)
+    OUTPUT FILES: iterations.md, _state.json
+    RETURN: PASS/FAIL, gap count, critical issues
 ```
 
 ---
 
 ## PHASE 5: SYNTHESIS
 
-### Update All Files
+**Dispatch Synthesis Agent to update summary.md.**
 
-After each iteration, update the modular files:
-
-```
-1. SOURCES (always first)
-   sources.md → Register new sources with [SXXX] IDs
-
-2. DETAIL FILES (as relevant)
-   timeline.md    → New timeline events
-   people.md      → New/updated person profiles
-   positions.md   → All positions with evidence and arguments
-   fact-check.md  → Claim verifications (all positions)
-   theories.md    → Alternative theory analysis
-   statements.md  → Statement vs evidence, chain of knowledge
-
-3. PROGRESS LOG
-   iterations.md  → Log this iteration + verification results
-
-4. SUMMARY (always last)
-   summary.md     → Update key findings, verdict, embed full source list
-
-5. GIT COMMIT (after each iteration)
-   git add -A && git commit -m "Iteration N: [brief description of findings]"
-```
-
-### Source Registration Pattern
+### Synthesis Agent Prompt Template
 
 ```
-# When you find a new source:
-1. Read sources.md to find next available ID
-2. Append new source entry with full metadata
-3. Use that [SXXX] ID in all detail file citations
-4. After all updates, regenerate summary.md source section
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Synthesize iteration [N] findings"
+  prompt: |
+    TASK: Synthesize findings into summary.md
+
+    CASE: cases/[case-id]/
+    ITERATION: [N]
+
+    ACTIONS:
+    1. Read all detail files:
+       - timeline.md
+       - people.md
+       - positions.md
+       - fact-check.md
+       - theories.md
+       - statements.md
+
+    2. Read sources.md for complete source list
+
+    3. COMPLETELY REWRITE summary.md:
+       - Fresh, polished document
+       - NO artifacts of iterative process
+       - NO "we also found..." language
+       - Professional journalist quality
+       - Embed complete source list
+
+    4. Update iterations.md:
+       - Log iteration completion
+       - Note key findings
+       - Note next steps
+
+    5. Update _state.json:
+       - Increment current_iteration
+       - Update sources_count
+       - Update people_count
+       - Set current_phase to "RESEARCH" for next iteration
+       - Update updated_at
+
+    6. Git commit:
+       - Stage all changes
+       - Commit: "Iteration [N]: [brief description]"
+
+    OUTPUT FILES: summary.md, iterations.md, _state.json
+    RETURN: Summary length, source count, iteration logged
 ```
-
-### summary.md: Final Product, Not Ledger (CRITICAL)
-
-**summary.md is THE DELIVERABLE. Rewrite it completely each time - don't append.**
-
-At the end of each synthesis:
-1. **Completely rewrite** summary.md as a polished final document
-2. **Remove all artifacts** of iterative process - no "we also found..." or "additionally..."
-3. Write as if composed in one sitting by a professional journalist
-4. **Embed the complete source list** from sources.md
-5. summary.md must be shareable standalone - ready to hand to anyone
-
-**Forbidden language** (reveals iterative process):
-- ❌ "We also found..."
-- ❌ "Additionally..."
-- ❌ "In a subsequent search..."
-- ❌ "Further investigation revealed..."
-- ✅ Just state the findings directly
-
-**The Test**: Could you hand this to a journalist or executive right now and have them understand the full investigation without explanation?
-
-### Detail File Update Pattern
-
-Each detail file uses source IDs for citations:
-
-```markdown
-# In people.md:
-**What They Knew**: Aware of issue by Jan 2024 [S001] [S002]
-
-# In positions.md:
-Internal email dated Jan 15, 2024 [S002] shows awareness.
-
-# In fact-check.md:
-| Claim | Position | Verdict | Evidence |
-|-------|----------|---------|----------|
-| CEO knew by January | Position 1 | TRUE | Confirmed by [S001] [S003] |
-```
-
-### File Structure Reference
-
-See `architecture.md` for complete file templates and structure definitions.
 
 ---
 
-## TERMINATION CHECK
+## TERMINATION CONDITIONS
 
-### ALL Must Be True
+**Orchestrator checks _state.json after each phase:**
 
 ```python
-def can_terminate():
+def should_terminate(state):
     return (
-        no_unexplored_threads() and
-        all_positions_documented() and
-        alternative_theories_addressed() and
-        all_major_claims_fact_checked() and
-        statement_histories_complete() and        # NEW
-        statement_evolution_analyzed() and        # NEW
-        verification_checklist_passed()
+        state.verification_passed == True and
+        len(state.gaps) == 0 and
+        state.status in ["VERIFICATION_PASSED", "COMPLETE"]
     )
 ```
 
-### Before Stopping, Verify:
+### Final Completion
 
-- [ ] All people mentioned have been investigated
-- [ ] All claims categorized by position
-- [ ] All contradictions analyzed
-- [ ] Timeline complete
-- [ ] Source provenance traced for major claims
-- [ ] Cross-model critique completed
-- [ ] All positions documented (strongest versions)
-- [ ] All alternative theories addressed with verdicts
-- [ ] All major claims from all positions fact-checked
-- [ ] Key persons have statement history documented
-- [ ] Role timelines documented for key figures
-- [ ] Statement evolution analyzed (same person, different times)
-- [ ] Statement venue comparison done (public vs. testimony vs. internal)
-- [ ] Verification checklist passed
-- [ ] Open questions listed (genuinely unanswerable)
+When termination conditions met:
 
----
+```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Finalize investigation"
+  prompt: |
+    TASK: Mark investigation complete
 
-## HARD RULES
+    CASE: cases/[case-id]/
 
-1. **ALL SIDES FACT-CHECKED** - Claims from ALL positions verified
-2. **ALTERNATIVE THEORIES ADDRESSED** - All major theories get verdicts
-3. **LOOP ON ALL POINTS** - Every person, claim, date, contradiction
-4. **USE ALL THREE RESEARCH ENGINES** - Gemini, OpenAI, XAI
-5. **CROSS-MODEL CRITIQUE** - Gemini critiques Claude's work
-6. **BUILD ALL CASES** - Every position, strongest versions
-7. **NEVER FABRICATE** - If you can't find evidence, say so
-8. **PROBABILITY RANGES** - [0.6, 0.8] not 0.7
-9. **LET READERS DECIDE** - Present evidence, don't dictate conclusions
-10. **EVERY CLAIM NEEDS A SOURCE ID** - No [SXXX] = no claim. Source attribution is sacred.
-11. **APPEND-ONLY SOURCES** - Never renumber or delete source IDs
-12. **SUMMARY.MD IS A FINAL PRODUCT** - Rewrite completely each time. No ledger artifacts. Publishable quality.
-13. **SUMMARY.MD SELF-CONTAINED** - Must embed full source list, shareable standalone
-14. **GIT VERSIONING PER CASE** - Each case has its own git repo. Commit after every iteration.
+    ACTIONS:
+    1. Update _state.json:
+       - Set status to "COMPLETE"
+       - Update updated_at
+
+    2. Final git commit:
+       - "Investigation complete: [topic]"
+
+    3. Display final stats from _state.json
+
+    RETURN: Completion confirmation, final stats
+```
 
 ---
 
-## VERIFICATION TRIGGERS
+## ORCHESTRATOR SCRIPT EXAMPLE
 
-The verification checkpoint is MANDATORY at:
+Here's how the orchestrator should behave:
 
-1. **Periodically during investigation** (as needed)
-2. **When claiming "saturation"** (no more threads)
-3. **When claiming "complete"** (before final status)
-4. **When asked to stop** (user says "wrap up")
+```
+User: /investigate --new "Boeing 737 MAX crashes"
 
-If verification fails (gaps exist), you MUST continue investigating.
+Orchestrator:
+  "I'll create a new investigation case."
+  [Dispatch Setup Agent]
+  [Wait for completion]
+  "Case created: boeing-737-max-crashes. Starting iteration 1."
+
+  [Read _state.json - iteration: 0, phase: SETUP]
+
+  "Dispatching Phase 1 research agents in parallel."
+  [Dispatch 4-6 Research Agents in ONE message]
+  [Wait for all to complete]
+  "Research complete. 4 agents returned findings."
+
+  [Read _state.json - check if gaps updated]
+
+  "Dispatching extraction agent."
+  [Dispatch Extraction Agent]
+  [Wait for completion]
+  "Extraction complete. Found 15 people, 47 claims."
+
+  [Read _state.json - see people/claims to investigate]
+
+  "Dispatching investigation agents in parallel."
+  [Dispatch Investigation Agents for each person/claim]
+  [Wait for all to complete]
+
+  "Running verification checkpoint."
+  [Dispatch Verification Agent]
+  [Wait for completion]
+
+  [Read _state.json - check verification_passed and gaps]
+
+  if gaps:
+    "Verification found 3 gaps. Continuing investigation."
+    [Loop to address gaps]
+  else:
+    "Dispatching synthesis agent."
+    [Dispatch Synthesis Agent]
+    [Check termination]
+```
+
+---
+
+## HARD RULES FOR ORCHESTRATOR
+
+1. **NEVER call MCP tools directly** - Always dispatch sub-agents
+2. **NEVER read full research content** - Only read _state.json and file headers
+3. **NEVER write large content** - Sub-agents do all file writing
+4. **ALWAYS dispatch parallel agents in ONE message**
+5. **ALWAYS wait for agents to complete before next phase**
+6. **ALWAYS check _state.json between phases**
+7. **TRACK iteration count** - But let agents update _state.json
+8. **BRIEF status only** - Don't ask agents to return content
 
 ---
 
@@ -877,74 +681,8 @@ If verification fails (gaps exist), you MUST continue investigating.
 Do NOT:
 - Skip verification because "it's obviously done"
 - Claim saturation to avoid more iterations
-- Cherry-pick which claims to fact-check
-- Ignore alternative theories because they're "obviously false"
-- Assume only two sides exist
-- Present incomplete work as "good enough"
+- Stop early without verification passing
+- Read full file contents "just to check"
+- Do research directly "to save time"
 
-The verification checkpoint catches self-deception. Trust the process.
-
----
-
-## EXAMPLE: VERIFICATION CHECKPOINT OUTPUT
-
-```markdown
-## Verification Checkpoint - Iteration 15
-
-### Cross-Model Critique (Gemini)
-"The investigation has thoroughly covered the main events but has gaps in:
-1. Position 3 claims about regulatory failures - UNEXAMINED
-2. The leaked memo claim - mentioned but not fully contextualized
-3. Systemic failure claims - dismissed without investigation
-4. Position 2 argument about prior approvals - not fully verified"
-
-### Verification Checklist
-
-| Category | Status | Notes |
-|----------|--------|-------|
-| All people investigated | YES | All key people covered |
-| Claims categorized by position | PARTIAL | Some missing |
-| Timeline complete | YES | Good |
-| Source provenance traced | PARTIAL | Some gaps |
-| All positions documented | NO | Position 3 underdeveloped |
-| Alternative theories addressed | NO | Not addressed |
-| Cross-model critique passed | NO | Gaps found |
-| All major claims fact-checked | PARTIAL | Many unexamined |
-| **Statement history documented** | PARTIAL | CEO covered, CFO incomplete |
-| **Role timelines documented** | YES | All key figures have role history |
-| **Statement evolution analyzed** | NO | Not yet compared across time |
-| **Statement venue comparison** | NO | Need to compare testimony vs. public |
-| **Statement contradictions flagged** | PARTIAL | Some identified, not all investigated |
-
-### Gaps to Address
-1. Fact-check regulatory failure claims (Position 3)
-2. Research the leaked memo context
-3. Investigate systemic failure claims
-4. Verify prior approval argument (Position 2)
-5. Address coverup alternative theory
-6. Address political motivation theory
-
-### Verdict: CONTINUE
-Checklist has NO/PARTIAL items. 6 gaps identified. Must continue.
-```
-
----
-
-## WHEN RESUMING A CASE
-
-1. Read `summary.md` for current state and key findings
-2. Read `iterations.md` for progress log and last verification checkpoint
-3. Read `sources.md` to determine next source ID (e.g., if last is [S047], next is [S048])
-4. If verification gaps exist: address listed gaps from iterations.md
-5. If no gaps: check termination conditions
-6. Continue from next iteration number
-
-### Quick Resume Checklist
-
-```
-□ Read summary.md header (status, iteration count)
-□ Read iterations.md (last iteration, verification gaps)
-□ Read sources.md (find next available source ID)
-□ Identify gaps to address in next iteration
-□ Continue investigation loop
-```
+The architecture exists to prevent context bloat. Trust the process.
