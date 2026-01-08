@@ -130,10 +130,33 @@ AgenticInvestigator is an orchestrated multi-agent system that investigates cont
 | Completion claim | Before marking investigation COMPLETE |
 | User request | When user says "wrap up" |
 
+### Anti-Hallucination Check (Step 1 of Verification)
+
+**CRITICAL**: Before cross-model critique, verify that every claim attributed to a source actually exists in the captured evidence.
+
+```bash
+node scripts/verify-claims.js cases/[topic-slug]
+```
+
+| Verdict | Meaning | Action Required |
+|---------|---------|-----------------|
+| VERIFIED | Claim found in evidence | None |
+| NOT_FOUND | Claim NOT in evidence (hallucination risk) | Find evidence or revise claim |
+| PARTIAL | Claim partially supported | Review and clarify |
+| CONTRADICTED | Evidence says opposite | Urgent: fix the claim |
+| NO_EVIDENCE | No captured evidence for source | Capture the source |
+
+**Do NOT proceed with verification if CONTRADICTED claims exist.**
+
 ### Verification Checklist
 
 ```
 All must be TRUE to complete:
+
+# Evidence & Anti-Hallucination
+□ All sources have captured evidence
+□ Anti-hallucination check passed (no CONTRADICTED claims)
+□ All NOT_FOUND claims addressed or removed
 
 # Core Investigation
 □ All people investigated
