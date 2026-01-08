@@ -92,11 +92,8 @@ cases/[topic-slug]/
 │    - Read _state.json (full file is small, ~20 lines)                        │
 │    - Note: current_iteration, current_phase, gaps, verification_passed       │
 │                                                                              │
-│  STEP 2: DECIDE NEXT PHASE                                                   │
-│    - If iteration 0: PHASE 1 (initial research)                              │
-│    - If gaps exist: Continue current phase addressing gaps                   │
-│    - If no gaps and not verified: PHASE 4 (verification)                     │
-│    - If verification_passed: COMPLETE                                        │
+│  STEP 2: DECIDE NEXT ACTION (based on current_phase)                         │
+│    See PHASE STATE MACHINE below                                             │
 │                                                                              │
 │  STEP 3: DISPATCH SUB-AGENTS                                                 │
 │    - Launch appropriate agents for current phase (parallel when possible)    │
@@ -104,14 +101,90 @@ cases/[topic-slug]/
 │                                                                              │
 │  STEP 4: CHECK COMPLETION                                                    │
 │    - Re-read _state.json                                                     │
-│    - If phase complete: Move to next phase                                   │
-│    - If iteration complete: Increment iteration, git commit                  │
+│    - Advance to next phase per state machine                                 │
 │                                                                              │
 │  STEP 5: LOOP OR TERMINATE                                                   │
 │    - If status == "COMPLETE": Done                                           │
 │    - Else: Loop to STEP 1                                                    │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Phase State Machine
+
+**Valid `current_phase` values:** `SETUP`, `RESEARCH`, `EXTRACTION`, `INVESTIGATION`, `VERIFICATION`, `SYNTHESIS`, `COMPLETE`
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           PHASE STATE MACHINE                                │
+│                                                                              │
+│   SETUP ──────────────────────────────────────────────────────► RESEARCH    │
+│     (after case created)                                                     │
+│                                                                              │
+│   RESEARCH ───────────────────────────────────────────────────► EXTRACTION  │
+│     (after all research agents complete)                                     │
+│                                                                              │
+│   EXTRACTION ─────────────────────────────────────────────────► INVESTIGATION│
+│     (after extraction agent completes, gaps populated)                       │
+│                                                                              │
+│   INVESTIGATION ──────────────────────────────────────────────► VERIFICATION│
+│     (after all investigation agents complete)                                │
+│                                                                              │
+│   VERIFICATION ─────► INVESTIGATION (if gaps.length > 0)                    │
+│        │                                                                     │
+│        └────────────► SYNTHESIS (if verification_passed && gaps.length == 0)│
+│                                                                              │
+│   SYNTHESIS ──────────────────────────────────────────────────► RESEARCH    │
+│        │              (next iteration, if new gaps found)                    │
+│        │                                                                     │
+│        └────────────► COMPLETE (if verification_passed && gaps.length == 0) │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Phase Transition Logic (Orchestrator Decision Tree)
+
+```python
+def decide_next_action(state):
+    phase = state.current_phase
+
+    if phase == "SETUP":
+        # Just created - start research
+        return "DISPATCH_RESEARCH"
+
+    elif phase == "RESEARCH":
+        # Research done - extract findings
+        return "DISPATCH_EXTRACTION"
+
+    elif phase == "EXTRACTION":
+        # Extraction done - investigate people/claims
+        return "DISPATCH_INVESTIGATION"
+
+    elif phase == "INVESTIGATION":
+        # Investigation done - verify completeness
+        return "DISPATCH_VERIFICATION"
+
+    elif phase == "VERIFICATION":
+        if state.gaps and len(state.gaps) > 0:
+            # Gaps found - go back to investigate
+            return "DISPATCH_INVESTIGATION"  # Address specific gaps
+        elif state.verification_passed:
+            # Verified complete - synthesize
+            return "DISPATCH_SYNTHESIS"
+        else:
+            # Not passed but no specific gaps - research more
+            return "DISPATCH_RESEARCH"
+
+    elif phase == "SYNTHESIS":
+        # Synthesis done - check if truly complete
+        if state.verification_passed and len(state.gaps) == 0:
+            return "MARK_COMPLETE"
+        else:
+            # New iteration needed
+            return "DISPATCH_RESEARCH"
+
+    elif phase == "COMPLETE":
+        return "DONE"
 ```
 
 ---
@@ -152,6 +225,7 @@ Task tool:
          "people_count": 0,
          "sources_count": 0,
          "gaps": [],
+         "last_verification": null,
          "verification_passed": false,
          "created_at": "[ISO timestamp]",
          "updated_at": "[ISO timestamp]"
@@ -404,6 +478,7 @@ Task tool:
     TASK: Verify claim
 
     CASE: cases/[case-id]/
+    ITERATION: [N]
     CLAIM: [claim text]
     CLAIMANT: [who made claim]
     POSITION: [which position this supports]
@@ -443,6 +518,7 @@ Task tool:
     TASK: Capture evidence
 
     CASE: cases/[case-id]/
+    ITERATION: [N]
     SOURCE_ID: [SXXX]
     URL: [url]
 
@@ -456,6 +532,7 @@ Task tool:
     3. Verify capture succeeded:
        ls cases/[case-id]/evidence/web/[SOURCE_ID]/
 
+    OUTPUT FILES: evidence/web/[SOURCE_ID]/ or evidence/documents/
     RETURN: Success/failure, files created
 ```
 
@@ -602,6 +679,7 @@ Task tool:
     ACTIONS:
     1. Update _state.json:
        - Set status to "COMPLETE"
+       - Set current_phase to "COMPLETE"
        - Update updated_at
 
     2. Final git commit:
@@ -609,6 +687,7 @@ Task tool:
 
     3. Display final stats from _state.json
 
+    OUTPUT FILES: _state.json
     RETURN: Completion confirmation, final stats
 ```
 

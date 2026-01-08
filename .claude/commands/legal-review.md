@@ -214,35 +214,7 @@ This disclosure:
 
 ---
 
-## STEP 1: LOAD CASE FILES
-
-```python
-# Load all case files for review
-read(summary.md)
-read(sources.md)
-read(fact-check.md)
-read(people.md)
-read(positions.md)
-read(statements.md)
-```
-
----
-
-## STEP 2: EXTRACT ALL CLAIMS
-
-For each factual claim in summary.md:
-
-```
-CLAIM: [The specific claim]
-SUBJECT: [Person/entity the claim is about]
-SUBJECT_TYPE: [Public Official | Public Figure | Limited Public Figure | Private Figure]
-CLAIM_TYPE: [Criminal | Professional | Financial | Personal | Other]
-SOURCES: [List of source IDs supporting this claim]
-```
-
----
-
-## STEP 3: ASSESS EACH CLAIM
+## ASSESSMENT CRITERIA (Reference for Sub-Agents)
 
 For each claim, evaluate:
 
@@ -402,7 +374,7 @@ If the latter, revise to include dispute acknowledgment.
 
 ---
 
-## STEP 4: RISK CLASSIFICATION
+## RISK CLASSIFICATION MATRIX (Reference for Sub-Agents)
 
 ### Overall Claim Risk Matrix
 
@@ -431,9 +403,7 @@ SEVERITY    Moderate  LOW      MEDIUM   HIGH
 
 ---
 
-## STEP 5: GENERATE LEGAL REVIEW
-
-### Output Format
+## OUTPUT FORMAT (Template for Sub-Agents)
 
 ```markdown
 # Legal Risk Assessment: [Investigation Title]
