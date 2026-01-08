@@ -44,7 +44,7 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 ├── positions.md                  # ALL sides - each position with arguments and evidence
 ├── fact-check.md                 # Claim verdicts (all sides)
 ├── theories.md                   # Fringe/alternative theories analysis
-├── evidence.md                   # Statement vs evidence, chain of knowledge
+├── statements.md                 # Statement vs evidence, chain of knowledge
 ├── iterations.md                 # Progress log + verification checkpoints
 ├── integrity-check.md            # Journalistic integrity assessment (generated)
 ├── legal-review.md               # Pre-publication legal risk assessment (generated)

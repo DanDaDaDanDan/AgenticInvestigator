@@ -209,7 +209,7 @@ read(sources.md)
 read(fact-check.md)
 read(people.md)
 read(positions.md)
-read(evidence.md)
+read(statements.md)
 ```
 
 ---

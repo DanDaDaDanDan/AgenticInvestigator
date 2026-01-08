@@ -1,9 +1,30 @@
 #!/usr/bin/env node
+/**
+ * find-failed-captures.js - Audit capture quality
+ *
+ * Usage: node find-failed-captures.js <case-dir>
+ *
+ * Scans evidence/web/ for captures that may have failed:
+ * - Non-200 HTTP status codes
+ * - Error pages (404, access denied, bot blocked)
+ */
+
 const fs = require('fs');
 const path = require('path');
 
-const caseDir = process.argv[2] || '/Users/vogel/Documents/AgenticInvestigator/cases/inv-20260106-143022';
+const args = process.argv.slice(2);
+if (args.length < 1) {
+  console.error('Usage: node find-failed-captures.js <case-dir>');
+  process.exit(1);
+}
+
+const caseDir = args[0];
 const webDir = path.join(caseDir, 'evidence', 'web');
+
+if (!fs.existsSync(webDir)) {
+  console.error(`Error: evidence/web directory not found: ${webDir}`);
+  process.exit(1);
+}
 
 const dirs = fs.readdirSync(webDir).filter(d => d.startsWith('S')).sort((a, b) => {
   const numA = parseInt(a.substring(1));
