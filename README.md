@@ -341,6 +341,7 @@ node scripts/verify-claims.js /path/to/case
 
 | File | Contents |
 |------|----------|
+| `rules.md` | **Canonical rules** (sources, evidence, verification, state ownership) |
 | `CLAUDE.md` | AI behavioral instructions |
 | `architecture.md` | Technical design, data formats |
 | `.claude/commands/investigate.md` | Full investigation procedure |
