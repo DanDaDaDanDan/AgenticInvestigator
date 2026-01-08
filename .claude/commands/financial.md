@@ -428,8 +428,10 @@ money flow summary, recommended follow-up]
 Save financial analysis to case directory:
 
 ```
-cases/[case-id]/financial-[entity]-[datetime].md
+cases/[case-id]/financial-[entity].md
 ```
+
+Git handles versioning - no timestamps needed in filenames.
 
 If new sources discovered, add to `sources.md` with proper [SXXX] IDs.
 
