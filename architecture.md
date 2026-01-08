@@ -796,6 +796,7 @@ Screenshot  PDF      HTML          Store with
 | `scripts/firecrawl-capture.js` | Bot-bypass capture (Firecrawl API) | `node scripts/firecrawl-capture.js --batch urls.txt case_dir` |
 | `scripts/capture-evidence.js` | Combined workflow (Firecrawl + PDF) | `node scripts/capture-evidence.js urls.txt case_dir` |
 | `scripts/verify-sources.js` | Verify evidence integrity | `node scripts/verify-sources.js case_dir` |
+| `scripts/verify-claims.js` | Anti-hallucination claim verification | `node scripts/verify-claims.js case_dir` |
 | `scripts/find-failed-captures.js` | Audit capture quality | `node scripts/find-failed-captures.js case_dir` |
 | `scripts/find-wayback-url.js` | Find Wayback Machine URLs | `node scripts/find-wayback-url.js URL` |
 | `scripts/archivebox-backup.js` | WARC forensic backups | `node scripts/archivebox-backup.js urls.txt archive_dir` |

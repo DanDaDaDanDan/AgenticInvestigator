@@ -43,7 +43,42 @@ else:
 
 ---
 
-## STEP 2: CROSS-MODEL CRITIQUE
+## STEP 2: CLAIM-TO-EVIDENCE VERIFICATION (Anti-Hallucination Check)
+
+**CRITICAL**: Verify that every claim attributed to a source actually exists in the captured evidence.
+
+Run the verification script:
+```bash
+node scripts/verify-claims.js cases/[case-id]
+```
+
+This checks:
+- Every claim with a source citation [S001], [S002], etc.
+- Reads the captured evidence for that source
+- Uses AI to verify the claim actually appears in the evidence
+- Reports: VERIFIED, NOT_FOUND, PARTIAL, CONTRADICTED
+
+### Interpreting Results
+
+| Verdict | Meaning | Action Required |
+|---------|---------|-----------------|
+| VERIFIED | Claim found in evidence | None |
+| NOT_FOUND | Claim NOT in evidence (hallucination risk) | Find evidence or revise claim |
+| PARTIAL | Claim partially supported | Review and clarify |
+| CONTRADICTED | Evidence says opposite | Urgent: fix the claim |
+| NO_EVIDENCE | No captured evidence for source | Capture the source |
+
+### If Problems Found
+
+1. **NOT_FOUND claims**: Either find evidence and capture it, or remove/revise the claim
+2. **CONTRADICTED claims**: Urgent - the claim is wrong, must fix
+3. **NO_EVIDENCE sources**: Run `./scripts/capture [SXXX] [url]` to capture missing sources
+
+**Do NOT proceed with verification if CONTRADICTED claims exist.**
+
+---
+
+## STEP 3: CROSS-MODEL CRITIQUE
 
 Use Gemini to critique the investigation with high thinking:
 
@@ -112,7 +147,7 @@ mcp__mcp-gemini__generate_text:
 
 ---
 
-## STEP 3: POSITION AUDIT
+## STEP 4: POSITION AUDIT
 
 ### 3A: List All Claims By Position
 
@@ -166,7 +201,7 @@ For each theory, check if addressed:
 
 ---
 
-## STEP 4: VERIFICATION CHECKLIST
+## STEP 5: VERIFICATION CHECKLIST
 
 ```
 All must be TRUE to pass:
@@ -211,7 +246,7 @@ All must be TRUE to pass:
 
 ---
 
-## STEP 5: GENERATE GAP LIST
+## STEP 6: GENERATE GAP LIST
 
 If any checklist items are FALSE or PARTIAL:
 
@@ -246,7 +281,7 @@ If any checklist items are FALSE or PARTIAL:
 
 ---
 
-## STEP 6: VERDICT
+## STEP 7: VERDICT
 
 ### If PASS (all checklist items YES AND no critical gaps):
 
@@ -289,7 +324,7 @@ The investigation does NOT meet completeness standards.
 
 ---
 
-## STEP 7: UPDATE CASE
+## STEP 8: UPDATE CASE
 
 ### Add Verification Log Entry
 

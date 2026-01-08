@@ -64,6 +64,36 @@ node scripts/verify-sources.js /path/to/case
 
 ---
 
+### `verify-claims.js`
+
+**Anti-hallucination check**: Verify that claims attributed to sources actually exist in the captured evidence.
+
+```bash
+node scripts/verify-claims.js /path/to/case              # Verify all claims
+node scripts/verify-claims.js /path/to/case --summary    # Only check summary.md
+node scripts/verify-claims.js /path/to/case --json       # Output JSON report
+```
+
+**Checks:**
+- Extracts all claims with source IDs [SXXX] from case files
+- Loads captured evidence (HTML, PDF text, markdown) for each source
+- Uses Gemini AI to semantically verify claims exist in evidence
+- Reports verdict for each claim
+
+**Verdicts:**
+
+| Verdict | Meaning | Action Required |
+|---------|---------|-----------------|
+| VERIFIED | Claim found in evidence | None |
+| NOT_FOUND | Claim NOT in evidence (hallucination risk) | Find evidence or revise claim |
+| PARTIAL | Claim partially supported | Review and clarify |
+| CONTRADICTED | Evidence says opposite | Urgent: fix the claim |
+| NO_EVIDENCE | No captured evidence for source | Capture the source |
+
+**Requires:** `GEMINI_API_KEY` environment variable or `.env` file.
+
+---
+
 ### `firecrawl-capture.js`
 
 Capture using Firecrawl API - excellent for bot-protected sites (Cloudflare, Akamai, etc.).
