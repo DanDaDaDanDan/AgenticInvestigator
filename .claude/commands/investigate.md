@@ -55,13 +55,15 @@ cases/[topic-slug]/
 
 ### _state.json Structure
 
+**Valid `status` values:** `IN_PROGRESS`, `COMPLETE`, `PAUSED`, `ERROR`
+
 ```json
 {
   "case_id": "topic-slug",
   "topic": "Original investigation topic",
   "status": "IN_PROGRESS",
   "current_iteration": 5,
-  "current_phase": "RESEARCH",
+  "current_phase": "VERIFICATION",
   "next_source_id": "S048",
   "people_count": 12,
   "sources_count": 47,
@@ -73,6 +75,65 @@ cases/[topic-slug]/
   "verification_passed": false,
   "created_at": "2026-01-07T09:00:00Z",
   "updated_at": "2026-01-08T10:30:00Z"
+}
+```
+
+### _extraction.json Structure
+
+Holds current iteration's extracted findings. Overwritten each extraction phase.
+
+```json
+{
+  "iteration": 5,
+  "extracted_at": "2026-01-08T10:00:00Z",
+  "people": [
+    {
+      "name": "John Smith",
+      "mentioned_role": "CEO",
+      "source_file": "iteration-005-gemini.md",
+      "needs_investigation": true,
+      "role_timeline_hints": ["appointed 2020", "resigned 2024"]
+    }
+  ],
+  "claims": [
+    {
+      "text": "Company knew about safety issues in 2019",
+      "position": "Critics",
+      "needs_verification": true,
+      "source_file": "iteration-005-xai.md"
+    }
+  ],
+  "events": [
+    {
+      "date": "2019-03-10",
+      "event": "Internal memo circulated",
+      "source_file": "iteration-005-gemini.md"
+    }
+  ],
+  "statements": [
+    {
+      "speaker": "John Smith",
+      "date": "2020-01-15",
+      "venue": "Congressional testimony",
+      "summary": "Denied knowledge of issues",
+      "source_file": "iteration-005-gemini.md"
+    }
+  ],
+  "contradictions": [
+    {
+      "description": "CEO's 2020 testimony vs 2019 internal memo",
+      "sources": ["iteration-005-gemini.md", "iteration-005-xai.md"]
+    }
+  ],
+  "sources_to_capture": [
+    {
+      "url": "https://example.com/article",
+      "type": "news",
+      "claims_supported": ["safety issue knowledge"],
+      "priority": "HIGH",
+      "circular_reporting_note": null
+    }
+  ]
 }
 ```
 
@@ -131,6 +192,9 @@ cases/[topic-slug]/
 │     (after all investigation agents complete)                                │
 │                                                                              │
 │   VERIFICATION ─────► INVESTIGATION (if gaps.length > 0)                    │
+│        │                                                                     │
+│        ├────────────► RESEARCH (if !verification_passed && gaps.length == 0)│
+│        │              (need more research even though no specific gaps)      │
 │        │                                                                     │
 │        └────────────► SYNTHESIS (if verification_passed && gaps.length == 0)│
 │                                                                              │
