@@ -102,11 +102,18 @@ Each case has a `_state.json` for orchestrator state:
 ```json
 {
   "case_id": "topic-slug",
+  "topic": "Original investigation topic",
   "status": "IN_PROGRESS",
   "current_iteration": 5,
   "current_phase": "VERIFICATION",
+  "next_source_id": "S048",
+  "people_count": 12,
+  "sources_count": 47,
   "gaps": ["gap1", "gap2"],
-  "verification_passed": false
+  "last_verification": "2026-01-08T10:30:00Z",
+  "verification_passed": false,
+  "created_at": "2026-01-07T09:00:00Z",
+  "updated_at": "2026-01-08T10:30:00Z"
 }
 ```
 
