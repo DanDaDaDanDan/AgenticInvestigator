@@ -47,6 +47,7 @@ cases/[topic-slug]/
   "sources_count": 47,
   "gaps": ["gap1", "gap2"],
   "verification_passed": false,
+  "last_verification": "...",
   "created_at": "...",
   "updated_at": "..."
 }
