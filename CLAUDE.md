@@ -139,6 +139,7 @@ Each case has a `_state.json` for orchestrator state tracking:
   "current_phase": "VERIFICATION",
   "next_source_id": "S048",
   "people_count": 12,
+  "entities_count": 8,
   "sources_count": 47,
   "gaps": ["gap1", "gap2"],
   "last_verification": "2026-01-08T10:30:00Z",
@@ -331,6 +332,7 @@ cases/[topic-slug]/
 ├── sources.md                    # Source registry with URLs, evidence paths, hashes
 ├── timeline.md                   # Chronological events
 ├── people.md                     # Person profiles
+├── organizations.md              # Company/entity profiles (corporations, agencies, NGOs)
 ├── positions.md                  # ALL positions with arguments and evidence
 ├── fact-check.md                 # Claim verdicts (all positions)
 ├── theories.md                   # Alternative/fringe theories

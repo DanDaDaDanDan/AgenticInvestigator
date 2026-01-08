@@ -49,6 +49,7 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 ├── sources.md                    # Master source registry [S001], [S002]...
 ├── timeline.md                   # Chronological events
 ├── people.md                     # Person profiles
+├── organizations.md              # Company/entity profiles (corporations, agencies, NGOs)
 ├── positions.md                  # ALL sides - each position with arguments and evidence
 ├── fact-check.md                 # Claim verdicts (all sides)
 ├── theories.md                   # Fringe/alternative theories analysis
@@ -111,6 +112,7 @@ Each case has a `_state.json` for orchestrator state:
   "current_phase": "VERIFICATION",
   "next_source_id": "S048",
   "people_count": 12,
+  "entities_count": 8,
   "sources_count": 47,
   "gaps": ["gap1", "gap2"],
   "last_verification": "2026-01-08T10:30:00Z",
