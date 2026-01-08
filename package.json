@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/DanDaDaDanDan/AgenticInvestigator#readme",
   "dependencies": {
+    "dotenv": "^17.2.3",
     "playwright": "^1.57.0"
   }
 }

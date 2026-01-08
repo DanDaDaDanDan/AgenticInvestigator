@@ -13,8 +13,11 @@
  *   Batch:       node firecrawl-capture.js --batch <url-list> <case-dir>
  *
  * Environment:
- *   FIRECRAWL_API_KEY - Required API key from firecrawl.dev
+ *   FIRECRAWL_API_KEY - Required API key from firecrawl.dev (or in .env)
  */
+
+// Load .env from project root
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 
 const fs = require('fs');
 const path = require('path');
@@ -98,11 +101,10 @@ async function captureUrl(sourceId, url, evidenceDir, attempt = 1) {
   fs.mkdirSync(evidenceDir, { recursive: true });
 
   try {
-    // Call Firecrawl API
+    // Call Firecrawl API (v2 format)
     const response = await post(API_URL, {
       url: url,
-      formats: ['html', 'markdown', 'screenshot', 'rawHtml'],
-      screenshot: true,
+      formats: ['html', 'rawHtml', 'markdown', 'screenshot@fullPage'],
       waitFor: 3000,
       timeout: 120000
     });
