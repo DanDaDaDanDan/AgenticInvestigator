@@ -38,6 +38,7 @@ Only one agent updates each field to prevent race conditions:
 | `current_iteration` | Synthesis Agent only |
 | `gaps` | Verification Agent only |
 | `verification_passed` | Verification Agent only |
+| `last_verification` | Verification Agent only |
 | `next_source_id` | Investigation Agent (read-increment-write atomically) |
 | `*_count` fields | Synthesis Agent (computed from file counts) |
 
