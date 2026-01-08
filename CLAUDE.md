@@ -320,7 +320,7 @@ Use `/questions` to generate investigative questions using 20 frameworks in 6 ca
 ```
 cases/[topic-slug]/
 ├── _state.json                   # ORCHESTRATOR STATE (machine-readable)
-├── _extraction.json              # Current extraction results (claims, people, dates)
+├── _extraction.json              # Current extraction results (claims, people, entities, dates)
 ├── .git/                         # Case-specific git repository
 ├── evidence/                     # EVIDENCE ARCHIVE (hallucination-proof)
 │   ├── web/S001/                 # Screenshots, PDFs, HTML per source

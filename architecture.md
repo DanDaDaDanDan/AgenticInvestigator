@@ -653,8 +653,8 @@ Transform investigation findings into publication-ready journalism.
 | Agent Type | Task tool subagent_type | Responsibilities | Writes To |
 |------------|-------------------------|------------------|-----------|
 | **Research Agent** | `general-purpose` | Execute MCP research (Gemini/OpenAI/XAI), save raw output | `research-leads/` |
-| **Extraction Agent** | `general-purpose` | Parse research-leads/, extract claims/people/dates | `_extraction.json` |
-| **Investigation Agent** | `general-purpose` | Investigate specific people/claims, verify facts | `people.md`, `fact-check.md`, `timeline.md` |
+| **Extraction Agent** | `general-purpose` | Parse research-leads/, extract claims/people/entities/dates | `_extraction.json` |
+| **Investigation Agent** | `general-purpose` | Investigate people/entities/claims, verify facts | `people.md`, `organizations.md`, `fact-check.md`, `timeline.md` |
 | **Evidence Agent** | `Bash` | Run capture scripts, verify evidence | `evidence/`, `sources.md` |
 | **Verification Agent** | `general-purpose` | Run verification checkpoint, cross-model critique | `iterations.md` (append checkpoint) |
 | **Synthesis Agent** | `general-purpose` | Synthesize all detail files into summary.md | `summary.md` |
@@ -983,7 +983,7 @@ cases/
     │
     │  # ORCHESTRATOR STATE (machine-readable)
     ├── _state.json                   # Case status, iteration, gaps, verification
-    ├── _extraction.json              # Current extraction results (claims, people, dates)
+    ├── _extraction.json              # Current extraction results (claims, people, entities, dates)
     │
     │  # VERSION CONTROL
     ├── .git/                         # Case-specific git repository
