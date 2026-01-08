@@ -11,8 +11,11 @@
  *   node capture-evidence.js <url-list> <case-dir> [--archivebox]
  *
  * Environment:
- *   FIRECRAWL_API_KEY - Required for Firecrawl
+ *   FIRECRAWL_API_KEY - Required for Firecrawl (or in .env)
  */
+
+// Load .env from project root
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 
 const { execSync, spawn } = require('child_process');
 const fs = require('fs');
@@ -129,7 +132,8 @@ async function generatePdfs(caseDir) {
 
     try {
       const page = await browser.newPage();
-      await page.goto(`file://${htmlPath}`, { waitUntil: 'networkidle' });
+      const absoluteHtmlPath = path.resolve(htmlPath);
+      await page.goto(`file://${absoluteHtmlPath}`, { waitUntil: 'networkidle' });
       await page.pdf({
         path: pdfPath,
         format: 'A4',
