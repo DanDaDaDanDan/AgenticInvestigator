@@ -37,6 +37,11 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 **Modular files** in `cases/[topic-slug]/` (e.g., `cases/corporate-fraud-acme-corp/`):
 
 ```
+├── evidence/                     # CAPTURED EVIDENCE (hallucination-proof)
+│   ├── web/S001/                 # Screenshots, PDFs, HTML per source
+│   ├── documents/                # Downloaded PDFs (SEC filings, court docs)
+│   └── media/                    # Videos, transcripts
+├── research-leads/               # AI research outputs (NOT citable - leads only)
 ├── summary.md                    # THE DELIVERABLE - self-contained, shareable
 ├── sources.md                    # Master source registry [S001], [S002]...
 ├── timeline.md                   # Chronological events
@@ -55,6 +60,8 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 
 **Source attribution is sacred** - Every claim has a source ID `[S001]`. No exceptions.
 
+**Evidence capture is mandatory** - Every source has local screenshots/PDFs proving content existed.
+
 ## How It Works
 
 ```
@@ -66,6 +73,12 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 │    - OpenAI deep research (max depth, critical claims)           │
 │    - XAI real-time search (X/Twitter, web, news)                 │
 │    - Statement searches (testimony, interviews, earnings calls)  │
+│                                                                  │
+│  PHASE 1.5: EVIDENCE CAPTURE (for each source found)             │
+│    - Find primary source URL (AI research = leads only)          │
+│    - IMMEDIATELY capture: ./scripts/capture SXXX https://url     │
+│    - Verify claim exists in captured content                     │
+│    - Register in sources.md with evidence path                   │
 │                                                                  │
 │  PHASE 2: EXTRACTION                                             │
 │    - Extract claims, people, dates, contradictions               │
@@ -79,7 +92,8 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 │    - For EVERY contradiction → investigate discrepancy           │
 │    - Compare statements across time and venues                   │
 │                                                                  │
-│  PHASE 4: VERIFICATION CHECKPOINT (periodic)                      │
+│  PHASE 4: VERIFICATION CHECKPOINT (periodic)                     │
+│    - Anti-hallucination check (verify claims exist in evidence)  │
 │    - Cross-model critique (Gemini critiques Claude)              │
 │    - Identify unexplored claims from ALL positions               │
 │    - Identify alternative theories to address                    │
@@ -205,6 +219,53 @@ Transform investigation findings into publication-ready journalism:
 **Standards**: Professional newsroom quality (NYT/ProPublica style), preserves all source citations, no editorializing, balanced perspectives, hedging language for unverified claims.
 
 **Output**: Two complete articles ready for publication with source key and editorial notes.
+
+## Evidence Capture System
+
+**Hallucination-proof source verification.** Every source has local evidence proving content existed at research time.
+
+### Capture Workflow
+
+```bash
+# Capture web page (screenshot + PDF + HTML)
+./scripts/capture S001 https://example.com/article
+
+# Capture document (PDF download)
+./scripts/capture --document S015 https://sec.gov/filing.pdf
+
+# Batch capture with Firecrawl (bot-protected sites)
+node scripts/firecrawl-capture.js --batch urls.txt /path/to/case
+```
+
+### Evidence Structure
+
+```
+evidence/
+├── web/S001/
+│   ├── capture.png       # Full-page screenshot
+│   ├── capture.pdf       # PDF rendering
+│   ├── capture.html      # Raw HTML source
+│   └── metadata.json     # URL, timestamp, SHA-256 hashes
+└── documents/
+    └── S015_10k_2024.pdf # Downloaded with source ID prefix
+```
+
+### Anti-Hallucination Verification
+
+Before finalization, verify all claims actually exist in captured evidence:
+
+```bash
+node scripts/verify-claims.js /path/to/case
+```
+
+| Verdict | Meaning | Action |
+|---------|---------|--------|
+| VERIFIED | Claim found in evidence | None |
+| NOT_FOUND | Claim NOT in evidence | Find evidence or revise claim |
+| PARTIAL | Claim partially supported | Review and clarify |
+| CONTRADICTED | Evidence says opposite | Urgent: fix the claim |
+
+**AI research outputs are NOT sources.** Save to `research-leads/`, then find and capture primary sources.
 
 ## Investigation Loop Finale
 

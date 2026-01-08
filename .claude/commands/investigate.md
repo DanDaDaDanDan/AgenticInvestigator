@@ -154,6 +154,7 @@ cases/[topic-slug]/
 │    ┌──────────────────────────────────────────────────────────────────────────┐ │
 │    │  PHASE 4: VERIFICATION CHECKPOINT (periodic)                              │ │
 │    │                                                                            │ │
+│    │  → Anti-hallucination check (verify claims exist in evidence)            │ │
 │    │  → Cross-model critique (Gemini critiques Claude's work)                  │ │
 │    │  → Identify unexplored claims (from ALL positions)                        │ │
 │    │  → Identify alternative theories to address                               │ │
@@ -590,7 +591,25 @@ for each contradiction:
 
 **Run this phase periodically OR when claiming the investigation is saturated.**
 
-### Step 1: Cross-Model Critique
+### Step 1: Anti-Hallucination Check
+
+**CRITICAL**: Before cross-model critique, verify that every claim attributed to a source actually exists in the captured evidence.
+
+```bash
+node scripts/verify-claims.js cases/[topic-slug]
+```
+
+| Verdict | Action Required |
+|---------|-----------------|
+| VERIFIED | None |
+| NOT_FOUND | Find evidence or revise claim |
+| PARTIAL | Review and clarify |
+| CONTRADICTED | Urgent: fix the claim |
+| NO_EVIDENCE | Capture the source with ./scripts/capture |
+
+**Do NOT proceed with cross-model critique if CONTRADICTED claims exist.**
+
+### Step 2: Cross-Model Critique
 
 ```
 mcp__mcp-gemini__generate_text:
@@ -622,7 +641,7 @@ mcp__mcp-gemini__generate_text:
     4. Unverified claims that should be fact-checked
 ```
 
-### Step 2: Position Audit
+### Step 3: Position Audit
 
 Explicitly list claims from ALL positions and their status:
 
@@ -648,12 +667,17 @@ Explicitly list claims from ALL positions and their status:
 | [theory] | [who promotes] | DEBUNKED/UNPROVEN/PARTIAL | [verdict] |
 ```
 
-### Step 3: Verification Checklist
+### Step 4: Verification Checklist
 
 Check completeness:
 
 ```
 All must be TRUE to complete:
+
+# Evidence & Anti-Hallucination
+□ All sources have captured evidence
+□ Anti-hallucination check passed (no CONTRADICTED claims)
+□ All NOT_FOUND claims addressed or removed
 
 # Core Investigation
 □ All people investigated
@@ -666,7 +690,7 @@ All must be TRUE to complete:
 □ All major claims fact-checked (all sides)
 □ No unexamined major claims
 
-# Statement & Temporal Coverage (NEW)
+# Statement & Temporal Coverage
 □ Key persons have statement history documented
 □ Role timelines documented for key figures
 □ Statement evolution analyzed (same person, different times)
@@ -674,7 +698,7 @@ All must be TRUE to complete:
 □ All contradictions between statements flagged and investigated
 ```
 
-### Step 4: Gap List
+### Step 5: Gap List
 
 If any checklist items are FALSE or PARTIAL:
 
@@ -687,7 +711,7 @@ If any checklist items are FALSE or PARTIAL:
 3. [Specific gap] → Action: [what to research]
 ```
 
-### Step 5: Verdict
+### Step 6: Verdict
 
 ```
 if all_checklist_items_true AND no_gaps:
