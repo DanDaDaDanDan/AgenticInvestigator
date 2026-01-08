@@ -776,9 +776,14 @@ Screenshot  PDF      HTML          Store with
 
 | Script | Purpose | Usage |
 |--------|---------|-------|
-| `scripts/capture` | Capture web page or document | `./scripts/capture S001 https://url` |
-| `scripts/capture-url.js` | Node.js Playwright capture | Called by capture script |
+| `scripts/capture` | Main capture wrapper | `./scripts/capture S001 https://url` |
+| `scripts/capture-url.js` | Playwright capture (core) | Called by capture script |
+| `scripts/firecrawl-capture.js` | Bot-bypass capture (Firecrawl API) | `node scripts/firecrawl-capture.js --batch urls.txt case_dir` |
+| `scripts/capture-evidence.js` | Combined workflow (Firecrawl + PDF) | `node scripts/capture-evidence.js urls.txt case_dir` |
 | `scripts/verify-sources.js` | Verify evidence integrity | `node scripts/verify-sources.js case_dir` |
+| `scripts/find-failed-captures.js` | Audit capture quality | `node scripts/find-failed-captures.js case_dir` |
+| `scripts/find-wayback-url.js` | Find Wayback Machine URLs | `node scripts/find-wayback-url.js URL` |
+| `scripts/archivebox-backup.js` | WARC forensic backups | `node scripts/archivebox-backup.js urls.txt archive_dir` |
 
 ### Evidence Types
 
@@ -1459,7 +1464,7 @@ of specific quid pro quo.
 [... continues ...]
 ```
 
-### evidence.md
+### statements.md
 
 ```markdown
 # Evidence Analysis: [Topic]

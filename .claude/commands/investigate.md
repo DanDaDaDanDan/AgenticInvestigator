@@ -61,7 +61,7 @@ cases/inv-YYYYMMDD-HHMMSS/
 ├── positions.md                  # All positions/sides with arguments and evidence
 ├── fact-check.md                 # Claim verdicts (all positions)
 ├── theories.md                   # Alternative theories analysis
-├── evidence.md                   # Statement vs evidence, chain of knowledge
+├── statements.md                 # Statement vs evidence, chain of knowledge
 │
 │  # METADATA
 └── iterations.md                 # Progress log + verification checkpoints
@@ -78,7 +78,7 @@ cases/inv-YYYYMMDD-HHMMSS/
 | `positions.md` | All positions with arguments | As positions found |
 | `fact-check.md` | Claim verdicts (all positions) | As claims verified |
 | `theories.md` | Alternative theory analysis | As theories addressed |
-| `evidence.md` | Documentary analysis | As evidence analyzed |
+| `statements.md` | Statement vs evidence analysis | As evidence analyzed |
 | `iterations.md` | Progress tracking | Every iteration |
 
 ### Source Attribution Rule
@@ -543,7 +543,7 @@ for each contradiction:
     find_evidence_for_each()
     determine_which_is_correct()
     register_sources(sources.md)       # Get [SXXX] IDs
-    add_analysis(evidence.md)          # Statement vs evidence
+    add_analysis(statements.md)         # Statement vs evidence
     update_summary(summary.md)         # Contested section
 ```
 
@@ -677,7 +677,7 @@ After each iteration, update the modular files:
    positions.md   → All positions with evidence and arguments
    fact-check.md  → Claim verifications (all positions)
    theories.md    → Alternative theory analysis
-   evidence.md    → Statement vs evidence, chain of knowledge
+   statements.md  → Statement vs evidence, chain of knowledge
 
 3. PROGRESS LOG
    iterations.md  → Log this iteration + verification results
