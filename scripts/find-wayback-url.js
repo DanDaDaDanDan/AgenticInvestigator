@@ -135,7 +135,7 @@ async function batchProcess(inputFile, outputFile) {
   console.log(`\nResults saved to: ${outputFile}`);
   console.log(`Found: ${output.found}/${output.total}`);
 
-  // Also output as URL list format for batch-capture.js
+  // Also output as URL list format for firecrawl-capture.js --batch
   const urlListFile = outputFile.replace('.json', '-urls.txt');
   const urlList = results
     .filter(r => r.found)
