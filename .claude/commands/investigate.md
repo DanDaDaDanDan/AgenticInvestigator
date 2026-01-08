@@ -38,6 +38,7 @@ You are the **orchestrator** for a deep investigative journalism research projec
 ```
 cases/[topic-slug]/
 ├── _state.json                   # ORCHESTRATOR STATE (machine-readable)
+├── _extraction.json              # Current extraction results (claims, people, dates)
 ├── .git/                         # Git repository
 ├── evidence/                     # Evidence archive
 ├── research-leads/               # AI research outputs (NOT citable)
@@ -333,14 +334,14 @@ Task tool:
        - Mark for evidence capture
 
     3. Write extraction summary to:
-       research-leads/iteration-[N]-extraction.json
+       _extraction.json (in case root)
 
     4. Update _state.json:
        - Update people_count estimate
        - Update current_phase to "EXTRACTION"
        - Add gaps for uninvestigated people/claims
 
-    OUTPUT FILE: research-leads/iteration-[N]-extraction.json
+    OUTPUT FILE: _extraction.json
     RETURN: Counts only - N people, N claims, N sources, N contradictions
 ```
 

@@ -821,17 +821,22 @@ Create these auxiliary files for orchestrator state tracking:
 ```json
 {
   "case_id": "boeing-737-max",
+  "topic": "Boeing 737 MAX crashes investigation",
   "status": "IN_PROGRESS",
   "current_iteration": 5,
   "current_phase": "VERIFICATION",
   "next_source_id": "S048",
+  "people_count": 12,
+  "sources_count": 47,
   "gaps": [
     "Regulatory oversight claims",
     "Whistleblower testimony",
     "Coverup theory"
   ],
   "last_verification": "2026-01-08T10:30:00Z",
-  "verification_passed": false
+  "verification_passed": false,
+  "created_at": "2026-01-07T09:00:00Z",
+  "updated_at": "2026-01-08T10:30:00Z"
 }
 ```
 
@@ -975,6 +980,10 @@ cases/
 ├── .active                           # Current case slug (plain text)
 └── [topic-slug]/
     │
+    │  # ORCHESTRATOR STATE (machine-readable)
+    ├── _state.json                   # Case status, iteration, gaps, verification
+    ├── _extraction.json              # Current extraction results (claims, people, dates)
+    │
     │  # VERSION CONTROL
     ├── .git/                         # Case-specific git repository
     │
@@ -1022,6 +1031,8 @@ cases/
 
 | File | Purpose | Size Target | Self-Contained? |
 |------|---------|-------------|-----------------|
+| `_state.json` | **ORCHESTRATOR STATE** - case status, iteration, gaps | ~30 lines | Machine-readable |
+| `_extraction.json` | Current extraction results (claims, people, dates) | ~200 lines | Machine-readable |
 | `summary.md` | **THE DELIVERABLE** - shareable report | < 1000 lines | **YES** (has all sources) |
 | `sources.md` | Source registry with URLs, evidence paths, hashes | Unlimited | Reference only |
 | `evidence/` | **Captured evidence files** (screenshots, PDFs, HTML) | ~50MB/source | Binary archive |
