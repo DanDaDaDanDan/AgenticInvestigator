@@ -189,6 +189,91 @@ def decide_next_action(state):
 
 ---
 
+## CRITICAL RULES FOR ALL SUB-AGENTS
+
+**Every sub-agent prompt MUST include these rules or reference them.**
+
+### Source Attribution Rules
+
+```
+SOURCE IDS:
+- Format: [S001], [S002], [S003]...
+- Append-only: NEVER renumber, NEVER delete
+- Cite inline: "The CEO knew by January [S001] [S002]."
+- Get next ID from _state.json.next_source_id
+- After assigning, increment next_source_id
+
+AI RESEARCH IS NOT A SOURCE:
+- Deep research output → research-leads/ (for reference only)
+- NEVER assign [SXXX] to AI research output
+- Find the PRIMARY SOURCE URL mentioned in AI research
+- Capture the PRIMARY SOURCE → that gets [SXXX] ID
+```
+
+### Evidence Capture Rules
+
+```
+CAPTURE IMMEDIATELY:
+- When you find a source URL, capture it RIGHT AWAY
+- Run: ./scripts/capture [SXXX] [URL]
+- For PDFs: ./scripts/capture --document [SXXX] [URL]
+
+VERIFY CLAIMS IN EVIDENCE:
+- After capture, READ the captured HTML/PDF
+- Verify the claim text ACTUALLY EXISTS in the evidence
+- If claim not found → mark as UNVERIFIED or HALLUCINATION
+
+NO SOURCE WITHOUT EVIDENCE:
+- Every [SXXX] must have captured evidence in evidence/
+- No evidence = no source ID
+```
+
+### Fact-Checking Rules
+
+```
+FACT-CHECK ALL SIDES:
+- Claims from EVERY position get verified
+- Not just the main narrative - ALL perspectives
+
+CIRCULAR REPORTING:
+- Multiple outlets citing the same original = ONE source
+- Track: "Originally reported by X, cited by Y and Z"
+- Don't count republication as independent verification
+
+PROBABILITY RANGES:
+- Express confidence as ranges: [0.6, 0.8] not 0.7
+- No false precision
+```
+
+### Statement Tracking Rules
+
+```
+FOR EVERY KEY PERSON:
+- Collect ALL statements (public, testimony, internal, social media)
+- Document role timeline (when joined, left, promoted)
+- Compare statements ACROSS TIME (same person, different dates)
+- Compare statements ACROSS VENUES (public vs testimony vs internal)
+- FLAG ALL CONTRADICTIONS for investigation
+```
+
+### Research Angles (ALL Must Be Covered)
+
+| Angle | What to Search |
+|-------|---------------|
+| Mainstream | Consensus narrative, major outlet coverage |
+| Official | Court filings, government documents, FOIA |
+| Critical | Evidence of wrongdoing, accusations |
+| Supportive | Rebuttals, context, exculpatory evidence |
+| Industry | Trade publications, expert analysis |
+| Academic | Research papers, expert opinions |
+| Social | X/Twitter discourse, Reddit, forums |
+| Financial | SEC filings, earnings calls, investor reports |
+| International | Non-US perspectives, foreign coverage |
+| Historical | Prior incidents, patterns, precedents |
+| Alternative | Fringe theories (investigate, don't dismiss) |
+
+---
+
 ## STEP 0: CASE RESOLUTION
 
 ### 0A: New Investigation (--new [topic])
@@ -274,6 +359,13 @@ Task tool:
     CASE: cases/[case-id]/
     ITERATION: [N]
 
+    CRITICAL RULES:
+    - AI research output is LEADS ONLY, NOT citable sources
+    - DO NOT assign [SXXX] source IDs to AI research output
+    - Save to research-leads/ (reference only, not evidence)
+    - Extract URLs of PRIMARY SOURCES for later evidence capture
+    - Check for CIRCULAR REPORTING (outlets citing each other = 1 source)
+
     ACTIONS:
     1. Run [MCP tool]:
        mcp__mcp-[server]__[tool]
@@ -283,11 +375,12 @@ Task tool:
     2. Save RAW output to:
        research-leads/iteration-[N]-[source-type].md
 
-    3. Extract summary (DO NOT return full content):
+    3. Extract and list at end of file:
        - People mentioned (names only)
-       - Source URLs found (count)
+       - PRIMARY SOURCE URLs found (for evidence capture)
        - Key dates (list)
-       - Contradictions noted (count)
+       - Contradictions noted
+       - Circular reporting detected (which outlets cite which)
 
     4. Update _state.json:
        - Increment iteration if first research of iteration
@@ -295,7 +388,7 @@ Task tool:
        - Update updated_at timestamp
 
     OUTPUT FILE: research-leads/iteration-[N]-[source-type].md
-    RETURN: Brief status only - counts, key names, errors
+    RETURN: Brief status - counts, key names, URL count for capture
 ```
 
 ### Phase 1 Parallel Dispatch Example
@@ -383,29 +476,43 @@ Task tool:
     CASE: cases/[case-id]/
     ITERATION: [N]
 
+    CRITICAL RULES:
+    - DO NOT assign [SXXX] source IDs - these are research-leads (not sources)
+    - Source IDs are assigned during evidence capture phase
+    - Mark URLs for capture, don't cite them directly
+
     ACTIONS:
     1. Read all files in research-leads/iteration-[N]-*.md
 
     2. Extract and categorize:
        PEOPLE:
        - Name, mentioned role, which research file
+       - Role timeline data if mentioned (joined when, left when, promotions)
        - Add to people needing investigation
 
        CLAIMS:
        - Claim text, source position, needs verification
-       - Categorize by position/perspective
+       - Categorize by position/perspective (ALL positions, not just main narrative)
+       - Mark claims from EVERY side for fact-checking
 
        DATES/EVENTS:
        - Date, event description, source
        - Add to timeline
+       - Note any STATEMENT dates (who said what, when)
 
        CONTRADICTIONS:
        - What contradicts what
        - Which sources
+       - Note STATEMENT CONTRADICTIONS (same person, different story)
 
-       SOURCES:
-       - URL, type, key claims
-       - Mark for evidence capture
+       STATEMENTS:
+       - Who said it, when, where (venue: public/testimony/internal/social)
+       - For comparing across time and venues later
+
+       SOURCES TO CAPTURE:
+       - URL, type, key claims it supports
+       - Priority for evidence capture
+       - Flag circular reporting (outlets citing each other)
 
     3. Write extraction summary to:
        _extraction.json (in case root)
@@ -413,10 +520,10 @@ Task tool:
     4. Update _state.json:
        - Update people_count estimate
        - Update current_phase to "EXTRACTION"
-       - Add gaps for uninvestigated people/claims
+       - Add gaps for uninvestigated people/claims/statements
 
     OUTPUT FILE: _extraction.json
-    RETURN: Counts only - N people, N claims, N sources, N contradictions
+    RETURN: Counts only - N people, N claims, N sources, N statements, N contradictions
 ```
 
 ---
@@ -438,6 +545,14 @@ Task tool:
     PERSON: [name]
     ITERATION: [N]
 
+    CRITICAL RULES:
+    - CAPTURE EVIDENCE IMMEDIATELY when you find a source URL
+    - Source IDs: [S001], [S002]... from _state.json.next_source_id
+    - After assigning ID, capture THEN update next_source_id
+    - VERIFY claim exists in captured evidence before citing
+    - Check for CIRCULAR REPORTING (outlets citing each other = 1 source)
+    - Compare statements ACROSS TIME and ACROSS VENUES
+
     ACTIONS:
     1. Research person background:
        - Run mcp__mcp-gemini__deep_research
@@ -445,27 +560,43 @@ Task tool:
        - Run mcp__mcp-xai__x_search
          query: "[name]" for their statements
 
-    2. Collect statements:
-       - Testimony, depositions
-       - Interviews, earnings calls
-       - Social media history
+    2. CAPTURE EVIDENCE for each source URL found:
+       - Run: ./scripts/capture [SXXX] [URL]
+       - Read captured file to VERIFY claim text exists
+       - If claim not found → mark as UNVERIFIED
 
-    3. Update people.md:
-       - Add/update person profile
-       - Include role timeline
-       - Include statement history
+    3. Collect ALL statements (proactively seek these):
+       - Congressional testimony, depositions, court filings
+       - Interviews, earnings calls, press conferences
+       - Internal emails, memos (via FOIA/litigation)
+       - Social media history (X, LinkedIn)
+       - Compare statements ACROSS TIME (same person, different dates)
+       - Compare statements ACROSS VENUES (public vs testimony vs internal)
+       - FLAG any contradictions for investigation
 
-    4. Register new sources:
+    4. Document role timeline:
+       - When joined, left, promoted
+       - Title changes with dates
+       - Reporting relationships
+
+    5. Update people.md:
+       - Add/update person profile with [SXXX] citations
+       - Include role timeline with dates
+       - Include statement history with dates and venues
+       - Note statement contradictions
+
+    6. Register sources in sources.md:
        - Read _state.json for next_source_id
-       - Add sources to sources.md
-       - Update _state.json next_source_id
+       - Add sources with evidence paths
+       - Increment next_source_id for each new source
 
-    5. Update _state.json:
+    7. Update _state.json:
        - Increment people_count if new person
+       - Update next_source_id
        - Remove from gaps if addressed
 
-    OUTPUT FILES: people.md, sources.md
-    RETURN: Brief status - what found, statement count, sources added
+    OUTPUT FILES: people.md, sources.md, evidence/
+    RETURN: Brief status - what found, statement count, sources added, contradictions found
 ```
 
 ### Claim Verification Agent Prompt Template
@@ -483,29 +614,54 @@ Task tool:
     CLAIMANT: [who made claim]
     POSITION: [which position this supports]
 
+    CRITICAL RULES:
+    - CAPTURE EVIDENCE IMMEDIATELY when you find a source URL
+    - Source IDs: [S001], [S002]... from _state.json.next_source_id
+    - VERIFY claim text exists in captured evidence before citing
+    - Check for CIRCULAR REPORTING (outlets citing each other = 1 source)
+    - Confidence as RANGES: [0.6, 0.8] not 0.7 (no false precision)
+    - FACT-CHECK CLAIMS FROM ALL POSITIONS, not just main narrative
+
     ACTIONS:
     1. Search for supporting evidence:
        - Run mcp__mcp-xai__research
          prompt: "evidence supporting [claim]"
+       - Look for PRIMARY SOURCES (court docs, official records, direct quotes)
 
     2. Search for contradicting evidence:
        - Run mcp__mcp-xai__research
          prompt: "evidence against [claim]"
+       - Check claims from opposing positions too
 
-    3. Determine verdict:
-       - VERIFIED: Multiple independent sources confirm
+    3. CAPTURE EVIDENCE for each source URL found:
+       - Run: ./scripts/capture [SXXX] [URL]
+       - Read captured file to VERIFY claim text actually exists
+       - If claim not found in evidence → mark as UNVERIFIED
+
+    4. Check for circular reporting:
+       - If multiple sources cite the same original, count as ONE source
+       - Note: "Originally from X, republished by Y and Z"
+
+    5. Determine verdict:
+       - VERIFIED: Multiple INDEPENDENT sources confirm (not circular)
        - DEBUNKED: Evidence contradicts
-       - PARTIAL: Some aspects true
+       - PARTIAL: Some aspects true, others not
        - UNVERIFIED: Insufficient evidence
+       - CONTESTED: Conflicting evidence from credible sources
 
-    4. Update fact-check.md:
+    6. Update fact-check.md:
        - Add claim entry with verdict
-       - Include supporting/contradicting sources
+       - Include supporting/contradicting sources with [SXXX] IDs
+       - Include confidence range [low, high]
+       - Note any circular reporting detected
 
-    5. Register new sources in sources.md
+    7. Register sources in sources.md:
+       - Read _state.json for next_source_id
+       - Add sources with evidence paths
+       - Increment next_source_id
 
-    OUTPUT FILES: fact-check.md, sources.md
-    RETURN: Brief status - verdict, source count, confidence
+    OUTPUT FILES: fact-check.md, sources.md, evidence/
+    RETURN: Verdict, source count, confidence range, circular reporting noted
 ```
 
 ### Evidence Capture Agent Prompt Template
@@ -554,42 +710,95 @@ Task tool:
     CASE: cases/[case-id]/
     ITERATION: [N]
 
+    CRITICAL RULES:
+    - Be RUTHLESS - find ALL gaps, don't give benefit of the doubt
+    - Check evidence capture completeness (every source needs evidence)
+    - Verify claims from ALL positions, not just main narrative
+    - Do NOT pass if any CONTRADICTED claims exist in evidence check
+
     ACTIONS:
     1. Run anti-hallucination check:
        - Execute: node scripts/verify-claims.js cases/[case-id]
-       - Note any CONTRADICTED or NOT_FOUND claims
+       - For CONTRADICTED claims → add to gaps (URGENT)
+       - For NOT_FOUND claims → add to gaps (must find evidence or revise claim)
+       - Do NOT pass verification if CONTRADICTED claims exist
 
-    2. Run cross-model critique:
-       - Read summary.md (full content for critique)
+    2. Run evidence capture check:
+       - Execute: node scripts/verify-sources.js cases/[case-id]
+       - Any source without captured evidence → add to gaps
+       - Every [SXXX] must have files in evidence/
+
+    3. Run cross-model critique:
+       - Read summary.md, positions.md, fact-check.md, theories.md
        - Run mcp__mcp-gemini__generate_text
          thinking_level: "high"
-         system_prompt: "You are a ruthless investigative critic..."
-         prompt: "[summary.md content] - Find all gaps, missing claims, bias"
+         system_prompt: |
+           You are a RUTHLESS investigative critic. Find EVERYTHING wrong.
+           You are NOT here to praise. You are here to find gaps.
+           Look for:
+           - Claims that lack sufficient evidence
+           - Logical gaps in reasoning
+           - Biases in sourcing (too much from one position)
+           - What would DISPROVE the current conclusions
+           - What evidence is suspiciously ABSENT
+           - Unexplored claims from ANY position
+           - Alternative theories that haven't been addressed
+           - Arguments that haven't been steelmanned
+           - People mentioned but not investigated
+           - Claims asserted but not verified
+           - STATEMENT GAPS:
+             - Key persons missing statement history
+             - Statements not compared across time
+             - Statements not compared across venues
+             - Role changes not documented
+             - Contradictions identified but not resolved
+           Be specific. Name names. Cite missing evidence.
+         prompt: "[summary.md] [positions.md] [fact-check.md] - Find all gaps"
 
-    3. Evaluate verification checklist:
-       - All people investigated?
-       - All positions documented?
-       - Alternative theories addressed?
-       - All major claims fact-checked?
-       - Statement histories complete?
+    4. Evaluate COMPLETE verification checklist:
+       Core Investigation:
+       □ All people investigated
+       □ All claims categorized by position
+       □ Timeline complete
+       □ Source provenance traced
+       □ All positions documented
+       □ Alternative theories addressed
+       □ All major claims fact-checked (ALL sides)
+       □ No unexamined major claims
+       □ All sources have captured evidence
 
-    4. Compile gap list:
+       Statement & Temporal Coverage:
+       □ Key persons have statement history documented
+       □ Role timelines documented for key figures
+       □ Statement evolution analyzed (same person, different times)
+       □ Statement venue comparison done (public vs testimony vs internal)
+       □ All statement contradictions flagged and investigated
+
+       Evidence Quality:
+       □ No sources without captured evidence
+       □ All claims verified to exist in captured evidence
+       □ No CONTRADICTED verdicts from verify-claims.js
+       □ Circular reporting detected and noted
+
+    5. Compile gap list:
        - Specific actions needed
-       - Priority order
+       - Priority order (CONTRADICTED > NOT_FOUND > MISSING)
+       - Responsible agent type for each gap
 
-    5. Update iterations.md:
+    6. Update iterations.md:
        - Append verification checkpoint entry
-       - Include checklist status
-       - Include gap list
+       - Include FULL checklist status (YES/PARTIAL/NO for each)
+       - Include gap list with priorities
+       - Include cross-model critique summary
 
-    6. Update _state.json:
-       - Update gaps array
-       - Set verification_passed (true/false)
+    7. Update _state.json:
+       - Update gaps array with all identified gaps
+       - Set verification_passed (true ONLY if all checklist items YES)
        - Update last_verification timestamp
-       - If passed: set status to "VERIFICATION_PASSED"
+       - If passed AND gaps empty: set status to "VERIFICATION_PASSED"
 
     OUTPUT FILES: iterations.md, _state.json
-    RETURN: PASS/FAIL, gap count, critical issues
+    RETURN: PASS/FAIL, gap count by priority, critical issues list
 ```
 
 ---
@@ -610,6 +819,13 @@ Task tool:
     CASE: cases/[case-id]/
     ITERATION: [N]
 
+    CRITICAL RULES:
+    - EVERY claim must have [SXXX] source attribution - NO EXCEPTIONS
+    - summary.md must be SELF-CONTAINED (embed full source list)
+    - summary.md is THE DELIVERABLE - professional, shareable, publishable
+    - NO artifacts of iteration process ("we also found...", "additionally...")
+    - Present ALL positions fairly - this is reporting, not advocacy
+
     ACTIONS:
     1. Read all detail files:
        - timeline.md
@@ -621,31 +837,46 @@ Task tool:
 
     2. Read sources.md for complete source list
 
-    3. COMPLETELY REWRITE summary.md:
-       - Fresh, polished document
-       - NO artifacts of iterative process
-       - NO "we also found..." language
-       - Professional journalist quality
-       - Embed complete source list
+    3. VERIFY before writing:
+       - Every claim you include has a [SXXX] citation
+       - Every [SXXX] exists in sources.md with evidence
+       - All positions are represented fairly
+       - Contested claims are marked as contested
 
-    4. Update iterations.md:
+    4. COMPLETELY REWRITE summary.md:
+       - Fresh, polished document written as if in one sitting
+       - NO artifacts of iterative process
+       - NO "we also found..." or "additionally..." language
+       - Professional journalist quality (NYT/ProPublica standard)
+       - Present strongest version of each position
+       - Every claim has inline [SXXX] citation
+       - EMBED COMPLETE SOURCE LIST at end (for self-contained sharing)
+
+    5. Source list format at end of summary.md:
+       ## Sources
+
+       [S001] Description - URL
+       [S002] Description - URL
+       ...
+
+    6. Update iterations.md:
        - Log iteration completion
        - Note key findings
        - Note next steps
 
-    5. Update _state.json:
+    7. Update _state.json:
        - Increment current_iteration
-       - Update sources_count
-       - Update people_count
-       - Set current_phase to "RESEARCH" for next iteration
+       - Update sources_count (count from sources.md)
+       - Update people_count (count from people.md)
+       - Set current_phase to "SYNTHESIS" then after commit "RESEARCH"
        - Update updated_at
 
-    6. Git commit:
+    8. Git commit:
        - Stage all changes
        - Commit: "Iteration [N]: [brief description]"
 
     OUTPUT FILES: summary.md, iterations.md, _state.json
-    RETURN: Summary length, source count, iteration logged
+    RETURN: Summary length, source count, claim count, iteration logged
 ```
 
 ---
@@ -656,12 +887,35 @@ Task tool:
 
 ```python
 def should_terminate(state):
+    """
+    ALL conditions must be true to terminate:
+    - verification_passed: Verification checklist all YES
+    - gaps empty: No outstanding items to investigate
+    - status indicates completion
+
+    The verification checklist includes:
+    - All people investigated
+    - All positions documented
+    - Alternative theories addressed
+    - All major claims fact-checked (ALL sides)
+    - Statement histories complete
+    - Statement evolution analyzed
+    - All sources have captured evidence
+    - No CONTRADICTED claims in evidence check
+    """
     return (
         state.verification_passed == True and
         len(state.gaps) == 0 and
         state.status in ["VERIFICATION_PASSED", "COMPLETE"]
     )
 ```
+
+**DO NOT terminate if:**
+- Any checklist items are PARTIAL or NO
+- Any gaps remain in the gaps array
+- Any CONTRADICTED verdicts from verify-claims.js
+- Any sources missing captured evidence
+- Statement histories incomplete for key persons
 
 ### Final Completion
 
