@@ -341,11 +341,22 @@ If yes, it's a proper summary.md. If no, rewrite it.
 
 ### Common Patterns
 
-**Deep research (background)**:
+**Deep research (background)** - default 60 min timeout:
 ```
 mcp__mcp-gemini__deep_research
   query: "[topic] investigation"
-  timeout_minutes: 30
+  timeout_minutes: 60
+```
+
+**Check/resume research after timeout**:
+```
+# Gemini - use interaction_id from timeout error
+mcp__mcp-gemini__check_research
+  interaction_id: "[id from error message or _meta]"
+
+# OpenAI - use response_id from timeout error
+mcp__mcp-openai__check_research
+  response_id: "[id from error message or _meta]"
 ```
 
 **Cross-model critique (verification)**:
@@ -362,6 +373,17 @@ mcp__mcp-xai__research
   prompt: "[research question]"
   sources: ["x", "web", "news"]
 ```
+
+### Deep Research Error Handling
+
+| Error Prefix | Meaning | Action |
+|-------------|---------|--------|
+| `TIMEOUT:` | Research timed out but may still be running | Use `check_research` with the ID in error message |
+| `AUTH_ERROR:` | Invalid API key | Check credentials in MCP config |
+| `RATE_LIMIT:` | API rate limit exceeded | Wait and retry |
+| `API_ERROR:` | General API error | Check logs, may need retry |
+| `RESEARCH_FAILED:` | Research task failed | Try different query or approach |
+| `NOT_FOUND:` | Research ID not found | ID may have expired or be invalid |
 
 ---
 
