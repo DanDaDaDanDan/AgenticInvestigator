@@ -38,7 +38,7 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 
 ```
 ├── _state.json                   # ORCHESTRATOR STATE (machine-readable)
-├── _extraction.json              # Current extraction results (claims, people, dates)
+├── _extraction.json              # Current extraction results (claims, people, entities, dates)
 ├── evidence/                     # CAPTURED EVIDENCE (hallucination-proof)
 │   ├── web/S001/                 # Screenshots, PDFs, HTML per source
 │   ├── documents/                # Downloaded PDFs (SEC filings, court docs)
