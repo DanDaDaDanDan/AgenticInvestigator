@@ -1,8 +1,22 @@
-# Financial Investigation Toolkit
+# Financial Investigation Toolkit (Orchestrator Mode)
 
-You are running the **financial investigation toolkit** - specialized tools for following the money.
+You are the **orchestrator** running a financial investigation. You dispatch financial research agents - you do NOT run research directly.
 
-"Follow the money" is the cornerstone of investigative journalism. This command provides systematic approaches to trace financial flows, map corporate structures, and identify beneficial ownership.
+---
+
+## CRITICAL: ORCHESTRATOR-ONLY
+
+**You do NOT:**
+- Call MCP tools directly
+- Read full research results
+- Process financial data
+- Write analysis directly
+
+**You ONLY:**
+- Read _state.json for current status
+- Dispatch financial research agents (parallel)
+- Wait for completion
+- Read brief status from agents
 
 ---
 
@@ -19,436 +33,375 @@ You are running the **financial investigation toolkit** - specialized tools for 
 ## FINANCIAL INVESTIGATION FRAMEWORKS
 
 ### 1. Corporate Structure Mapping
-
-**Goal**: Map who owns what, and who controls what.
-
-```
-                    [Ultimate Beneficial Owner]
-                              │
-                    ┌─────────┴─────────┐
-                    │                   │
-              [Holding Co A]      [Holding Co B]
-                    │                   │
-              ┌─────┴─────┐            │
-              │           │            │
-         [Sub 1]    [Sub 2]      [Sub 3]
-              │           │            │
-         [Operating] [Operating] [Operating]
-```
-
-**Questions to answer**:
-- Who is the ultimate beneficial owner (UBO)?
-- What is the corporate structure (parent → subsidiaries)?
-- Are there shell companies or nominee directors?
-- What jurisdictions are involved (especially secrecy jurisdictions)?
-- Who are the directors and officers?
-- Who has signatory authority?
-- What's the ownership percentage at each level?
+Trace who owns what, and who controls what.
 
 ### 2. Transaction Pattern Analysis
-
-**Goal**: Identify suspicious financial patterns.
-
-**Red Flags**:
-| Pattern | What It Might Indicate |
-|---------|------------------------|
-| Round-trip transactions | Money laundering, artificial revenue |
-| Circular payments | Related-party fraud |
-| Just-under-threshold amounts | Structuring to avoid reporting |
-| Sudden spikes in related-party transactions | Asset stripping |
-| Payments to secrecy jurisdictions | Tax evasion, hidden ownership |
-| Invoice amounts that don't match services | Kickbacks, bribery |
-| Loans that are never repaid | Disguised distributions |
-| Consulting fees to connected parties | Self-dealing |
+Identify suspicious financial patterns (round-trips, structuring, etc.).
 
 ### 3. Beneficial Ownership Tracing
-
-**Goal**: Find who really controls and benefits from an entity.
-
-**Layers to penetrate**:
-1. Nominee directors/shareholders (front people)
-2. Bearer shares (anonymous ownership)
-3. Trusts (beneficiaries hidden)
-4. Shell companies (multiple layers)
-5. Secrecy jurisdictions (limited disclosure)
-
-**Key questions**:
-- Who has actual control (vs. nominal ownership)?
-- Who receives the economic benefits?
-- Are there undisclosed related parties?
-- Who makes the real decisions?
+Find who really controls and benefits from an entity.
 
 ### 4. Money Flow Mapping
-
-**Goal**: Trace where money comes from and where it goes.
-
-```
-[Source] → [Intermediary 1] → [Intermediary 2] → [Destination]
-   │              │                  │               │
- Where did     Why this          Why this        Where did
- it originate? intermediary?     intermediary?   it end up?
-```
-
-**Track**:
-- Source of funds
-- Path of funds (each hop)
-- Purpose stated vs. actual
-- Timing patterns
-- Amount patterns
+Trace where money comes from and where it goes.
 
 ---
 
-## DATA SOURCES
+## ORCHESTRATOR FLOW
 
-### Corporate Records
-
-| Source | Coverage | What You Get |
-|--------|----------|--------------|
-| **SEC EDGAR** | US public companies | 10-K, 10-Q, proxy statements, insider transactions |
-| **OpenCorporates** | 200+ jurisdictions | Basic company info, directors, filings |
-| **State SOS** | US states | Articles of incorporation, annual reports, registered agents |
-| **Companies House** | UK | Full company records, directors, shareholders |
-| **GLEIF** | Global | Legal Entity Identifiers, ownership chains |
-
-### Beneficial Ownership
-
-| Source | Coverage | What You Get |
-|--------|----------|--------------|
-| **ICIJ Offshore Leaks** | Global leaks | Panama Papers, Paradise Papers, Pandora Papers |
-| **OpenOwnership** | Select countries | Beneficial ownership registers |
-| **OpenSanctions** | Global | Sanctions lists, PEPs, wanted persons |
-| **UK PSC Register** | UK | Persons of Significant Control |
-| **EU BO Registers** | EU countries | National beneficial ownership registers |
-
-### Financial Disclosures
-
-| Source | Coverage | What You Get |
-|--------|----------|--------------|
-| **FEC** | US federal | Campaign contributions, PACs, dark money |
-| **OpenSecrets** | US | Aggregated political money data |
-| **IRS 990s** | US nonprofits | Nonprofit financials, executive comp |
-| **USAspending.gov** | US federal | Government contracts, grants |
-| **FPDS** | US federal | Federal procurement data |
-| **Lobbying disclosures** | US | Lobbying registrations, payments |
-
-### Court & Legal
-
-| Source | Coverage | What You Get |
-|--------|----------|--------------|
-| **PACER/RECAP** | US federal courts | Lawsuits, bankruptcies, judgments |
-| **State courts** | US states | Civil, criminal, family court records |
-| **SEC Litigation** | US | Securities enforcement actions |
-| **DOJ Press Releases** | US | Criminal prosecutions |
-| **FinCEN Files** | Global (leaked) | Suspicious Activity Reports |
-
-### Property & Assets
-
-| Source | Coverage | What You Get |
-|--------|----------|--------------|
-| **County recorders** | US counties | Property deeds, mortgages, liens |
-| **FAA Registry** | US | Aircraft ownership |
-| **USCG Documentation** | US | Vessel ownership |
-| **Patent/trademark** | US/Global | IP ownership |
-| **UCC filings** | US states | Secured transactions, collateral |
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     FINANCIAL INVESTIGATION ORCHESTRATOR                     │
+│                                                                              │
+│  STEP 1: DETERMINE CONTEXT                                                   │
+│    - New investigation or existing case?                                     │
+│    - What entity to investigate?                                             │
+│                                                                              │
+│  STEP 2: DISPATCH FINANCIAL AGENTS (parallel, ONE message)                   │
+│    - Agent 1: Corporate structure research                                   │
+│    - Agent 2: SEC/regulatory filings research                                │
+│    - Agent 3: Offshore/shell company search                                  │
+│    - Agent 4: Political money research                                       │
+│    - Agent 5: Litigation & enforcement research                              │
+│    - Agent 6: Real-time financial news                                       │
+│                                                                              │
+│  STEP 3: WAIT FOR COMPLETION                                                 │
+│    - All agents write to financial-[entity].md                               │
+│    - All agents return brief status                                          │
+│                                                                              │
+│  STEP 4: DISPATCH SYNTHESIS AGENT                                            │
+│    - Compile findings into final report                                      │
+│    - Identify red flags                                                      │
+│    - Register sources                                                        │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## EXECUTION: PARALLEL FINANCIAL RESEARCH
+## FINANCIAL RESEARCH AGENTS
 
-**Launch ALL of these simultaneously in ONE message:**
+**Dispatch ALL in ONE message for parallel execution:**
 
-### Call 1: Corporate Structure (Gemini Deep Research)
-```
-mcp__mcp-gemini__deep_research:
-  query: |
-    [ENTITY] corporate structure ownership subsidiaries:
-    - Parent company and ultimate owner
-    - All subsidiaries and affiliates
-    - Directors, officers, board members
-    - Ownership percentages
-    - Corporate history (mergers, acquisitions, spinoffs)
-    - Registered agents and addresses
-    - Jurisdictions of incorporation
-```
+### Agent 1: Corporate Structure
 
-### Call 2: SEC/Regulatory Filings (OpenAI Deep Research)
 ```
-mcp__mcp-openai__deep_research:
-  query: |
-    [ENTITY] SEC filings regulatory enforcement:
-    - 10-K, 10-Q, 8-K filings
-    - Proxy statements (executive compensation, related party transactions)
-    - Insider trading (Form 4)
-    - SEC enforcement actions
-    - Other regulatory actions (FTC, DOJ, state AGs)
-```
-
-### Call 3: Offshore/Shell Company Search (XAI)
-```
-mcp__mcp-xai__research:
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Corporate structure research for [entity]"
   prompt: |
-    Search for [ENTITY] or key individuals in:
-    - Panama Papers
-    - Paradise Papers
-    - Pandora Papers
-    - FinCEN Files
-    - Other offshore leaks
-    - Shell company connections
-    - Secrecy jurisdiction registrations
-  sources: ["web", "news"]
+    TASK: Research corporate structure
+
+    ENTITY: [entity name]
+    CASE: cases/[case-id]/
+
+    ACTIONS:
+    1. Run deep research:
+       mcp__mcp-gemini__deep_research
+         query: "[entity] corporate structure ownership subsidiaries directors officers"
+         timeout_minutes: 60
+
+    2. Extract:
+       - Parent company and ultimate owner
+       - All subsidiaries and affiliates
+       - Directors, officers, board members
+       - Ownership percentages
+       - Jurisdictions of incorporation
+       - Corporate history (mergers, acquisitions)
+
+    3. Write findings to:
+       research-leads/financial-[entity]-corporate.md
+
+    OUTPUT FILE: research-leads/financial-[entity]-corporate.md
+    RETURN: Brief status - entity count, jurisdiction count, key names
 ```
 
-### Call 4: Political Money (XAI)
+### Agent 2: SEC/Regulatory Filings
+
 ```
-mcp__mcp-xai__research:
+Task tool:
+  subagent_type: "general-purpose"
+  description: "SEC/regulatory research for [entity]"
   prompt: |
-    [ENTITY] or key individuals:
-    - Campaign contributions (FEC, state)
-    - PAC donations
-    - Lobbying expenditures
-    - Political connections
-    - Government contracts received
-  sources: ["web", "news"]
+    TASK: Research SEC and regulatory filings
+
+    ENTITY: [entity name]
+    CASE: cases/[case-id]/
+
+    ACTIONS:
+    1. Run deep research:
+       mcp__mcp-openai__deep_research
+         query: "[entity] SEC filings 10-K 10-Q proxy statement enforcement actions regulatory"
+         timeout_minutes: 60
+
+    2. Extract:
+       - 10-K, 10-Q, 8-K findings
+       - Proxy statements (executive comp, related party)
+       - Insider trading (Form 4)
+       - SEC enforcement actions
+       - Other regulatory actions
+
+    3. Write findings to:
+       research-leads/financial-[entity]-regulatory.md
+
+    OUTPUT FILE: research-leads/financial-[entity]-regulatory.md
+    RETURN: Brief status - filing count, enforcement count, red flags
 ```
 
-### Call 5: Litigation & Enforcement (Gemini)
-```
-mcp__mcp-gemini__deep_research:
-  query: |
-    [ENTITY] lawsuits litigation enforcement:
-    - Civil lawsuits (plaintiff and defendant)
-    - Criminal cases
-    - Regulatory enforcement
-    - Bankruptcies
-    - Judgments and liens
-    - Whistleblower complaints
-```
+### Agent 3: Offshore/Shell Company Search
 
-### Call 6: Real-Time Financial News (XAI)
 ```
-mcp__mcp-xai__news_search:
-  query: "[ENTITY] financial fraud investigation SEC"
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Offshore/shell company search for [entity]"
   prompt: |
-    Find recent news about:
-    - Financial irregularities
-    - Investigations
-    - Executive departures
-    - Accounting issues
-    - Analyst concerns
+    TASK: Search for offshore and shell company connections
+
+    ENTITY: [entity name]
+    CASE: cases/[case-id]/
+
+    ACTIONS:
+    1. Run search:
+       mcp__mcp-xai__research
+         prompt: "[entity] Panama Papers Paradise Papers Pandora Papers offshore shell company"
+         sources: ["web", "news"]
+
+    2. Extract:
+       - ICIJ leak database appearances
+       - Shell company connections
+       - Secrecy jurisdiction registrations
+       - Nominee directors/shareholders
+
+    3. Write findings to:
+       research-leads/financial-[entity]-offshore.md
+
+    OUTPUT FILE: research-leads/financial-[entity]-offshore.md
+    RETURN: Brief status - leak appearances, shell company count
+```
+
+### Agent 4: Political Money
+
+```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Political money research for [entity]"
+  prompt: |
+    TASK: Research political money connections
+
+    ENTITY: [entity name]
+    CASE: cases/[case-id]/
+
+    ACTIONS:
+    1. Run search:
+       mcp__mcp-xai__research
+         prompt: "[entity] campaign contributions PAC lobbying government contracts political donations"
+         sources: ["web", "news"]
+
+    2. Extract:
+       - Campaign contributions (FEC, state)
+       - PAC donations
+       - Lobbying expenditures
+       - Government contracts received
+       - Political connections
+
+    3. Write findings to:
+       research-leads/financial-[entity]-political.md
+
+    OUTPUT FILE: research-leads/financial-[entity]-political.md
+    RETURN: Brief status - contribution total, lobbying total, contract count
+```
+
+### Agent 5: Litigation & Enforcement
+
+```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Litigation research for [entity]"
+  prompt: |
+    TASK: Research litigation and enforcement history
+
+    ENTITY: [entity name]
+    CASE: cases/[case-id]/
+
+    ACTIONS:
+    1. Run deep research:
+       mcp__mcp-gemini__deep_research
+         query: "[entity] lawsuit litigation SEC enforcement bankruptcy judgment whistleblower"
+         timeout_minutes: 60
+
+    2. Extract:
+       - Civil lawsuits (plaintiff and defendant)
+       - Criminal cases
+       - Regulatory enforcement
+       - Bankruptcies
+       - Judgments and liens
+       - Whistleblower complaints
+
+    3. Write findings to:
+       research-leads/financial-[entity]-litigation.md
+
+    OUTPUT FILE: research-leads/financial-[entity]-litigation.md
+    RETURN: Brief status - lawsuit count, enforcement count, key cases
+```
+
+### Agent 6: Real-Time Financial News
+
+```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Financial news search for [entity]"
+  prompt: |
+    TASK: Search real-time financial news
+
+    ENTITY: [entity name]
+    CASE: cases/[case-id]/
+
+    ACTIONS:
+    1. Run news search:
+       mcp__mcp-xai__news_search
+         query: "[entity] financial fraud investigation SEC accounting"
+         prompt: "Find recent financial news, investigations, concerns"
+
+    2. Extract:
+       - Recent investigations
+       - Financial irregularities
+       - Executive departures
+       - Accounting issues
+       - Analyst concerns
+
+    3. Write findings to:
+       research-leads/financial-[entity]-news.md
+
+    OUTPUT FILE: research-leads/financial-[entity]-news.md
+    RETURN: Brief status - article count, investigation mentions
 ```
 
 ---
 
-## RED FLAG CHECKLIST
+## SYNTHESIS AGENT
 
-When analyzing financial information, flag these indicators:
+After all research agents complete:
 
-### Corporate Structure Red Flags
-- [ ] Multiple layers of holding companies
-- [ ] Incorporation in secrecy jurisdictions (BVI, Cayman, Delaware LLC)
-- [ ] Nominee directors (professional directors with many directorships)
-- [ ] Frequent corporate restructuring
-- [ ] Complex cross-ownership between related entities
-- [ ] Missing or inconsistent beneficial ownership information
-
-### Transaction Red Flags
-- [ ] Related-party transactions not at arm's length
-- [ ] Unusual consulting or management fees
-- [ ] Loans to/from related parties
-- [ ] Revenue from single customer or related party
-- [ ] Circular transactions
-- [ ] Payments to shell companies
-- [ ] Cash transactions just under reporting thresholds
-
-### Disclosure Red Flags
-- [ ] Auditor changes or qualifications
-- [ ] Restatements of financial statements
-- [ ] Late filings
-- [ ] Material weaknesses in internal controls
-- [ ] Unusual accounting policies
-- [ ] Off-balance-sheet arrangements
-- [ ] Related-party disclosures buried in footnotes
-
-### Behavioral Red Flags
-- [ ] Insider selling before bad news
-- [ ] Executive departures (especially CFO, auditors)
-- [ ] Aggressive revenue recognition
-- [ ] Frequent acquisition accounting adjustments
-- [ ] Excessive executive compensation vs. performance
-- [ ] Board members with conflicts of interest
-
----
-
-## OUTPUT: FINANCIAL ANALYSIS REPORT
-
-Generate structured output:
-
-```markdown
-# Financial Investigation: [Entity]
-
-**Case**: [case-id]
-**Entity Type**: [Person | Company | Topic]
-
----
-
-## Executive Summary
-
-[2-3 paragraphs: Key financial findings, red flags identified,
-money flow summary, recommended follow-up]
-
----
-
-## Corporate Structure
-
-### Ownership Chain
 ```
-[Ultimate Beneficial Owner]
-└── [Holding Company] (Jurisdiction)
-    ├── [Subsidiary 1] (Jurisdiction) - [ownership %]
-    └── [Subsidiary 2] (Jurisdiction) - [ownership %]
-```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Synthesize financial investigation"
+  prompt: |
+    TASK: Synthesize financial investigation findings
 
-### Key Individuals
-| Name | Role | Other Affiliations | Notes |
-|------|------|-------------------|-------|
-| | | | |
+    ENTITY: [entity name]
+    CASE: cases/[case-id]/
 
-### Jurisdictions of Concern
-- [List any secrecy jurisdictions and why they matter]
+    ACTIONS:
+    1. Read all research-leads/financial-[entity]-*.md files
 
----
+    2. Compile financial analysis report:
+       - Executive summary
+       - Corporate structure diagram
+       - Key individuals table
+       - Money flow analysis
+       - Red flags identified (HIGH/MEDIUM/LOW)
+       - Regulatory & legal history
+       - Political connections
+       - Offshore connections
+       - Recommended follow-up
 
-## Money Flow Analysis
+    3. Apply RED FLAG CHECKLIST:
+       Corporate Structure:
+       □ Multiple layers of holding companies
+       □ Secrecy jurisdiction incorporation
+       □ Nominee directors
+       □ Complex cross-ownership
 
-### Sources of Funds
-| Source | Amount | Period | Notes |
-|--------|--------|--------|-------|
-| | | | |
+       Transactions:
+       □ Related-party transactions
+       □ Unusual consulting fees
+       □ Loans to related parties
+       □ Circular transactions
 
-### Major Expenditures
-| Destination | Amount | Period | Notes |
-|-------------|--------|--------|-------|
-| | | | |
+       Disclosures:
+       □ Auditor changes
+       □ Restatements
+       □ Late filings
+       □ Material weaknesses
 
-### Suspicious Patterns
-- [Pattern 1]: [Description and significance]
-- [Pattern 2]: [Description and significance]
+       Behavioral:
+       □ Insider selling
+       □ Executive departures
+       □ Aggressive accounting
 
----
+    4. Write final report to:
+       cases/[case-id]/financial-[entity].md
 
-## Red Flags Identified
+    5. Register new sources in sources.md
 
-### High Concern
-- [ ] [Red flag with specific evidence]
-- [ ] [Red flag with specific evidence]
+    6. Update _state.json if applicable
 
-### Medium Concern
-- [ ] [Red flag with specific evidence]
-
-### Requires More Investigation
-- [ ] [Potential issue needing more research]
-
----
-
-## Regulatory & Legal History
-
-### Enforcement Actions
-| Agency | Date | Allegation | Outcome |
-|--------|------|------------|---------|
-| | | | |
-
-### Significant Litigation
-| Case | Date | Nature | Status/Outcome |
-|------|------|--------|----------------|
-| | | | |
-
----
-
-## Political & Government Connections
-
-### Campaign Contributions
-| Recipient | Amount | Date | Notes |
-|-----------|--------|------|-------|
-| | | | |
-
-### Lobbying Activity
-| Issue | Amount | Period | Lobbyist |
-|-------|--------|--------|----------|
-| | | | |
-
-### Government Contracts
-| Agency | Amount | Purpose | Period |
-|--------|--------|---------|--------|
-| | | | |
-
----
-
-## Offshore/Shell Company Connections
-
-### Entities in Secrecy Jurisdictions
-| Entity | Jurisdiction | Connection | Source |
-|--------|--------------|------------|--------|
-| | | | |
-
-### Leaked Database Appearances
-- [Database]: [Finding]
-
----
-
-## Source Documents
-
-### Filed with Regulators
-- [S-XX] [Document name, date, key findings]
-
-### Court Records
-- [S-XX] [Case name, key findings]
-
-### Public Records
-- [S-XX] [Record type, key findings]
-
----
-
-## Recommended Follow-Up
-
-### High Priority
-1. [Specific research action]
-2. [Specific records to obtain]
-
-### Medium Priority
-1. [Additional research]
-
-### FOIA/Records Requests to File
-1. [Agency]: [Specific records]
+    OUTPUT FILE: cases/[case-id]/financial-[entity].md
+    RETURN: Red flag count, source count, key findings summary
 ```
 
 ---
 
-## SAVE TO CASE
-
-Save financial analysis to case directory:
+## PARALLEL DISPATCH EXAMPLE
 
 ```
-cases/[case-id]/financial-[entity].md
+ONE MESSAGE with these Task tool calls:
+
+Task 1: Corporate structure agent
+Task 2: SEC/regulatory agent
+Task 3: Offshore/shell company agent
+Task 4: Political money agent
+Task 5: Litigation agent
+Task 6: Financial news agent
+
+All agents write to research-leads/.
+Orchestrator waits for all to complete.
+Then dispatch synthesis agent.
 ```
 
-Git handles versioning - no timestamps needed in filenames.
+---
 
-If new sources discovered, add to `sources.md` with proper [SXXX] IDs.
+## RED FLAG REFERENCE
+
+| Category | Red Flag | What It Might Indicate |
+|----------|----------|------------------------|
+| Structure | Multiple holding layers | Tax avoidance, liability shielding |
+| Structure | Secrecy jurisdictions | Hidden ownership |
+| Structure | Nominee directors | True control obscured |
+| Transaction | Round-trip transactions | Money laundering |
+| Transaction | Just-under-threshold | Structuring |
+| Transaction | Related-party loans | Self-dealing |
+| Disclosure | Auditor resignation | Accounting problems |
+| Disclosure | Restatements | Material misstatements |
+| Behavioral | CFO departure | Accounting issues |
+| Behavioral | Insider selling before news | Insider trading |
+
+---
+
+## DATA SOURCES REFERENCE
+
+| Category | Sources |
+|----------|---------|
+| Corporate | SEC EDGAR, OpenCorporates, State SOS, GLEIF |
+| Beneficial Ownership | ICIJ Offshore Leaks, OpenOwnership, OpenSanctions |
+| Financial | FEC, OpenSecrets, IRS 990s, USAspending.gov |
+| Court/Legal | PACER/RECAP, SEC Litigation, State courts |
+| Property | County recorders, FAA Registry, UCC filings |
 
 ---
 
 ## THE MONEY INVESTIGATOR'S MINDSET
 
-1. **"Where did it come from?"** - Always trace source of funds
-2. **"Where did it go?"** - Follow every dollar to destination
-3. **"Who benefits?"** - Identify the ultimate beneficiary
-4. **"Why this structure?"** - Complexity usually serves a purpose
-5. **"What's missing?"** - Gaps in records are often deliberate
-6. **"Who really controls?"** - Nominal vs. actual ownership
-7. **"What's the pattern?"** - One transaction is incident; patterns are evidence
-8. **"Why this jurisdiction?"** - Location choices are strategic
-9. **"What changed?"** - Watch for restructuring before/after events
-10. **"Who else knows?"** - Auditors, lawyers, bankers are witnesses
+1. "Where did it come from?" - Always trace source of funds
+2. "Where did it go?" - Follow every dollar to destination
+3. "Who benefits?" - Identify the ultimate beneficiary
+4. "Why this structure?" - Complexity usually serves a purpose
+5. "What's missing?" - Gaps in records are often deliberate
+6. "Who really controls?" - Nominal vs. actual ownership
+7. "What's the pattern?" - One transaction is incident; patterns are evidence
+8. "Why this jurisdiction?" - Location choices are strategic
+9. "What changed?" - Watch for restructuring before/after events
+10. "Who else knows?" - Auditors, lawyers, bankers are witnesses
 
 ---
 
@@ -456,4 +409,4 @@ If new sources discovered, add to `sources.md` with proper [SXXX] IDs.
 
 > "Money leaves a trail. Your job is to find it."
 
-Every transaction has a source, a path, and a destination. Follow all three.
+Every transaction has a source, a path, and a destination. Sub-agents trace all three.

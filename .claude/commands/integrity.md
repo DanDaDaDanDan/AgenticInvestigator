@@ -1,8 +1,22 @@
-# Journalistic Integrity & Neutrality Check
+# Journalistic Integrity & Neutrality Check (Orchestrator Mode)
 
-You are running the **journalistic integrity assessment** - a pre-publication review to ensure bipartisan, balanced, and ethically sound reporting.
+You are the **orchestrator** running a journalistic integrity assessment. You dispatch integrity analysis agents - you do NOT run analysis directly.
 
-This command evaluates the investigation for neutrality, fairness, and adherence to professional journalism standards.
+---
+
+## CRITICAL: ORCHESTRATOR-ONLY
+
+**You do NOT:**
+- Call MCP tools directly
+- Read full file contents
+- Process analysis results
+- Write to files directly
+
+**You ONLY:**
+- Read _state.json for current status
+- Dispatch integrity analysis agents (parallel)
+- Wait for completion
+- Read brief status from agents
 
 ---
 
@@ -128,92 +142,168 @@ For each position, verify the strongest version is presented:
 
 ---
 
-## PARALLEL ANALYSIS CALLS
+## ORCHESTRATOR FLOW
 
-Launch ALL of these simultaneously:
-
-### Call 1: Balance Analysis (Gemini)
 ```
-mcp__mcp-gemini__generate_text:
-  thinking_level: "high"
-  system_prompt: |
-    You are a journalism ethics professor reviewing an investigation for balance and fairness.
-    Analyze:
-    1. Source distribution across positions
-    2. Proportionality of coverage
-    3. Whether any perspective is underrepresented
-    4. Whether scrutiny is applied equally
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       INTEGRITY CHECK ORCHESTRATOR                           │
+│                                                                              │
+│  STEP 1: READ STATE                                                          │
+│    - Read _state.json (small file, OK to read fully)                         │
+│                                                                              │
+│  STEP 2: DISPATCH INTEGRITY AGENTS (parallel, ONE message)                   │
+│    - Agent 1: Balance analysis                                               │
+│    - Agent 2: Language neutrality                                            │
+│    - Agent 3: Adversarial review                                             │
+│    - Agent 4: Steelmanning verification                                      │
+│                                                                              │
+│  STEP 3: WAIT FOR COMPLETION                                                 │
+│    - All agents write to integrity-check.md                                  │
+│    - All agents return brief status                                          │
+│                                                                              │
+│  STEP 4: READ RESULTS                                                        │
+│    - Report overall rating to user                                           │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## DISPATCH INTEGRITY AGENTS
+
+**Dispatch ALL in ONE message for parallel execution:**
+
+### Agent 1: Balance Analysis
+
+```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Balance analysis for integrity check"
   prompt: |
-    INVESTIGATION TO REVIEW:
-    [summary.md content]
+    TASK: Analyze source balance and fairness
 
-    POSITIONS DOCUMENTED:
-    [positions.md content]
+    CASE: cases/[case-id]/
 
-    SOURCES:
-    [sources.md summary]
+    ACTIONS:
+    1. Read summary.md, positions.md, sources.md
 
-    Provide detailed balance analysis.
+    2. Run analysis:
+       mcp__mcp-gemini__generate_text
+         thinking_level: "high"
+         system_prompt: "You are a journalism ethics professor..."
+         prompt: "[content] - Analyze balance"
+
+    3. Compile findings:
+       - Source distribution by position
+       - Proportionality assessment
+       - Underrepresented perspectives
+
+    4. Write to integrity-check.md (Section 1)
+
+    OUTPUT FILE: integrity-check.md
+    RETURN: Balance verdict, position counts
 ```
 
-### Call 2: Language Neutrality (Gemini)
+### Agent 2: Language Neutrality
+
 ```
-mcp__mcp-gemini__generate_text:
-  thinking_level: "high"
-  system_prompt: |
-    You are an editor checking for loaded language and bias.
-    Flag any:
-    - Pejorative or emotionally charged terms
-    - Assumptive language
-    - Asymmetric treatment of parties
-    - Implicit judgments
-    - Editorializing in factual sections
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Language neutrality scan"
   prompt: |
-    TEXT TO REVIEW:
-    [summary.md content]
+    TASK: Scan for biased language
 
-    Identify ALL instances of potentially biased language and suggest neutral alternatives.
+    CASE: cases/[case-id]/
+
+    ACTIONS:
+    1. Read summary.md
+
+    2. Run analysis:
+       mcp__mcp-gemini__generate_text
+         thinking_level: "high"
+         system_prompt: "You are an editor checking for loaded language..."
+         prompt: "[content] - Find biased language"
+
+    3. Compile findings:
+       - Flagged phrases with locations
+       - Suggested neutral alternatives
+
+    4. Append to integrity-check.md (Section 2)
+
+    OUTPUT FILE: integrity-check.md
+    RETURN: Flagged phrase count, severity
 ```
 
-### Call 3: Adversarial Review (Gemini)
+### Agent 3: Adversarial Review
+
 ```
-mcp__mcp-gemini__generate_text:
-  thinking_level: "high"
-  system_prompt: |
-    You are a hostile reader from EACH criticized party.
-    For each entity criticized in this investigation:
-    1. What would they say is unfair?
-    2. What context is missing?
-    3. What exculpatory evidence was omitted?
-    4. Where is the scrutiny asymmetric?
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Adversarial review"
   prompt: |
-    INVESTIGATION:
-    [summary.md content]
+    TASK: Review from each criticized party's perspective
 
-    ENTITIES CRITICIZED:
-    [list from summary]
+    CASE: cases/[case-id]/
 
-    Provide the strongest objections each entity would raise about fairness.
+    ACTIONS:
+    1. Read summary.md
+
+    2. Run analysis:
+       mcp__mcp-gemini__generate_text
+         thinking_level: "high"
+         system_prompt: "You are a hostile reader from EACH criticized party..."
+         prompt: "[content] - What would each party object to?"
+
+    3. Compile objections by entity
+
+    4. Append to integrity-check.md (Section 7)
+
+    OUTPUT FILE: integrity-check.md
+    RETURN: Objection count by entity
 ```
 
-### Call 4: Steelmanning Verification (Gemini)
+### Agent 4: Steelmanning Verification
+
 ```
-mcp__mcp-gemini__generate_text:
-  thinking_level: "high"
-  system_prompt: |
-    You are a debate coach ensuring all arguments are steelmanned.
-    For each position in this investigation:
-    1. Is the STRONGEST version of this argument presented?
-    2. Are weak strawman versions being attacked instead?
-    3. What stronger arguments exist that weren't included?
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Steelmanning check"
   prompt: |
-    POSITIONS ANALYSIS:
-    [positions.md content]
+    TASK: Verify steelmanning quality
 
-    SUMMARY TREATMENT:
-    [relevant sections of summary.md]
+    CASE: cases/[case-id]/
 
-    Evaluate steelmanning quality for each position.
+    ACTIONS:
+    1. Read positions.md and summary.md
+
+    2. Run analysis:
+       mcp__mcp-gemini__generate_text
+         thinking_level: "high"
+         system_prompt: "You are a debate coach..."
+         prompt: "[content] - Evaluate steelmanning"
+
+    3. Compile findings per position
+
+    4. Append to integrity-check.md (Section 6)
+
+    OUTPUT FILE: integrity-check.md
+    RETURN: Steelmanning verdict by position
+```
+
+---
+
+## PARALLEL DISPATCH EXAMPLE
+
+```
+ONE MESSAGE with these Task tool calls:
+
+Task 1: Balance analysis agent
+Task 2: Language neutrality agent
+Task 3: Adversarial review agent
+Task 4: Steelmanning agent
+
+All agents append to integrity-check.md.
+Orchestrator waits for all to complete.
 ```
 
 ---

@@ -74,6 +74,80 @@ After any structural change, verify all three files are consistent.
 
 ---
 
+## Orchestrator-Only Architecture (CRITICAL)
+
+**The main Claude Code instance ONLY orchestrates. All actual work is done by sub-agents via Task tool.**
+
+This prevents context bloat in the main loop and ensures all findings are persisted to files.
+
+### What the Orchestrator Does
+
+| Action | ✓ ALLOWED | ✗ FORBIDDEN |
+|--------|-----------|-------------|
+| State tracking | Read file headers (20-30 lines) | Read full file contents |
+| Research | Dispatch sub-agents via Task tool | Call MCP research tools directly |
+| Analysis | Dispatch sub-agents | Process research results in main loop |
+| File updates | Dispatch sub-agents | Write large content directly |
+| Iteration tracking | Track iteration count | Accumulate findings in memory |
+
+### Orchestrator Loop
+
+```
+REPEAT:
+  1. READ STATE: Read _state.json or file headers (brief)
+  2. DECIDE: What phase/step is next?
+  3. DISPATCH: Launch sub-agents via Task tool (parallel when independent)
+  4. WAIT: Sub-agents write to files, return brief status
+  5. CHECK: Read brief status from files
+  6. LOOP OR TERMINATE
+```
+
+### Sub-Agent Dispatch Rules
+
+**ALWAYS use Task tool with `subagent_type: "general-purpose"` for:**
+- Research (Gemini, OpenAI, XAI deep research)
+- Extraction (parsing research-leads/)
+- Investigation (people, claims, timelines)
+- Verification (cross-model critique)
+- Synthesis (summary.md updates)
+- Any file analysis or updates
+
+**Sub-agent prompts MUST include:**
+1. **TASK**: Clear description of what to do
+2. **CASE**: Path to case directory
+3. **ITERATION**: Current iteration number
+4. **ACTIONS**: Specific steps to perform
+5. **OUTPUT FILE**: Where to write results
+6. **RETURN**: "Brief status only" (counts, key findings, errors)
+
+**Sub-agents MUST:**
+- Write ALL findings to specified files
+- NEVER return large content bodies to orchestrator
+- Update _state.json with state changes
+- Return only brief status message
+
+### State File (_state.json)
+
+Each case has a `_state.json` for orchestrator state tracking:
+
+```json
+{
+  "case_id": "topic-slug",
+  "status": "IN_PROGRESS",
+  "current_iteration": 5,
+  "current_phase": "VERIFICATION",
+  "next_source_id": "S048",
+  "gaps": ["gap1", "gap2"],
+  "verification_passed": false
+}
+```
+
+Sub-agents update this file. Orchestrator reads it.
+
+See `architecture.md` → "Agent Orchestration Model" for full details.
+
+---
+
 ## Core Philosophy: INSATIABLE CURIOSITY
 
 **The key to AgenticInvestigator is to be INSATIABLY CURIOUS.**
@@ -95,54 +169,43 @@ Only stop when ALL conditions are true:
 
 ---
 
-## The Investigation Loop
+## The Investigation Loop (Orchestrator View)
+
+**All phases executed via sub-agents. Orchestrator only dispatches and tracks.**
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         INVESTIGATION LOOP                          │
+│                   INVESTIGATION LOOP (Orchestrator)                  │
 │                                                                     │
-│  PHASE 1: RESEARCH                                                  │
-│    - Gemini deep research (primary)                                 │
-│    - OpenAI deep research (critical claims)                         │
-│    - XAI real-time search (current events, social media)            │
-│    - Statement searches (testimony, interviews, earnings calls)     │
+│  PHASE 1: RESEARCH → Dispatch Research Agents (parallel)            │
+│    [Agent] Gemini deep research → research-leads/                   │
+│    [Agent] OpenAI deep research → research-leads/                   │
+│    [Agent] XAI real-time search → research-leads/                   │
+│    [Agent] Statement searches → research-leads/                     │
 │                                                                     │
-│  PHASE 2: EXTRACTION                                                │
-│    - Extract all claims, people, dates, contradictions              │
-│    - Categorize by position/perspective                             │
+│  PHASE 2: EXTRACTION → Dispatch Extraction Agent                    │
+│    [Agent] Parse research-leads/ → _extraction.json                 │
+│    [Agent] Update _state.json with new items found                  │
 │                                                                     │
-│  PHASE 3: INVESTIGATION                                             │
-│    - For EVERY person: investigate background                       │
-│    - For EVERY person: collect ALL statements (proactively seek)    │
-│    - For EVERY person: document role timeline                       │
-│    - For EVERY claim: verify with multiple sources                  │
-│    - For EVERY contradiction: investigate discrepancy               │
-│    - Compare statements across time and venues                      │
+│  PHASE 3: INVESTIGATION → Dispatch Investigation Agents (parallel)  │
+│    [Agent] Person A background → people.md                          │
+│    [Agent] Person B background → people.md                          │
+│    [Agent] Claim X verification → fact-check.md                     │
+│    [Agent] Timeline event Y → timeline.md                           │
 │                                                                     │
-│  PHASE 4: VERIFICATION CHECKPOINT (periodic)                        │
-│    → Cross-model critique (Gemini critiques Claude)                 │
-│    → Identify unexplored claims from ALL positions                  │
-│    → Identify alternative theories to address                       │
-│    → Fact-check all major claims                                    │
-│    → Check statement coverage (histories, evolution, contradictions)│
-│    → List specific gaps                                             │
-│    → If gaps exist: CONTINUE                                        │
+│  PHASE 4: VERIFICATION → Dispatch Verification Agent                │
+│    [Agent] Cross-model critique → iterations.md (checkpoint)        │
+│    [Agent] Gap analysis → _state.json (gaps list)                   │
 │                                                                     │
-│  PHASE 5: SYNTHESIS                                                 │
-│    - Register sources in sources.md (append-only, [SXXX] IDs)       │
-│    - Update detail files (timeline, people, positions, etc.)        │
-│    - Update summary.md (embed full source list)                     │
-│    - Log iteration in iterations.md                                 │
-│    - Git commit: "Iteration N: [brief description]"                 │
+│  PHASE 5: SYNTHESIS → Dispatch Synthesis Agent                      │
+│    [Agent] Read all detail files → summary.md (complete rewrite)    │
+│    [Agent] Update _state.json (iteration++, phase, status)          │
+│    [Agent] Git commit                                               │
 │                                                                     │
-│  TERMINATION CHECK                                                  │
-│    - no_unexplored_threads                                          │
-│    - all_positions_documented                                       │
-│    - alternative_theories_addressed                                 │
-│    - all_major_claims_fact_checked                                  │
-│    - statement_histories_complete                                   │
-│    - statement_evolution_analyzed                                   │
-│    - verification_checklist_passed                                  │
+│  TERMINATION CHECK (orchestrator reads _state.json)                 │
+│    - verification_passed == true                                    │
+│    - gaps.length == 0                                               │
+│    - status == "COMPLETE"                                           │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -151,29 +214,44 @@ Only stop when ALL conditions are true:
 
 ## Parallelization Rules
 
-**Always maximize parallel execution.** Use multiple Task tool calls in a single message when agents are independent.
+**Always maximize parallel execution.** Dispatch multiple sub-agents in ONE message when tasks are independent.
 
-### AgenticInvestigator Parallel Phases
+### Phase 1 - Research (parallel)
 
-**Phase 1 - Research (parallel)**:
+Dispatch ALL in ONE message:
 ```
-Launch ALL of these simultaneously in ONE message:
-- Gemini deep research
-- XAI multi-source research
-- X/Twitter analysis
-- Mainstream angle
-- Official records
-- All major positions/perspectives
-- Alternative theories
+Task 1: Research Agent - Gemini deep research on [topic]
+Task 2: Research Agent - OpenAI deep research on [critical claims]
+Task 3: Research Agent - XAI multi-source search
+Task 4: Research Agent - X/Twitter discourse
+Task 5: Research Agent - Official records search
+Task 6: Research Agent - Alternative theories search
 ```
 
-**Phase 4 - Verification (parallel)**:
+All write to `research-leads/`. Orchestrator waits for all to complete.
+
+### Phase 3 - Investigation (parallel)
+
+Dispatch ALL in ONE message:
 ```
-Launch ALL of these simultaneously in ONE message:
-- Cross-model critique (Gemini)
-- Unexplored claims search (all positions)
-- Alternative theory search
+Task 1: Investigation Agent - Person A (writes to people.md)
+Task 2: Investigation Agent - Person B (writes to people.md)
+Task 3: Investigation Agent - Claim verification (writes to fact-check.md)
+Task 4: Investigation Agent - Timeline event (writes to timeline.md)
 ```
+
+Each agent updates its target file and _state.json.
+
+### Phase 4 - Verification (parallel)
+
+Dispatch ALL in ONE message:
+```
+Task 1: Verification Agent - Cross-model critique (Gemini)
+Task 2: Verification Agent - Unexplored claims search
+Task 3: Verification Agent - Alternative theory search
+```
+
+Results aggregated in iterations.md checkpoint and _state.json gaps.
 
 ---
 
@@ -327,7 +405,9 @@ If yes, it's a proper summary.md. If no, rewrite it.
 
 ---
 
-## MCP Quick Reference
+## MCP Quick Reference (For Sub-Agents)
+
+**NOTE**: These tools are called by SUB-AGENTS, not by the orchestrator directly. The orchestrator dispatches agents that use these tools.
 
 ### When to Use Which Server
 

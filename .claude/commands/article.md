@@ -1,8 +1,22 @@
-# Article Generator
+# Article Generator (Orchestrator Mode)
 
-You are running the **article generator** - a tool that transforms investigation findings into publication-ready journalistic articles.
+You are the **orchestrator** running the article generator. You dispatch article writing agents - you do NOT write articles directly.
 
-This command generates two distinct articles from summary.md, written with professional newsroom standards.
+---
+
+## CRITICAL: ORCHESTRATOR-ONLY
+
+**You do NOT:**
+- Call MCP tools directly
+- Read full file contents
+- Write articles directly
+- Process source material
+
+**You ONLY:**
+- Read _state.json for current status
+- Dispatch article writing agents
+- Wait for completion
+- Read brief status from agents
 
 ---
 
@@ -100,66 +114,125 @@ This command generates two distinct articles from summary.md, written with profe
 
 ---
 
-## EXECUTION PROCESS
-
-### Step 1: Load Source Material
-
-Read the following files from the case directory:
-- `summary.md` (PRIMARY SOURCE - all content must come from here)
-- `sources.md` (for source verification)
-- `fact-check.md` (for accuracy verification)
-
-### Step 2: Extract Key Elements
-
-From summary.md, identify:
-1. **Central finding/thesis**: The main newsworthy discovery
-2. **Key facts**: Verified, important information
-3. **Stakes**: Who is affected and how
-4. **Context**: Background needed to understand the story
-5. **Multiple perspectives**: All positions represented
-6. **Limitations**: What is unknown or contested
-7. **Sources**: All [SXXX] citations
-
-### Step 3: Generate Articles
-
-Use Gemini for high-quality article generation:
+## ORCHESTRATOR FLOW
 
 ```
-mcp__mcp-gemini__generate_text:
-  model: "gemini-3-pro"
-  thinking_level: "high"
-  system_prompt: |
-    You are a senior investigative journalist at a major news organization.
-    Write with the standards of The New York Times, The Washington Post, or ProPublica.
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        ARTICLE GENERATOR ORCHESTRATOR                        │
+│                                                                              │
+│  STEP 1: READ STATE                                                          │
+│    - Read _state.json (small file, OK to read fully)                         │
+│                                                                              │
+│  STEP 2: DISPATCH ARTICLE AGENTS (parallel or sequential)                    │
+│    - Agent 1: Short overview article                                         │
+│    - Agent 2: Full professional article                                      │
+│                                                                              │
+│  STEP 3: WAIT FOR COMPLETION                                                 │
+│    - Agents write to articles.md                                             │
+│    - Agents return brief status                                              │
+│                                                                              │
+│  STEP 4: READ RESULTS                                                        │
+│    - Report completion to user                                               │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
-    CRITICAL RULES:
-    1. NEVER introduce facts not present in the source material
-    2. NEVER editorialize or inject personal opinions
-    3. ALWAYS attribute claims to their sources
-    4. ALWAYS preserve [SXXX] source citations
-    5. ALWAYS present contested claims as contested
-    6. Use hedging language ("appears to," "according to") for unverified claims
-    7. Balance all perspectives fairly
-    8. Write for an informed but non-expert audience
+---
 
+## DISPATCH ARTICLE AGENTS
+
+**Dispatch BOTH in ONE message for parallel execution:**
+
+### Agent 1: Short Overview Article
+
+```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Generate short overview article"
   prompt: |
-    SOURCE MATERIAL:
-    [summary.md content]
+    TASK: Generate short overview article (400-800 words)
 
-    Generate [Article 1 / Article 2] following the specifications provided.
+    CASE: cases/[case-id]/
+
+    ACTIONS:
+    1. Read summary.md (PRIMARY SOURCE)
+    2. Read sources.md for verification
+
+    3. Generate article:
+       mcp__mcp-gemini__generate_text
+         model: "gemini-3-pro"
+         thinking_level: "high"
+         system_prompt: |
+           You are a senior investigative journalist.
+           RULES:
+           - NEVER introduce facts not in source material
+           - ALWAYS preserve [SXXX] citations
+           - ALWAYS present contested claims as contested
+         prompt: "[summary.md] - Generate 400-800 word overview"
+
+    4. Write to articles.md (Article 1 section)
+
+    5. Verify:
+       - No facts added beyond summary.md
+       - All source citations preserved
+       - Neutral tone throughout
+
+    OUTPUT FILE: articles.md
+    RETURN: Word count, source citations preserved count
 ```
 
-### Step 4: Quality Check
+### Agent 2: Full Professional Article
 
-Before output, verify:
-- [ ] No facts introduced that aren't in summary.md
-- [ ] All major findings from summary.md are included
-- [ ] All source citations [SXXX] are preserved
-- [ ] Contested claims presented as contested
-- [ ] Multiple perspectives represented fairly
-- [ ] No editorializing or opinion injection
-- [ ] Appropriate hedging language used
-- [ ] Clear structure and flow
+```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Generate full professional article"
+  prompt: |
+    TASK: Generate full professional article (2,000-4,000 words)
+
+    CASE: cases/[case-id]/
+
+    ACTIONS:
+    1. Read summary.md (PRIMARY SOURCE)
+    2. Read sources.md, fact-check.md for verification
+
+    3. Generate article:
+       mcp__mcp-gemini__generate_text
+         model: "gemini-3-pro"
+         thinking_level: "high"
+         system_prompt: |
+           You are a senior investigative journalist at NYT/ProPublica.
+           RULES:
+           - NEVER introduce facts not in source material
+           - ALWAYS preserve [SXXX] citations
+           - Include methodology note
+           - Balance all perspectives
+         prompt: "[summary.md] - Generate 2,000-4,000 word investigation"
+
+    4. Append to articles.md (Article 2 section)
+
+    5. Verify:
+       - All major findings included
+       - All perspectives balanced
+       - Professional newsroom quality
+
+    OUTPUT FILE: articles.md
+    RETURN: Word count, section count, source citations count
+```
+
+---
+
+## PARALLEL DISPATCH EXAMPLE
+
+```
+ONE MESSAGE with these Task tool calls:
+
+Task 1: Short overview article agent
+Task 2: Full professional article agent
+
+Both agents write to articles.md.
+Orchestrator waits for all to complete.
+```
 
 ---
 

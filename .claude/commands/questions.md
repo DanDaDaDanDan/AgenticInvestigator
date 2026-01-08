@@ -1,6 +1,22 @@
-# Investigation Questions Generator
+# Investigation Questions Generator (Orchestrator Mode)
 
-You are running the **questions engine** - the heart of investigative curiosity. This command embodies the principle that **there are always more questions**.
+You are the **orchestrator** running the questions engine. You dispatch question generation agents - you do NOT generate questions directly.
+
+---
+
+## CRITICAL: ORCHESTRATOR-ONLY
+
+**You do NOT:**
+- Call MCP tools directly
+- Read full file contents
+- Process question results
+- Write to files directly
+
+**You ONLY:**
+- Read _state.json for current status
+- Dispatch question generation agents (parallel)
+- Wait for completion
+- Read brief status from agents
 
 ---
 
@@ -376,92 +392,210 @@ Key questions:
 
 ---
 
-## EXECUTION: PARALLEL QUESTION GENERATION
+## ORCHESTRATOR FLOW
 
-**Launch ALL of these simultaneously in ONE message:**
-
-### Call 1: Core Investigation Questions (Gemini)
 ```
-mcp__mcp-gemini__generate_text:
-  thinking_level: "high"
-  system_prompt: |
-    You are an elite investigative journalist. Generate questions using:
-    - Follow the Money, Silence, Timeline, Documents, Contradictions
-    - Stakeholder Mapping, Relationships, Network Analysis
-    Be specific. Name names. Suggest specific documents.
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      QUESTIONS GENERATOR ORCHESTRATOR                        │
+│                                                                              │
+│  STEP 1: READ STATE                                                          │
+│    - Read _state.json (small file, OK to read fully)                         │
+│                                                                              │
+│  STEP 2: DISPATCH QUESTION AGENTS (parallel, ONE message)                    │
+│    - Agent 1: Core investigation questions                                   │
+│    - Agent 2: Hypothesis & analysis questions                                │
+│    - Agent 3: Adversarial questions                                          │
+│    - Agent 4: Context & root cause questions                                 │
+│    - Agent 5: Real-time questions                                            │
+│    - Agent 6: Pattern research questions                                     │
+│                                                                              │
+│  STEP 3: WAIT FOR COMPLETION                                                 │
+│    - All agents write to questions.md                                        │
+│    - All agents return brief status                                          │
+│                                                                              │
+│  STEP 4: READ RESULTS                                                        │
+│    - Report question count and priorities to user                            │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## DISPATCH QUESTION AGENTS
+
+**Dispatch ALL in ONE message for parallel execution:**
+
+### Agent 1: Core Investigation Questions
+
+```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Core investigation questions"
   prompt: |
-    INVESTIGATION: [summary.md]
-    PEOPLE: [people.md summary]
-    Generate 20 questions across these frameworks.
+    TASK: Generate core investigation questions
+
+    CASE: cases/[case-id]/
+
+    ACTIONS:
+    1. Read summary.md and people.md
+
+    2. Generate questions:
+       mcp__mcp-gemini__generate_text
+         thinking_level: "high"
+         system_prompt: "You are an elite investigative journalist..."
+         prompt: "[content] - Generate 20 questions using Money, Silence, Timeline, Documents, Contradictions, Relationships frameworks"
+
+    3. Write to questions.md (Core Investigation section)
+
+    OUTPUT FILE: questions.md
+    RETURN: Question count, high-priority count
 ```
 
-### Call 2: Hypothesis & Analysis Questions (Gemini)
+### Agent 2: Hypothesis & Analysis Questions
+
 ```
-mcp__mcp-gemini__generate_text:
-  thinking_level: "high"
-  system_prompt: |
-    You are an intelligence analyst. Generate questions using:
-    - ACH (Analysis of Competing Hypotheses)
-    - Key Assumptions Check
-    - Pattern Recognition
-    - Means/Motive/Opportunity
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Hypothesis & analysis questions"
   prompt: |
-    INVESTIGATION: [summary.md]
-    CLAIMS: [fact-check.md summary]
-    Generate 15 analytical questions.
+    TASK: Generate analytical questions
+
+    CASE: cases/[case-id]/
+
+    ACTIONS:
+    1. Read summary.md and fact-check.md
+
+    2. Generate questions:
+       mcp__mcp-gemini__generate_text
+         thinking_level: "high"
+         system_prompt: "You are an intelligence analyst..."
+         prompt: "[content] - Generate 15 questions using ACH, Assumptions, Patterns, Means/Motive/Opportunity"
+
+    3. Append to questions.md (Hypothesis & Analysis section)
+
+    OUTPUT FILE: questions.md
+    RETURN: Question count
 ```
 
-### Call 3: Adversarial Questions (Gemini)
+### Agent 3: Adversarial Questions
+
 ```
-mcp__mcp-gemini__generate_text:
-  thinking_level: "high"
-  system_prompt: |
-    You are hostile opposing counsel AND a cognitive bias auditor.
-    Generate questions using:
-    - Counterfactual Thinking
-    - Pre-Mortem Analysis
-    - Cognitive Bias Check
-    - Uncomfortable Questions
-    Find EVERY weakness in this investigation.
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Adversarial questions"
   prompt: |
-    INVESTIGATION: [summary.md]
-    Generate 15 adversarial questions.
+    TASK: Generate adversarial questions
+
+    CASE: cases/[case-id]/
+
+    ACTIONS:
+    1. Read summary.md
+
+    2. Generate questions:
+       mcp__mcp-gemini__generate_text
+         thinking_level: "high"
+         system_prompt: "You are hostile opposing counsel AND a cognitive bias auditor..."
+         prompt: "[content] - Generate 15 adversarial questions"
+
+    3. Append to questions.md (Adversarial section)
+
+    OUTPUT FILE: questions.md
+    RETURN: Weakness count identified
 ```
 
-### Call 4: Context & Root Cause Questions (Gemini)
+### Agent 4: Context & Root Cause Questions
+
 ```
-mcp__mcp-gemini__generate_text:
-  thinking_level: "high"
-  system_prompt: |
-    You are a systems thinker and contextual analyst. Generate questions using:
-    - Second-Order Effects
-    - Meta Questions
-    - Framing & Sense-Making
-    - 5 Whys Root Cause Analysis
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Context & root cause questions"
   prompt: |
-    INVESTIGATION: [summary.md]
-    Generate 15 context and root cause questions.
+    TASK: Generate context and root cause questions
+
+    CASE: cases/[case-id]/
+
+    ACTIONS:
+    1. Read summary.md
+
+    2. Generate questions:
+       mcp__mcp-gemini__generate_text
+         thinking_level: "high"
+         system_prompt: "You are a systems thinker..."
+         prompt: "[content] - Generate 15 questions using Second-Order, Meta, 5 Whys"
+
+    3. Append to questions.md (Context & Root Cause section)
+
+    OUTPUT FILE: questions.md
+    RETURN: Question count
 ```
 
-### Call 5: Real-Time Questions (XAI)
+### Agent 5: Real-Time Questions
+
 ```
-mcp__mcp-xai__research:
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Real-time questions from discourse"
   prompt: |
-    For [TOPIC], find:
-    - What questions are people asking on social media?
-    - What questions remain unanswered in public discourse?
-    - What new information raises new questions?
-  sources: ["x", "web", "news"]
+    TASK: Find questions from public discourse
+
+    CASE: cases/[case-id]/
+    TOPIC: [topic from _state.json]
+
+    ACTIONS:
+    1. Search current discourse:
+       mcp__mcp-xai__research
+         prompt: "What questions are people asking about [topic]?"
+         sources: ["x", "web", "news"]
+
+    2. Extract unanswered questions
+
+    3. Append to questions.md (Real-Time section)
+
+    OUTPUT FILE: questions.md
+    RETURN: New question count from discourse
 ```
 
-### Call 6: Pattern Research (OpenAI)
+### Agent 6: Pattern Research Questions
+
 ```
-mcp__mcp-openai__deep_research:
-  query: |
-    Find similar cases, precedents, and patterns for [TOPIC].
-    - Has this happened before?
-    - Same players in other cases?
-    - What patterns emerge?
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Pattern and precedent research"
+  prompt: |
+    TASK: Research patterns and precedents
+
+    CASE: cases/[case-id]/
+    TOPIC: [topic from _state.json]
+
+    ACTIONS:
+    1. Run pattern research:
+       mcp__mcp-openai__deep_research
+         query: "Similar cases and patterns for [topic]"
+
+    2. Extract pattern-based questions
+
+    3. Append to questions.md (Patterns section)
+
+    OUTPUT FILE: questions.md
+    RETURN: Precedent count, pattern questions generated
+```
+
+---
+
+## PARALLEL DISPATCH EXAMPLE
+
+```
+ONE MESSAGE with these Task tool calls:
+
+Task 1: Core investigation questions agent
+Task 2: Hypothesis & analysis questions agent
+Task 3: Adversarial questions agent
+Task 4: Context & root cause questions agent
+Task 5: Real-time questions agent
+Task 6: Pattern research questions agent
+
+All agents write to questions.md.
+Orchestrator waits for all to complete.
 ```
 
 ---
