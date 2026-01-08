@@ -565,11 +565,22 @@ Task tool:
        - Read captured file to VERIFY claim text exists
        - If claim not found → mark as UNVERIFIED
 
-    3. Collect ALL statements (proactively seek these):
+    3. Collect ALL statements using these search queries:
+       QUERY TEMPLATES (run all):
+       - "[name] testimony Congress Senate House hearing"
+       - "[name] deposition sworn statement court"
+       - "[name] interview transcript earnings call"
+       - "[name] statement press conference remarks"
+       - "[name] internal email memo leaked"
+       - "from:[x_handle]" on X/Twitter
+
+       STATEMENT TYPES TO FIND:
        - Congressional testimony, depositions, court filings
        - Interviews, earnings calls, press conferences
        - Internal emails, memos (via FOIA/litigation)
        - Social media history (X, LinkedIn)
+
+       ANALYSIS:
        - Compare statements ACROSS TIME (same person, different dates)
        - Compare statements ACROSS VENUES (public vs testimony vs internal)
        - FLAG any contradictions for investigation
@@ -1018,5 +1029,54 @@ Do NOT:
 - Stop early without verification passing
 - Read full file contents "just to check"
 - Do research directly "to save time"
+- Cherry-pick which claims to fact-check
+- Ignore alternative theories because they're "obviously false"
+- Assume only two positions exist
+- Present incomplete work as "good enough"
+- Mark PARTIAL as YES on verification checklist
+- Give benefit of the doubt on gaps
 
-The architecture exists to prevent context bloat. Trust the process.
+The architecture exists to prevent context bloat and self-deception. Trust the process.
+
+---
+
+## VERIFICATION TRIGGERS
+
+**Verification checkpoint is MANDATORY at:**
+
+1. **Periodically during investigation** (every 3-5 iterations)
+2. **When claiming "saturation"** (no more threads to explore)
+3. **When claiming "complete"** (before setting status to COMPLETE)
+4. **When user says "wrap up"** (must verify before stopping)
+5. **After addressing all gaps** (re-verify to confirm)
+
+**If verification fails (gaps exist), you MUST continue investigating.**
+
+The verification checkpoint catches self-deception. Do not skip it.
+
+---
+
+## HARD RULES FOR INVESTIGATION
+
+These rules apply to all sub-agents and the entire investigation:
+
+1. **ALL SIDES FACT-CHECKED** - Claims from ALL positions verified, not just main narrative
+2. **ALTERNATIVE THEORIES ADDRESSED** - All major theories get investigated with evidence, not dismissed
+3. **LOOP ON ALL POINTS** - Every person, claim, date, contradiction gets investigated
+4. **USE ALL THREE RESEARCH ENGINES** - Gemini, OpenAI, XAI for comprehensive coverage
+5. **CROSS-MODEL CRITIQUE** - Gemini critiques Claude's work to find blind spots
+6. **BUILD ALL CASES** - Every position gets steelmanned (strongest version)
+7. **NEVER FABRICATE** - If you can't find evidence, say so. Don't make it up.
+8. **PROBABILITY RANGES** - [0.6, 0.8] not 0.7. Explicit uncertainty is valuable.
+9. **LET READERS DECIDE** - Present evidence, acknowledge uncertainty, don't dictate conclusions
+10. **EVERY CLAIM NEEDS [SXXX]** - Source attribution is sacred. No ID = no claim.
+11. **APPEND-ONLY SOURCES** - Never renumber or delete source IDs. Mark deprecated.
+12. **SUMMARY.MD IS FINAL PRODUCT** - Rewrite completely each time. Professional quality.
+13. **SUMMARY.MD SELF-CONTAINED** - Must embed full source list, shareable standalone.
+14. **GIT VERSIONING PER CASE** - Each case has its own git repo. Commit after every iteration.
+15. **CAPTURE EVIDENCE IMMEDIATELY** - Use ./scripts/capture when source found. Don't wait.
+16. **AI RESEARCH = LEADS ONLY** - Deep research → research-leads/. Find primary sources.
+17. **VERIFY CLAIMS IN EVIDENCE** - Read captured files to confirm claim exists before citing.
+18. **EVERY SOURCE NEEDS EVIDENCE** - No [SXXX] without captured evidence in evidence/ folder.
+19. **TRACK STATEMENT HISTORIES** - Collect all statements, compare across time and venues.
+20. **FLAG ALL CONTRADICTIONS** - When statements conflict, investigate the discrepancy.
