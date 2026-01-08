@@ -685,10 +685,15 @@ Transform investigation findings into publication-ready journalism.
 
 **Each case has its own git repository for version control. Commit after every iteration.**
 
+**Case naming**: Folder name is a slug derived from the investigation topic:
+- `"Boeing 737 MAX crashes"` → `boeing-737-max-crashes`
+- `"FTX collapse"` → `ftx-collapse`
+- `"Corporate fraud at Acme Corp"` → `corporate-fraud-acme-corp`
+
 ```
 cases/
-├── .active                           # Current case ID (plain text)
-└── inv-YYYYMMDD-HHMMSS/
+├── .active                           # Current case slug (plain text)
+└── [topic-slug]/
     │
     │  # VERSION CONTROL
     ├── .git/                         # Case-specific git repository
@@ -871,7 +876,7 @@ Sources are assigned sequential IDs: `[S001]`, `[S002]`, `[S003]`, etc.
 ```markdown
 # Source Registry
 
-**Case**: inv-YYYYMMDD-HHMMSS
+**Case**: [topic-slug]
 **Total Sources**: [N]
 **Last Updated**: [datetime]
 
@@ -991,7 +996,7 @@ When multiple sources cite each other, note it:
 ```markdown
 # Investigation: [Topic]
 
-**Case ID**: inv-YYYYMMDD-HHMMSS
+**Case ID**: [topic-slug]
 **Status**: [IN PROGRESS | COMPLETE]
 **Last Updated**: [datetime]
 
@@ -1112,7 +1117,7 @@ so summary.md is completely self-contained and shareable]
 ```markdown
 # Timeline: [Topic]
 
-**Case**: inv-YYYYMMDD-HHMMSS
+**Case**: [topic-slug]
 **Events**: [N]
 
 ---
@@ -1147,7 +1152,7 @@ According to meeting minutes obtained by NYT [S002], the board...
 ```markdown
 # Key People: [Topic]
 
-**Case**: inv-YYYYMMDD-HHMMSS
+**Case**: [topic-slug]
 **People Profiled**: [N]
 
 ---
@@ -1225,7 +1230,7 @@ According to meeting minutes obtained by NYT [S002], the board...
 ```markdown
 # Positions: [Topic]
 
-**Case**: inv-YYYYMMDD-HHMMSS
+**Case**: [topic-slug]
 **Positions Documented**: [N]
 
 ---
@@ -1353,7 +1358,7 @@ When new perspectives emerge during investigation:
 ```markdown
 # Fact-Check: [Topic]
 
-**Case**: inv-YYYYMMDD-HHMMSS
+**Case**: [topic-slug]
 **Claims Checked**: [N]
 **Positions Covered**: [N]
 
@@ -1425,7 +1430,7 @@ When new perspectives emerge during investigation:
 ```markdown
 # Alternative Theories: [Topic]
 
-**Case**: inv-YYYYMMDD-HHMMSS
+**Case**: [topic-slug]
 **Theories Analyzed**: [N]
 
 ---
@@ -1485,7 +1490,7 @@ of specific quid pro quo.
 ```markdown
 # Evidence Analysis: [Topic]
 
-**Case**: inv-YYYYMMDD-HHMMSS
+**Case**: [topic-slug]
 
 ---
 
@@ -1563,7 +1568,7 @@ This could indicate:
 ```markdown
 # Iteration Log: [Topic]
 
-**Case**: inv-YYYYMMDD-HHMMSS
+**Case**: [topic-slug]
 **Current Iteration**: [N]
 
 ---

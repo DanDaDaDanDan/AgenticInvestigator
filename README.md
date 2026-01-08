@@ -16,11 +16,11 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 # Start new investigation (topic required)
 /investigate --new "Corporate fraud at Acme Corp"
 
-# Resume specific case by ID
-/investigate inv-20260103-143022
+# Resume specific case by slug
+/investigate corporate-fraud-acme-corp
 
 # Resume case with new research direction
-/investigate inv-20260103-143022 "follow the money"
+/investigate corporate-fraud-acme-corp "follow the money"
 
 # List all cases
 /status --list
@@ -34,7 +34,7 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 
 ## Output
 
-**Modular files** in `cases/inv-YYYYMMDD-HHMMSS/`:
+**Modular files** in `cases/[topic-slug]/` (e.g., `cases/corporate-fraud-acme-corp/`):
 
 ```
 ├── summary.md                    # THE DELIVERABLE - self-contained, shareable

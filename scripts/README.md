@@ -202,7 +202,7 @@ When AI research returns a claim:
 Run verification to ensure all sources are captured:
 
 ```bash
-node scripts/verify-sources.js cases/inv-YYYYMMDD-HHMMSS
+node scripts/verify-sources.js cases/[topic-slug]
 ```
 
 Target: 100% capture rate for sources cited in summary.md.

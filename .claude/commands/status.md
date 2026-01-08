@@ -131,7 +131,7 @@ mv cases/[case-id] cases/archive/
 ## EXAMPLE OUTPUT
 
 ```markdown
-# Case Status: inv-20260105-143022
+# Case Status: corporate-fraud-investigation
 
 **Topic**: Corporate Fraud Investigation
 **Status**: IN PROGRESS (Iteration 12)
