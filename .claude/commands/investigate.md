@@ -49,11 +49,19 @@ cases/inv-YYYYMMDD-HHMMSS/
 │  # VERSION CONTROL
 ├── .git/                         # Git repository for case versioning
 │
+│  # EVIDENCE ARCHIVE (hallucination-proof)
+├── evidence/
+│   ├── web/S001/                 # Screenshots, PDFs, HTML per source
+│   ├── documents/                # Downloaded PDFs (SEC filings, court docs)
+│   ├── api/                      # API response captures
+│   └── media/                    # Videos, transcripts
+├── research-leads/               # AI research outputs (NOT citable)
+│
 │  # DELIVERABLE (self-contained, shareable)
 ├── summary.md                    # Executive summary + key findings + ALL sources embedded
 │
 │  # SOURCE REGISTRY (authoritative, append-only)
-├── sources.md                    # Master source list with unique IDs [S001], [S002]...
+├── sources.md                    # Master source list with URLs, evidence paths, hashes
 │
 │  # DETAIL FILES (use source IDs for citations)
 ├── timeline.md                   # Full chronological timeline
@@ -64,7 +72,12 @@ cases/inv-YYYYMMDD-HHMMSS/
 ├── statements.md                 # Statement vs evidence, chain of knowledge
 │
 │  # METADATA
-└── iterations.md                 # Progress log + verification checkpoints
+├── iterations.md                 # Progress log + verification checkpoints
+│
+│  # GENERATED OUTPUTS (created by finalization commands)
+├── integrity-check.md            # Journalistic integrity assessment (/integrity)
+├── legal-review.md               # Pre-publication legal risk assessment (/legal-review)
+└── articles.md                   # Publication-ready articles (/article)
 ```
 
 ### File Responsibilities
@@ -72,7 +85,9 @@ cases/inv-YYYYMMDD-HHMMSS/
 | File | Purpose | Update Frequency |
 |------|---------|------------------|
 | `summary.md` | **THE DELIVERABLE** - shareable, self-contained | Every iteration |
-| `sources.md` | Source registry - append-only, never delete | As sources found |
+| `sources.md` | Source registry with URLs, evidence paths, hashes | As sources found |
+| `evidence/` | Captured evidence (screenshots, PDFs, HTML) | As sources captured |
+| `research-leads/` | AI research outputs (NOT citable) | As research runs |
 | `timeline.md` | Chronological events | As timeline grows |
 | `people.md` | Person profiles | As people investigated |
 | `positions.md` | All positions with arguments | As positions found |
@@ -80,6 +95,9 @@ cases/inv-YYYYMMDD-HHMMSS/
 | `theories.md` | Alternative theory analysis | As theories addressed |
 | `statements.md` | Statement vs evidence analysis | As evidence analyzed |
 | `iterations.md` | Progress tracking | Every iteration |
+| `integrity-check.md` | Journalistic integrity assessment | Via /integrity |
+| `legal-review.md` | Pre-publication legal risk assessment | Via /legal-review |
+| `articles.md` | Publication-ready articles | Via /article |
 
 ### Source Attribution Rule
 
