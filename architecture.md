@@ -614,10 +614,12 @@ Transform investigation findings into publication-ready journalism.
 
 | Engine | Server | Tool | Strength |
 |--------|--------|------|----------|
-| **Gemini** | [`mcp-gemini`](https://github.com/DanDaDaDanDan/mcp-gemini) | `deep_research` | Fast, broad coverage (5-15 min) |
-| **OpenAI** | [`mcp-openai`](https://github.com/DanDaDaDanDan/mcp-openai) | `deep_research` | Maximum depth, complex reasoning (10-30 min) |
+| **Gemini** | [`mcp-gemini`](https://github.com/DanDaDaDanDan/mcp-gemini) | `deep_research` | Fast, broad coverage (5-30 min) |
+| **OpenAI** | [`mcp-openai`](https://github.com/DanDaDaDanDan/mcp-openai) | `deep_research` | Maximum depth, complex reasoning (10-60 min) |
 | **XAI** | [`mcp-xai`](https://github.com/DanDaDaDanDan/mcp-xai) | `research` | Real-time, social media, breaking news |
 | **Gemini (critique)** | [`mcp-gemini`](https://github.com/DanDaDaDanDan/mcp-gemini) | `generate_text` | Cross-model verification |
+
+**Default timeout: 60 minutes.** If research times out, use `check_research` with the returned ID to retrieve results.
 
 ### When to Use Which
 
@@ -644,25 +646,38 @@ Transform investigation findings into publication-ready journalism.
 │   (Google AI)   │ │   (OpenAI)      │ │   (xAI/Grok)    │
 ├─────────────────┤ ├─────────────────┤ ├─────────────────┤
 │ deep_research   │ │ deep_research   │ │ x_search        │
-│ generate_text   │ │ generate_text   │ │ web_search      │
-│ list_models     │ │ web_search      │ │ news_search     │
-└─────────────────┘ │ list_models     │ │ research        │
-                    └─────────────────┘ │ generate_text   │
-                                        └─────────────────┘
+│ check_research  │ │ check_research  │ │ web_search      │
+│ generate_text   │ │ generate_text   │ │ news_search     │
+│ list_models     │ │ web_search      │ │ research        │
+└─────────────────┘ │ list_models     │ │ generate_text   │
+                    └─────────────────┘ └─────────────────┘
 ```
 
 ### Tool Selection Matrix
 
 | Task | Server | Tool | Key Parameters |
 |------|--------|------|----------------|
-| Deep research (fast) | gemini | `deep_research` | `query`, `timeout_minutes` |
-| Deep research (max depth) | openai | `deep_research` | `query`, `model: o3-deep-research` |
+| Deep research (fast) | gemini | `deep_research` | `query`, `timeout_minutes: 60` |
+| Deep research (max depth) | openai | `deep_research` | `query`, `model: o3-deep-research`, `timeout_minutes: 60` |
+| Check/resume research | gemini | `check_research` | `interaction_id` (from timeout error) |
+| Check/resume research | openai | `check_research` | `response_id` (from timeout error) |
 | Cross-model critique | gemini | `generate_text` | `thinking_level: high` |
 | Verification checkpoint | gemini | `generate_text` | `thinking_level: high`, ruthless prompt |
 | Real-time multi-source | xai | `research` | `sources: ["x","web","news"]` |
 | X/Twitter search | xai | `x_search` | `query`, `from_date` |
 | Web search | xai | `web_search` | `query`, `allowed_domains` |
 | News search | xai | `news_search` | `query`, `from_date` |
+
+### Deep Research Error Handling
+
+| Error Prefix | Meaning | Recovery |
+|-------------|---------|----------|
+| `TIMEOUT:` | Research still running | Use `check_research` with ID in error |
+| `AUTH_ERROR:` | Invalid API key | Check MCP server credentials |
+| `RATE_LIMIT:` | API rate limit hit | Wait and retry |
+| `API_ERROR:` | API failure | Check logs, retry |
+| `RESEARCH_FAILED:` | Research task failed | Try different query |
+| `NOT_FOUND:` | ID not found/expired | Start new research |
 
 ---
 

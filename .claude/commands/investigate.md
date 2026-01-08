@@ -197,7 +197,7 @@ cases/inv-YYYYMMDD-HHMMSS/
 ```
 mcp__mcp-gemini__deep_research
   query: "[investigation query]"
-  timeout_minutes: 30
+  timeout_minutes: 60
 ```
 Use for: Most research passes - fast and thorough.
 
@@ -206,11 +206,23 @@ Use for: Most research passes - fast and thorough.
 mcp__mcp-openai__deep_research
   query: "[investigation query]"
   model: "o3-deep-research"
-  timeout_minutes: 30
+  timeout_minutes: 60
 ```
 Use for: Critical claims needing independent verification.
 
-### 3. XAI Real-Time Research (Tertiary - Current Events)
+### 3. Check/Resume Research (After Timeout)
+```
+# Gemini - use interaction_id from timeout error
+mcp__mcp-gemini__check_research
+  interaction_id: "[id from error message]"
+
+# OpenAI - use response_id from timeout error
+mcp__mcp-openai__check_research
+  response_id: "[id from error message]"
+```
+Use for: Retrieving results if deep_research times out (research may still be running).
+
+### 4. XAI Real-Time Research (Tertiary - Current Events)
 ```
 mcp__mcp-xai__research
   prompt: "[research question]"
@@ -218,7 +230,7 @@ mcp__mcp-xai__research
 ```
 Use for: Real-time information, social media, current news.
 
-### 4. Cross-Model Critique (Verification)
+### 5. Cross-Model Critique (Verification)
 ```
 mcp__mcp-gemini__generate_text
   thinking_level: "high"
