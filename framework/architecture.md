@@ -77,7 +77,7 @@ Instead of fixed phases with hardcoded triggers, the system:
 │     → Update verification_passed                                             │
 │                                                                              │
 │  9. TERMINATION GATE CHECK                                                   │
-│     All 8 gates must pass → SYNTHESIS + ARTICLE                              │
+│     All 9 gates must pass → SYNTHESIS + ARTICLE                              │
 │     Any gate fails → Regenerate tasks → LOOP                                 │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
