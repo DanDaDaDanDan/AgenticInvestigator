@@ -341,9 +341,10 @@ node scripts/verify-claims.js /path/to/case
 
 | File | Contents |
 |------|----------|
-| `rules.md` | **Canonical rules** (sources, evidence, verification, state ownership) |
+| `framework/rules.md` | **Canonical rules** (sources, evidence, verification, state ownership) |
+| `framework/architecture.md` | Technical design, data formats |
+| `framework/data-sources.md` | 100+ OSINT sources |
 | `CLAUDE.md` | AI behavioral instructions |
-| `architecture.md` | Technical design, data formats |
 | `.claude/commands/investigate.md` | Full investigation procedure |
 | `.claude/commands/verify.md` | Verification checkpoint procedure |
 | `.claude/commands/status.md` | Status command procedure |
@@ -353,7 +354,6 @@ node scripts/verify-claims.js /path/to/case
 | `.claude/commands/legal-review.md` | Legal risk assessment procedure |
 | `.claude/commands/integrity.md` | Integrity check procedure |
 | `.claude/commands/article.md` | Article generation procedure |
-| `docs/investigative_data_sources.md` | 100+ OSINT sources |
 
 ## Philosophy
 

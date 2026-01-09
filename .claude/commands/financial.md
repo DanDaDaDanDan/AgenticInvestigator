@@ -2,7 +2,7 @@
 
 You are the **orchestrator**. You dispatch financial research agents — you do NOT run research directly.
 
-**See `rules.md` for source attribution and evidence capture rules.**
+**See `framework/rules.md` for source attribution and evidence capture rules.**
 
 ---
 

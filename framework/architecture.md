@@ -2,7 +2,7 @@
 
 Technical design documentation for the multi-agent investigation framework.
 
-**See `rules.md` for canonical rules (sources, evidence, verification, state ownership).**
+**See `framework/rules.md` for canonical rules (sources, evidence, verification, state ownership).**
 
 ---
 
@@ -490,4 +490,4 @@ These sources are NOT indexed by Google — must query directly:
 | Shell companies | ICIJ Offshore Leaks, OpenSanctions |
 | Deleted content | Wayback Machine, Archive.today |
 
-Full reference: `docs/investigative_data_sources.md`
+Full reference: `framework/data-sources.md`

@@ -2,7 +2,7 @@
 
 Behavioral rules and quick reference for Claude Code operating in this project.
 
-**Canonical rules: `rules.md` | Architecture: `architecture.md`**
+**Canonical rules: `framework/rules.md` | Architecture: `framework/architecture.md`**
 
 ---
 
@@ -12,8 +12,8 @@ When modifying system behavior, keep in sync:
 
 | File | Update When... |
 |------|----------------|
-| `rules.md` | Rules change |
-| `architecture.md` | Data formats, case structure, workflow |
+| `framework/rules.md` | Rules change |
+| `framework/architecture.md` | Data formats, case structure, workflow |
 | `CLAUDE.md` | Behavioral guidance |
 | `README.md` | User-facing documentation |
 
@@ -126,13 +126,13 @@ Only stop when ALL are true:
 
 ## Rules Quick Reference
 
-**See `rules.md` for canonical rules.**
+**See `framework/rules.md` for canonical rules.**
 
 - **Sources**: `[S001]` format, append-only, every claim needs attribution
 - **Evidence**: Capture immediately with `./scripts/capture`
 - **Verification**: 6-item checklist, all must be YES
 - **Termination**: `verification_passed && gaps.length == 0`
-- **State ownership**: See `rules.md`
+- **State ownership**: See `framework/rules.md`
 
 ---
 
@@ -167,7 +167,7 @@ Only stop when ALL are true:
 
 | Topic | File |
 |-------|------|
-| Canonical rules | `rules.md` |
-| Architecture | `architecture.md` |
+| Canonical rules | `framework/rules.md` |
+| Architecture | `framework/architecture.md` |
 | Investigation | `.claude/commands/investigate.md` |
-| Data sources | `docs/investigative_data_sources.md` |
+| Data sources | `framework/data-sources.md` |

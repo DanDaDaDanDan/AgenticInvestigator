@@ -2,7 +2,7 @@
 
 You are the **orchestrator**. You dispatch verification agents — you do NOT run verification directly.
 
-**See `rules.md` for verification rules and termination signals.**
+**See `framework/rules.md` for verification rules and termination signals.**
 
 ---
 
@@ -73,7 +73,7 @@ Task tool:
     Check all positions have claims verified
 
     [For gap analysis]:
-    Evaluate core checklist (6 items from rules.md)
+    Evaluate core checklist (6 items from framework/rules.md)
 
     Update iterations.md, _state.json (gaps, verification_passed)
 
