@@ -309,7 +309,7 @@ Full baseline reference: `framework/data-sources.md`
 - New task generation yields mostly duplicates
 - Rigor checkpoint finds all frameworks ✓ or N/A
 - Coverage metrics at thresholds
-- All 8 termination gates pass
+- All 9 termination gates pass
 
 **You are NOT done because:**
 - You've completed many iterations

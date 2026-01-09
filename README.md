@@ -45,7 +45,7 @@ RESEARCH → EXTRACTION → SOURCE DISCOVERY → TASK GENERATION
     ↓
 ADVERSARIAL PASS → EXECUTE TASKS → UPDATE COVERAGE
     ↓
-VERIFICATION → TERMINATION CHECK (8 gates)
+VERIFICATION → TERMINATION CHECK (9 gates)
     ↓
 All pass? → SYNTHESIS + ARTICLE
 Any fail? → Loop back to TASK GENERATION
@@ -54,7 +54,7 @@ Any fail? → Loop back to TASK GENERATION
 **Key innovations:**
 - **Dynamic Source Discovery** - Finds case-specific databases (FDA for pharma, FINRA for finance)
 - **Three-Layer Rigor** - Required perspectives, adversarial pass, 20-framework checkpoint
-- **8 Termination Gates** - Cannot complete until all pass
+- **9 Termination Gates** - Mechanically verified, cannot complete until all pass
 
 See `framework/architecture.md` for detailed workflow and schemas.
 
