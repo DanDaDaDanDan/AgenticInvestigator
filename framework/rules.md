@@ -111,7 +111,56 @@ Only one agent updates each field to prevent race conditions:
 | `sources.md` | Investigation Agents (append new sources) |
 | `summary.md` | Synthesis Agent (complete rewrite each time) |
 | `iterations.md` | All agents (append checkpoints/logs) |
+| `_audit.json` | All agents (append via audit-append.js) |
 | `_state.json` | Per field ownership above |
+
+---
+
+## Audit Trail Rules
+
+**All agent actions must be logged for debugging and progress tracking.**
+
+### Required Files
+
+| File | Purpose | Update Method |
+|------|---------|---------------|
+| `_audit.json` | Machine-readable action log | `node scripts/audit-append.js` |
+| `iterations.md` | Human-readable progress log | Direct append at iteration end |
+
+### Actions That Must Be Logged
+
+| Action | Actor | When | Log Command |
+|--------|-------|------|-------------|
+| `phase_start` | orchestrator | Beginning of phase | `audit-append.js <case> orchestrator phase_start --target PHASE_NAME` |
+| `phase_complete` | orchestrator | End of phase | `audit-append.js <case> orchestrator phase_complete --target PHASE_NAME` |
+| `task_start` | task-agent | Before starting task | `audit-append.js <case> task-agent task_start --target T###` |
+| `task_complete` | task-agent | After completing task | `audit-append.js <case> task-agent task_complete --target T### --output '{...}'` |
+| `capture_source` | capture-agent | After capture | `audit-append.js <case> capture-agent capture_source --target S### --input '{...}'` |
+| `verification_run` | verify-agent | After verification | `audit-append.js <case> verify-agent verification_run --output '{...}'` |
+| `gate_check` | orchestrator | After gate check | `audit-append.js <case> orchestrator gate_check --output '{...}'` |
+
+### iterations.md Format
+
+Update at each iteration boundary with:
+- Phase summary table
+- Tasks completed this iteration
+- Coverage snapshot
+- Gate status
+- Next iteration focus
+
+See `framework/architecture.md` for full template.
+
+### Verification
+
+```bash
+node scripts/verify-audit-trail.js cases/[case-id]
+```
+
+Checks:
+- `_audit.json` exists and has entries
+- `iterations.md` exists and has content
+- Completed tasks are logged in audit
+- Source captures are logged
 
 ---
 

@@ -136,6 +136,115 @@ node scripts/capture-evidence.js urls.txt /path/to/case --archivebox
 
 ---
 
+## Verification Scripts
+
+### `verify-all-gates.js`
+
+**Master termination gate checker.** Runs all 9 gates and outputs `_gate_results.json`.
+
+```bash
+node scripts/verify-all-gates.js cases/[case-id]
+node scripts/verify-all-gates.js cases/[case-id] --json
+```
+
+**Exit codes:**
+- `0` = All gates pass, can terminate
+- `1` = Gates failed, must continue investigation
+
+**Gates checked:**
+1. Coverage - Thresholds met
+2. Tasks - All completed
+3. Adversarial - Complete
+4. Sources - Evidence folders exist
+5. Content - Claims in evidence text
+6. Claims - AI verification
+7. Contradictions - All explored
+8. Rigor - 20 frameworks
+9. Legal - Review file exists
+
+---
+
+### `verify-source-content.js`
+
+**Layer 4 content verification.** Extracts text from evidence and verifies claims exist.
+
+```bash
+node scripts/verify-source-content.js cases/[case-id]
+node scripts/verify-source-content.js cases/[case-id] --json
+```
+
+**Checks:**
+- Extracts text from HTML, PDF, and Markdown evidence
+- Searches for key phrases from claims
+- Reports found/not found for each claim
+
+---
+
+### `verify-state-consistency.js`
+
+**State vs filesystem validator.** Compares what state files claim vs what exists.
+
+```bash
+node scripts/verify-state-consistency.js cases/[case-id]
+node scripts/verify-state-consistency.js cases/[case-id] --fix  # Show fix suggestions
+```
+
+**Checks:**
+- `_sources.json` entries vs `evidence/web/` folders
+- `_coverage.json` counts vs actual files
+- `_tasks.json` completed tasks vs output files
+- `_state.json` flags vs verification results
+
+---
+
+### `verify-audit-trail.js`
+
+**Audit trail completeness checker.** Verifies all actions are logged.
+
+```bash
+node scripts/verify-audit-trail.js cases/[case-id]
+node scripts/verify-audit-trail.js cases/[case-id] --fix
+```
+
+**Checks:**
+- `_audit.json` exists with entries
+- `iterations.md` exists with content
+- Completed tasks are logged
+- Source captures are logged
+
+---
+
+## Audit Trail Scripts
+
+### `audit-append.js`
+
+**Append entries to `_audit.json`.** Atomic append-only logging.
+
+```bash
+# Initialize
+node scripts/audit-append.js cases/[case-id] --init
+
+# Append entry
+node scripts/audit-append.js cases/[case-id] <actor> <action> [options]
+
+# Examples
+node scripts/audit-append.js cases/topic-slug orchestrator phase_start --target RESEARCH
+node scripts/audit-append.js cases/topic-slug task-agent task_complete --target T001 --output '{"findings_file":"findings/T001.md"}'
+node scripts/audit-append.js cases/topic-slug capture-agent capture_source --target S001 --input '{"url":"https://..."}'
+```
+
+**Options:**
+- `--target <value>` - Target of action (task ID, source ID, phase name)
+- `--input <json>` - Input data as JSON
+- `--output <json>` - Output data as JSON
+- `--verification <json>` - Verification result
+
+**Actors:** `orchestrator`, `task-agent`, `capture-agent`, `verify-agent`, `research-agent`
+
+**Actions:** `phase_start`, `phase_complete`, `task_start`, `task_complete`, `capture_source`, `verification_run`, `gate_check`
+
+---
+
 ## Utility Scripts
 
 ### `find-wayback-url.js`

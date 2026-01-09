@@ -536,6 +536,71 @@ function verifyLegal(caseDir) {
 }
 
 /**
+ * Audit Trail Check (informational, not blocking)
+ * Uses verify-audit-trail.js script
+ */
+function verifyAuditTrail(caseDir) {
+  const result = { passed: true, reason: null, details: {}, warnings: [] };
+
+  const scriptPath = path.join(__dirname, 'verify-audit-trail.js');
+  if (!fs.existsSync(scriptPath)) {
+    result.reason = 'verify-audit-trail.js script not found';
+    result.passed = false;
+    return result;
+  }
+
+  try {
+    const proc = spawnSync('node', [scriptPath, caseDir, '--json'], {
+      encoding: 'utf-8',
+      timeout: 60000
+    });
+
+    if (proc.stdout) {
+      const data = JSON.parse(proc.stdout);
+      result.details = {
+        total_issues: data.total_issues,
+        critical_issues: data.critical_issues,
+        checks: {}
+      };
+
+      // Extract check results
+      for (const check of data.checks) {
+        result.details.checks[check.name] = {
+          passed: check.passed,
+          stats: check.stats
+        };
+
+        // Collect warnings
+        for (const issue of check.issues) {
+          if (issue.severity === 'warning') {
+            result.warnings.push(`${check.name}: ${issue.message}`);
+          } else if (!check.passed) {
+            result.warnings.push(`${check.name}: ${issue.message}`);
+          }
+        }
+      }
+
+      // Only fail if there are critical issues (missing _audit.json, etc.)
+      if (data.critical_issues > 0) {
+        result.passed = false;
+        result.reason = `${data.critical_issues} critical audit trail issues`;
+      } else if (data.total_issues > 0) {
+        result.reason = `${data.total_issues} audit trail warnings (non-blocking)`;
+      }
+    } else if (proc.status !== 0) {
+      result.passed = false;
+      result.reason = proc.stderr || 'Audit trail verification failed';
+    }
+
+  } catch (e) {
+    result.passed = false;
+    result.reason = `Error running verify-audit-trail.js: ${e.message}`;
+  }
+
+  return result;
+}
+
+/**
  * Generate remediation tasks for failed gates
  */
 function generateRemediationTasks(gateResults) {
@@ -586,6 +651,9 @@ async function main() {
     legal: verifyLegal(caseDir)
   };
 
+  // Run audit trail check (informational, for debugging)
+  const auditTrail = verifyAuditTrail(caseDir);
+
   // Calculate overall result
   const failedGates = Object.entries(gates)
     .filter(([_, r]) => !r.passed)
@@ -601,6 +669,7 @@ async function main() {
     case_dir: caseDir,
     duration_ms: Date.now() - startTime,
     gates,
+    audit_trail: auditTrail,
     summary: {
       passed: passedCount,
       failed: failedGates.length,
@@ -624,6 +693,25 @@ async function main() {
       console.log(`${icon} Gate ${gate.padEnd(15)} ${status}`);
       if (!result.passed && result.reason) {
         console.log(`  ${YELLOW}→ ${result.reason}${NC}`);
+      }
+    }
+
+    console.log('');
+    console.log('-'.repeat(70));
+
+    // Display audit trail status (informational)
+    const auditIcon = auditTrail.passed ? `${GREEN}✓${NC}` : `${YELLOW}!${NC}`;
+    const auditStatus = auditTrail.passed ? `${GREEN}OK${NC}` : `${YELLOW}WARN${NC}`;
+    console.log(`${auditIcon} Audit Trail        ${auditStatus} (informational)`);
+    if (auditTrail.reason) {
+      console.log(`  ${BLUE}→ ${auditTrail.reason}${NC}`);
+    }
+    if (auditTrail.warnings && auditTrail.warnings.length > 0) {
+      for (const warn of auditTrail.warnings.slice(0, 3)) {
+        console.log(`  ${YELLOW}→ ${warn}${NC}`);
+      }
+      if (auditTrail.warnings.length > 3) {
+        console.log(`  ${YELLOW}→ ... and ${auditTrail.warnings.length - 3} more warnings${NC}`);
       }
     }
 
