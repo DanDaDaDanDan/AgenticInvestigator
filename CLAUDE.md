@@ -105,18 +105,21 @@ When modifying system behavior, keep in sync:
 
 ---
 
-## OSINT Source Knowledge
+## Dynamic Source Discovery
 
-Investigation agents know OSINT sources—tasks generate relevant sources for THIS case.
+**Instead of static reference files, discover case-specific sources dynamically.**
 
-| Entity Type | Sources Known |
-|-------------|---------------|
-| Person | OpenCorporates, courts, OpenSanctions, ICIJ, campaign finance |
-| Corporation | SEC EDGAR, State SOS, OpenCorporates, USAspending, courts |
-| Nonprofit | ProPublica 990s, Candid, IRS, state charity registration |
-| Government | USAspending, GAO/OIG reports, FOIA libraries |
+After extraction, run SOURCE DISCOVERY phase:
+1. Read `framework/data-sources.md` for baseline sources
+2. Use deep research to find sources specific to THIS investigation
+3. Save combined sources to `_sources.json`
+4. Task generation and investigation agents use `_sources.json`
 
-**The LLM knows domain knowledge.** We don't spell it out—we generate what's relevant.
+**Example**: Pharmaceutical fraud investigation
+- Baseline: SEC EDGAR, OpenCorporates (generic corporate)
+- Discovered: FDA MAUDE, ClinicalTrials.gov adverse events, FDA warning letters, state pharmacy boards (case-specific)
+
+**Why dynamic?** A static file can't anticipate every investigation type. Deep research finds sources tailored to THIS case. The baseline seeds discovery; case-specific sources emerge dynamically.
 
 Full source reference: `framework/data-sources.md`
 

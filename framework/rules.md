@@ -50,6 +50,7 @@ Only one agent updates each field to prevent race conditions:
 |------|------------|
 | `research-leads/*.md` | Research Agents |
 | `_extraction.json` | Extraction Agent (overwrites each iteration) |
+| `_sources.json` | Source Discovery Agent (created once, may be extended) |
 | `_tasks.json` | Task Generation Agent, Adversarial Agent, Rigor Checkpoint Agent |
 | `_coverage.json` | Coverage Agent (overwrites after each task batch) |
 | `people.md`, `timeline.md`, `organizations.md` | Investigation Agents |

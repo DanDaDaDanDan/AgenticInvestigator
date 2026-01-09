@@ -35,8 +35,9 @@ Instead of fixed phases with hardcoded triggers, this system:
 cases/[topic-slug]/
 ├── _state.json           # Orchestrator state
 ├── _extraction.json      # Extracted entities, claims, people
-├── _tasks.json           # Dynamic task queue (NEW)
-├── _coverage.json        # Coverage metrics (NEW)
+├── _sources.json         # Case-specific data sources (discovered dynamically)
+├── _tasks.json           # Dynamic task queue
+├── _coverage.json        # Coverage metrics
 ├── .git/                 # Version control
 ├── evidence/             # Captured sources
 ├── research-leads/       # AI research (NOT citable)
@@ -123,16 +124,42 @@ cases/[topic-slug]/
 }
 ```
 
+### _sources.json
+
+```json
+{
+  "baseline": [
+    {
+      "name": "SEC EDGAR",
+      "url": "sec.gov/edgar",
+      "contains": "Corporate filings (10-K, 10-Q, 8-K, DEF 14A)",
+      "category": "Corporate"
+    }
+  ],
+  "discovered": [
+    {
+      "name": "FDA MAUDE Database",
+      "url": "accessdata.fda.gov/scripts/cdrh/cfdocs/cfmaude/search.cfm",
+      "contains": "Medical device adverse event reports",
+      "category": "Regulatory",
+      "relevance": "Specific to medical device investigation"
+    }
+  ],
+  "case_notes": "Pharma investigation - FDA sources prioritized over general corporate"
+}
+```
+
 ---
 
 ## Main Loop: Dynamic Task Generation
 
 ```
-1. READ: _state.json, _tasks.json, _coverage.json
+1. READ: _state.json, _tasks.json, _coverage.json, _sources.json
 2. IF initial research not done:
      → RESEARCH phase (multi-engine)
      → EXTRACTION phase (parse findings)
-3. GENERATE TASKS: With required perspectives + curiosity check
+     → SOURCE DISCOVERY phase (find case-specific data sources)
+3. GENERATE TASKS: Using _sources.json + required perspectives + curiosity check
 4. RUN ADVERSARIAL PASS: Generate counter-tasks
 5. EXECUTE TASKS: Parallel where independent
 6. UPDATE COVERAGE: Track metrics
@@ -189,6 +216,81 @@ Single agent parses research-leads/, populates _extraction.json:
 
 ---
 
+## Phase 2.5: SOURCE DISCOVERY
+
+**Dynamically discover case-specific data sources.** Instead of relying on static reference files, use deep research to find sources tailored to THIS investigation.
+
+```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Discover case-specific data sources"
+  prompt: |
+    TASK: Discover investigative data sources for this case
+    CASE: cases/[case-id]/
+
+    Read _extraction.json for:
+    - Entity types (corporation, nonprofit, person, government)
+    - Industry/domain (infer from topic and entities)
+    - Claim types (fraud, misconduct, corruption, safety, etc.)
+    - Jurisdictions involved
+
+    BASELINE SOURCES:
+    Review framework/data-sources.md for commonly-used investigative sources.
+    Select sources relevant to the entity types in this case.
+
+    DISCOVERY:
+    Use mcp__mcp-xai__research to find CASE-SPECIFIC sources:
+
+    Query: "What specialized investigative databases, public records,
+    regulatory filings, and archives are relevant for investigating
+    [TOPIC] involving [ENTITY TYPES] in [INDUSTRY/DOMAIN]?
+
+    Focus on:
+    - Regulatory bodies specific to this industry and their public databases
+    - Industry-specific registries and mandatory disclosure systems
+    - Specialized archives that domain experts would know
+    - Jurisdiction-specific public records
+    - Deep-web databases NOT indexed by search engines
+    - Niche sources for this specific type of investigation
+
+    For each source: name, URL, what it contains, why relevant to THIS case."
+
+    MERGE baseline + discovered sources.
+
+    Write to _sources.json:
+    {
+      "baseline": [
+        {"name": "...", "url": "...", "contains": "...", "category": "..."}
+      ],
+      "discovered": [
+        {"name": "...", "url": "...", "contains": "...", "category": "...",
+         "relevance": "Why this matters for THIS specific case"}
+      ],
+      "case_notes": "Brief explanation of source selection strategy"
+    }
+
+    RETURN: Source count (baseline + discovered), key discoveries
+```
+
+### Why Dynamic Discovery?
+
+| Static Reference | Dynamic Discovery |
+|------------------|-------------------|
+| Generic sources for entity type | Sources specific to THIS case |
+| May be stale | Always current |
+| Misses novel investigation types | Adapts to any topic |
+| One-size-fits-all | Tailored recommendations |
+
+**Example**: For a pharmaceutical company investigation:
+- Static: SEC EDGAR, OpenCorporates (generic corporate)
+- Dynamic: FDA MAUDE, ClinicalTrials.gov adverse events, FDA warning letters, state pharmacy boards (case-specific)
+
+### Feedback Loop
+
+When investigation completes, valuable discovered sources can be added to `framework/data-sources.md` as baseline for future investigations. The system self-improves over time.
+
+---
+
 ## Phase 3: TASK GENERATION (Core Innovation)
 
 **This replaces hardcoded `/questions`, `/financial`, and fixed investigation phases.**
@@ -204,7 +306,7 @@ Task tool:
     CASE: cases/[case-id]/
     ITERATION: [N]
 
-    Read _extraction.json and current findings.
+    Read _extraction.json, _sources.json, and current findings.
 
     CONTEXT:
     - Topic: [topic]
@@ -215,27 +317,31 @@ Task tool:
     - Previous findings: [summary from summary.md]
     - Current coverage gaps: [from _coverage.json]
 
+    AVAILABLE DATA SOURCES (from _sources.json):
+    [List baseline and discovered sources with their URLs and what they contain]
+
     GENERATE TASKS WITH REQUIRED PERSPECTIVES.
+    Use the discovered sources in _sources.json to inform your approach.
 
     For EACH perspective, generate at least one specific task IF APPLICABLE:
 
     □ MONEY/FINANCIAL — who benefits, funding sources, transactions, contracts
-      Consider: SEC filings, 990s, FEC, USAspending, OpenCorporates, ICIJ
+      Use relevant sources from _sources.json (financial, regulatory categories)
 
     □ TIMELINE/SEQUENCE — what happened when, causation chains, key dates
-      Consider: Court records, press releases, SEC filings, news archives
+      Use relevant sources from _sources.json (court, regulatory, news categories)
 
     □ SILENCE — who's NOT talking, missing voices, declined comment
       Consider: Who should have statements but doesn't? Why?
 
     □ DOCUMENTS — paper trails, filings, records that should exist
-      Consider: What documents MUST exist for these claims to be true?
+      Use relevant sources from _sources.json - what records MUST exist?
 
     □ CONTRADICTIONS — conflicting accounts, changed stories
-      Consider: Cross-reference statements across time and venues
+      Cross-reference statements using sources in _sources.json
 
     □ RELATIONSHIPS — connections, affiliations, conflicts of interest
-      Consider: Corporate relationships, personal ties, shared entities
+      Use relevant sources from _sources.json (corporate, ownership categories)
 
     □ ALTERNATIVE HYPOTHESES — other explanations, competing theories
       Consider: What else could explain the facts? Steelman opposing view.
@@ -344,13 +450,11 @@ Task tool:
 
     Follow framework/rules.md for source attribution and evidence capture.
 
-    The LLM KNOWS relevant OSINT sources for person investigation:
-    - OpenCorporates, State SOS, SEC EDGAR, OpenSanctions, ICIJ
-    - CourtListener/PACER, state courts, OpenSecrets/FEC
-    - County assessor, professional license DBs, LinkedIn
+    AVAILABLE SOURCES (from _sources.json):
+    [List relevant sources for person investigation from _sources.json]
 
-    Use the sources RELEVANT to this specific task.
-    Don't run all sources—run the ones that matter for this task.
+    Use sources from _sources.json that are RELEVANT to this specific task.
+    Prioritize discovered sources that are case-specific.
 
     SUCCESS CRITERIA: [from task]
 
@@ -378,13 +482,11 @@ Task tool:
 
     Follow framework/rules.md for source attribution and evidence capture.
 
-    The LLM KNOWS relevant OSINT sources by entity type:
-    - Corporation: SEC EDGAR, State SOS, OpenCorporates, USAspending, GLEIF
-    - Nonprofit: ProPublica 990s, Candid, IRS Tax Exempt, state charity
-    - PAC: FEC database, OpenSecrets
-    - Government: USAspending, GAO/OIG, FOIA, Federal Register
+    AVAILABLE SOURCES (from _sources.json):
+    [List relevant sources for this entity type from _sources.json]
 
-    Use the sources RELEVANT to this specific task.
+    Use sources from _sources.json that are RELEVANT to this specific task.
+    Prioritize discovered sources that are case-specific.
 
     SUCCESS CRITERIA: [from task]
 
@@ -407,14 +509,12 @@ Task tool:
 
     Follow framework/rules.md for source attribution and evidence capture.
 
+    AVAILABLE SOURCES (from _sources.json):
+    [List relevant sources for claim verification from _sources.json]
+
     Search for supporting AND contradicting evidence.
     Check for circular reporting.
-
-    The LLM KNOWS source types by claim type:
-    - Financial: USAspending, SEC EDGAR, 990s, OpenSecrets
-    - Legal: CourtListener/PACER, state courts, Google Scholar Case Law
-    - Statement: Original transcript/video, Wayback Machine
-    - Statistical: Original study, government statistics
+    Use sources from _sources.json - prioritize case-specific discovered sources.
 
     Verdict: VERIFIED | DEBUNKED | PARTIAL | UNVERIFIED | CONTESTED
     Confidence: [low, high]
