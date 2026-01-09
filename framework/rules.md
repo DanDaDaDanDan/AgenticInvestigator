@@ -18,13 +18,65 @@
 
 ## Evidence Capture
 
-| Rule | Details |
-|------|---------|
-| Capture immediately | When you find a source URL, capture it before moving on |
-| Script usage | `./scripts/capture S001 https://example.com` |
-| Document download | `./scripts/capture --document S015 https://sec.gov/filing.pdf` |
-| Verify in evidence | Before citing, confirm claim exists in captured HTML/PDF |
-| No source without evidence | Every `[SXXX]` must have files in `evidence/` |
+### 5-Layer Enforcement Protocol
+
+**Layer 1: Capture-First Workflow**
+
+| Rule | Enforcement |
+|------|-------------|
+| Capture BEFORE cite | No `[SXXX]` in any file until `evidence/web/SXXX/` exists |
+| Verify capture success | Check exit code of capture script (0 = success) |
+| Record in _sources.json | Only after evidence folder verified |
+| Audit trail | Every capture logged with timestamp |
+
+**Layer 2: Script Usage**
+
+| Command | Purpose |
+|---------|---------|
+| `./scripts/capture S001 https://example.com` | Web page capture |
+| `./scripts/capture --document S015 https://sec.gov/filing.pdf` | Document download |
+| `node scripts/verify-sources.js <case_dir>` | Verify evidence files exist |
+| `node scripts/verify-source-content.js <case_dir>` | Verify claims in evidence |
+
+**Layer 3: Mechanical Verification**
+
+Before citing any source, run:
+```bash
+# Check evidence folder exists with required files
+ls evidence/web/SXXX/  # Must contain metadata.json + (html|pdf|png)
+```
+
+**Layer 4: Content Verification**
+
+The `verify-source-content.js` script extracts text from evidence and verifies claims:
+- HTML: Parses and extracts text content
+- PDF: Uses pdf-parse for text extraction
+- Markdown: Strips formatting, keeps text
+- Stores extracted text in `evidence/web/SXXX/extracted_text.txt`
+
+**Layer 5: State File Integrity**
+
+`_sources.json` must track verified status:
+```json
+{
+  "S001": {
+    "url": "https://...",
+    "captured_at": "2026-01-09T14:30:00Z",
+    "evidence_path": "evidence/web/S001/",
+    "files": ["metadata.json", "capture.html", "capture.png"],
+    "verified": true
+  }
+}
+```
+
+### Anti-Hallucination Rule
+
+**Do NOT write "Captured: [date]" without running the capture script.**
+
+The orchestrator will verify:
+1. Evidence folder exists for every cited source
+2. Claims can be found in evidence content
+3. State files match filesystem reality
 
 ---
 
@@ -136,22 +188,39 @@ node scripts/verify-claims.js cases/[case-id]
 
 ---
 
-## Termination Gates (8 Required)
+## Termination Gates (9 Required)
 
-**ALL must be true to terminate:**
+**ALL must be mechanically verified to terminate.**
 
+Run: `node scripts/verify-all-gates.js <case_dir>`
+
+| Gate | Script | Verification |
+|------|--------|--------------|
+| 1. Coverage | `verify-all-gates.js` | Files exist, thresholds met |
+| 2. Tasks | `verify-all-gates.js` | All tasks completed, outputs exist |
+| 3. Adversarial | `verify-all-gates.js` | adversarial_complete=true, findings files exist |
+| 4. Sources | `verify-sources.js` | Evidence folder for every [SXXX] |
+| 5. Content | `verify-source-content.js` | Claims found in evidence text |
+| 6. Claims | `verify-claims.js` | AI verification passes |
+| 7. Contradictions | `verify-all-gates.js` | All contradictions explored |
+| 8. Rigor | `verify-all-gates.js` | rigor_checkpoint_passed=true |
+| 9. Legal | `verify-all-gates.js` | Legal review file exists |
+
+**Mechanical Enforcement:**
+
+```bash
+# Run before marking investigation COMPLETE
+node scripts/verify-all-gates.js cases/[case-id]
+
+# Exit code 0 = all gates pass → can terminate
+# Exit code 1 = gates failed → continue investigation
 ```
-1. Coverage thresholds met (see above)
-2. No HIGH priority tasks pending
-3. adversarial_complete == true
-4. rigor_checkpoint_passed == true (20 frameworks validated)
-5. verification_passed == true (anti-hallucination, core checklist)
-6. quality_checks_passed == true (integrity + legal)
-7. All positions steelmanned
-8. No unexplored contradictions
-```
+
+Results saved to: `cases/[case-id]/_gate_results.json`
 
 **If ANY gate fails → generate tasks to address → loop.**
+
+**Do NOT self-report gate passage.** Only the verification scripts can mark gates as passed.
 
 ---
 

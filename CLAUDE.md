@@ -33,11 +33,29 @@ When modifying system behavior, update:
 
 **Main instance ONLY orchestrates. Sub-agents do all work.**
 
-| Orchestrator DOES | Orchestrator does NOT |
-|-------------------|----------------------|
-| Read _state.json, _tasks.json | Read full file contents |
-| Dispatch sub-agents | Call MCP tools directly |
-| Track termination gates | Accumulate findings in memory |
+### Orchestrator MUST DO
+
+- Read state files: `_state.json`, `_tasks.json`, `_coverage.json`
+- Dispatch sub-agents with specific tasks
+- Track gate status via mechanical verification scripts
+- Log all agent dispatches
+
+### Orchestrator MUST NOT
+
+- Read full content of `findings/*.md`, `outlet-profiles/*.md`
+- Reason about investigation completeness (use verify scripts)
+- Make substantive claims about findings
+- Skip skills by "combining" them
+- Self-report gate passage
+
+### Strict Delegation
+
+| Agent Type | Responsibility |
+|------------|----------------|
+| Research agents | Gather information, write to findings/ |
+| Capture agents | Run capture scripts, verify evidence |
+| Verification agents | Run verify scripts, report results |
+| Orchestrator | Dispatch, track state, enforce gates |
 
 ---
 
@@ -69,7 +87,30 @@ When modifying system behavior, update:
 
 ## DO NOT STOP EARLY
 
-Only stop when ALL 8 TERMINATION GATES pass. See `framework/rules.md` for complete gate definitions, coverage thresholds, and termination signals.
+Only stop when ALL 9 TERMINATION GATES pass mechanically.
+
+### Mechanical Verification Required
+
+```bash
+# MUST run before marking COMPLETE
+node scripts/verify-all-gates.js cases/[case-id]
+
+# Exit 0 = can terminate
+# Exit 1 = must continue
+```
+
+### Required Skills (Must Invoke)
+
+Before marking investigation COMPLETE, orchestrator MUST invoke:
+
+1. `/verify` — Verification checkpoint
+2. `/integrity` — Journalistic integrity check
+3. `/legal-review` — Legal risk assessment
+4. `/article` — Article generation (if requested)
+
+**Do NOT combine or substitute skills.** Each has unique output requirements.
+
+See `framework/rules.md` for complete gate definitions, coverage thresholds, and termination signals.
 
 ---
 
@@ -79,10 +120,12 @@ Only stop when ALL 8 TERMINATION GATES pass. See `framework/rules.md` for comple
 |-------|------------------|
 | Source attribution (`[S001]`) | `framework/rules.md` |
 | File ownership | `framework/rules.md` |
-| Termination gates (8) | `framework/rules.md` |
+| Termination gates (9) | `framework/rules.md` |
+| 5-layer capture protocol | `framework/rules.md` |
 | Three-layer rigor system | `framework/architecture.md` |
 | Schema definitions | `framework/architecture.md` |
 | Dynamic source discovery | `framework/architecture.md` |
+| Gate results schema | `framework/architecture.md` |
 | Investigation procedure | `.claude/commands/investigate.md` |
 | Baseline data sources | `framework/data-sources.md` |
 

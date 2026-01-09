@@ -449,42 +449,29 @@ Task tool:
 
 ## Phase 7: VERIFICATION
 
+**REQUIRED: Invoke the `/verify` skill — do NOT substitute with a sub-agent.**
+
 ```
-Task tool:
-  subagent_type: "general-purpose"
-  description: "Verification checkpoint"
-  prompt: |
-    TASK: Run verification checkpoint
-    CASE: cases/[case-id]/
-
-    Be RUTHLESS. Find ALL gaps.
-
-    1. Run anti-hallucination check:
-       node scripts/verify-claims.js cases/[case-id]
-       CONTRADICTED → urgent gap
-       NOT_FOUND → must fix or revise
-
-    2. Run evidence check:
-       node scripts/verify-sources.js cases/[case-id]
-       Sources without evidence → gap
-
-    3. Cross-model critique:
-       mcp__mcp-gemini__generate_text (thinking_level: high)
-       Find: missing evidence, unexplored claims, unaddressed theories
-
-    4. Core checklist (all must be YES):
-       □ All major people investigated
-       □ All major claims fact-checked (ALL positions)
-       □ All positions steelmanned
-       □ Alternative theories addressed with evidence
-       □ All sources have captured evidence
-       □ No CONTRADICTED claims
-
-    Update _state.json:
-    - verification_passed: true only if ALL checklist items YES
-
-    RETURN: PASS/FAIL, gap count, critical issues
+Skill tool:
+  skill: "verify"
+  args: "[case-id]"
 ```
+
+The `/verify` skill will dispatch parallel verification agents:
+1. Anti-hallucination check (verify-claims.js)
+2. Cross-model critique (Gemini reviews summary)
+3. Position audit (all positions fact-checked?)
+4. Gap analysis (comprehensive checklist)
+
+Core checklist (all must be YES for verification to pass):
+- All major people investigated
+- All major claims fact-checked (ALL positions)
+- All positions steelmanned
+- Alternative theories addressed with evidence
+- All sources have captured evidence
+- No CONTRADICTED claims
+
+If verification fails → generate corrective tasks → continue investigation.
 
 ---
 
@@ -543,41 +530,65 @@ Task tool:
 
 ## Phase 9: QUALITY CHECKS (Integrity + Legal)
 
+**IMPORTANT: Each skill must be invoked separately. Do NOT combine them.**
+
+### Step 9a: Integrity Check
+
 ```
-Task tool:
-  subagent_type: "general-purpose"
-  description: "Quality checks - integrity and legal"
-  prompt: |
-    TASK: Run integrity and legal review
-    CASE: cases/[case-id]/
-
-    INTEGRITY CHECK:
-    - Source balance: Are all positions fairly represented?
-    - Language neutrality: Any loaded terms or editorializing?
-    - Steelmanning: Is each position shown at its strongest?
-    - Scrutiny symmetry: Same rigor applied to all sides?
-
-    If MAJOR integrity issues → generate corrective tasks.
-
-    LEGAL CHECK:
-    - Subject classification: Public or private figure?
-    - Per claim: Defamation risk assessment
-    - Evidence tier: Tier 1 (official) to Tier 4 (anonymous)
-    - Attribution audit: Every claim properly attributed?
-
-    If HIGH legal risks → generate mitigation tasks.
-
-    Update _state.json:
-    - quality_checks_passed: true only if no major issues
-
-    RETURN: PASS/FAIL, issues found, corrective tasks generated
+Skill tool:
+  skill: "integrity"
+  args: "[case-id]"
 ```
+
+The `/integrity` skill will:
+- Check source balance and representation
+- Evaluate language neutrality
+- Verify steelmanning of positions
+- Ensure scrutiny symmetry
+
+If MAJOR integrity issues → generate corrective tasks before proceeding.
+
+### Step 9b: Legal Review
+
+```
+Skill tool:
+  skill: "legal-review"
+  args: "[case-id]"
+```
+
+The `/legal-review` skill will:
+- Classify subjects (public vs private figure)
+- Assess defamation risk per claim
+- Tier evidence quality
+- Audit attribution completeness
+
+Creates: `legal-review.md` (REQUIRED for Gate 9)
+
+If HIGH legal risks → generate mitigation tasks.
+
+### After Both Skills Complete
+
+Update _state.json:
+- quality_checks_passed: true only if both pass with no major issues
+
+**Do NOT substitute a sub-agent for these skills. The skills have specific output requirements.**
 
 ---
 
 ## Termination Gates
 
-**See `framework/rules.md` for all 8 termination gates and coverage thresholds.**
+**See `framework/rules.md` for all 9 termination gates and coverage thresholds.**
+
+**Mechanical Verification Required:**
+```bash
+node scripts/verify-all-gates.js cases/[case-id]
+# Exit code 0 = all gates pass → can terminate
+# Exit code 1 = gates failed → continue investigation
+```
+
+Results saved to: `cases/[case-id]/_gate_results.json`
+
+**Do NOT self-report gate passage.** Only verification scripts can mark gates as passed.
 
 If ANY gate fails → generate tasks to address → loop.
 
@@ -689,5 +700,27 @@ The model knows how to do adversarial thinking, steelmanning, and implication an
 4. ALWAYS dispatch parallel agents in ONE message when independent
 5. ALWAYS check _state.json between phases
 6. ALWAYS regenerate tasks after each batch completes
-7. NEVER terminate without passing ALL 8 gates
+7. NEVER terminate without passing ALL 9 gates (verified mechanically)
 8. See `framework/rules.md` for state update ownership
+
+---
+
+## Required Skills (Must Invoke)
+
+Before marking investigation COMPLETE, you MUST invoke these skills:
+
+| Skill | Phase | Output Required |
+|-------|-------|-----------------|
+| `/verify` | Phase 7 | verification_passed in _state.json |
+| `/integrity` | Phase 9a | Integrity check results |
+| `/legal-review` | Phase 9b | `legal-review.md` file |
+| `/article` | Phase 11 | (if article requested) |
+
+**Do NOT substitute sub-agents for these skills.**
+
+Each skill has specific:
+- Dispatch patterns (parallel agents)
+- Output file requirements
+- State updates
+
+Combining or substituting skills defeats their purpose and will fail gate verification.
