@@ -665,6 +665,108 @@ Task tool:
 
 ---
 
+## Extended Reasoning Checkpoints
+
+Use GPT 5.2 Pro with extended thinking (`mcp__mcp-openai__generate_text` with `reasoning_effort: "high"` or `"xhigh"`) at these critical junctures:
+
+### 1. Post-Emergence Adversarial (iteration ≥ 3)
+
+When a narrative is forming, deep adversarial reasoning catches blind spots.
+
+```
+prompt: |
+  Investigation: [topic]
+  Emerging findings: [summary of what we think we know]
+  Current investigation focus: [active tasks]
+
+  Extended reasoning task:
+  1. What questions would a HOSTILE expert ask to tear this apart?
+  2. What assumptions are we making that we haven't verified?
+  3. Who benefits from us believing this narrative?
+  4. What evidence would we expect to see IF we're wrong?
+  5. What's the strongest case AGAINST our emerging conclusions?
+
+  Output: Specific investigation tasks to address gaps found.
+```
+
+### 2. Contradiction Resolution
+
+When sources conflict, extended reasoning works through incentives and evidence quality.
+
+```
+prompt: |
+  Contradiction identified:
+  - Source A ([credibility assessment]): [claim]
+  - Source B ([credibility assessment]): [opposite claim]
+
+  Extended reasoning:
+  1. What explains this contradiction?
+  2. Who has incentive to misrepresent? Why?
+  3. What's the most likely truth given all evidence?
+  4. What specific evidence would definitively resolve this?
+
+  Output: Resolution assessment + investigation tasks if needed.
+```
+
+### 3. Theory Steelmanning
+
+When alternative theories exist, extended reasoning genuinely steelmans uncomfortable positions.
+
+```
+prompt: |
+  Mainstream position: [X]
+  Alternative position: [Y] (currently assessed as [status])
+
+  Extended reasoning - GENUINELY steelman the alternative:
+  1. What's the strongest possible case for Y?
+  2. What evidence supports Y that we might be underweighting?
+  3. What would have to be true for Y to be correct?
+  4. What's our actual confidence in X vs Y, honestly assessed?
+
+  Output: Steelmanned argument + tasks to test distinguishing evidence.
+```
+
+### 4. Pre-Termination Deep Review
+
+Before declaring done, one deep review to catch what shallow passes missed.
+
+```
+prompt: |
+  Investigation: [topic]
+  Summary of findings: [summary.md content]
+  Evidence base: [source count, key sources]
+  All 8 termination gates: PASSING
+
+  Final extended reasoning review:
+  1. What's the most important thing we might have missed?
+  2. What would make you uncomfortable if this were published?
+  3. What's the weakest link in our evidence chain?
+  4. If we're wrong, what's the most likely way we're wrong?
+  5. What's the "dog that didn't bark" - what's conspicuously absent?
+
+  Output: CLEAR or specific concerns with investigation tasks.
+```
+
+### 5. Second-Order Implications
+
+What else must be true if our findings are correct?
+
+```
+prompt: |
+  Main finding: [X]
+  Supporting evidence: [key sources]
+
+  Extended reasoning on implications:
+  1. If X is true, what else MUST be true that we haven't verified?
+  2. What should we observe in the world if X is true?
+  3. Who else would know about X? Have we checked with them?
+  4. What predictions does X make that we can test?
+
+  Output: Testable implications + investigation tasks.
+```
+
+---
+
 ## Orchestrator Rules
 
 1. NEVER call MCP tools directly — dispatch sub-agents

@@ -343,7 +343,20 @@ Find the primary source URL, capture it, then cite that.
 | Deep research (max depth) | openai | `deep_research` | 10-60 min |
 | Real-time multi-source | xai | `research` | sources: ["x","web","news"] |
 | Cross-model critique | gemini | `generate_text` | thinking_level: high |
+| Extended reasoning | openai | `generate_text` | reasoning_effort: high/xhigh |
 | Check/resume timeout | gemini/openai | `check_research` | Use ID from error |
+
+### Extended Reasoning Checkpoints
+
+GPT 5.2 Pro with extended thinking provides deep adversarial reasoning at critical junctures:
+
+1. **Post-emergence adversarial** (iteration ≥ 3) — catch blind spots in forming narrative
+2. **Contradiction resolution** — reason through conflicting sources
+3. **Theory steelmanning** — genuinely strengthen uncomfortable positions
+4. **Pre-termination review** — final deep check before declaring done
+5. **Second-order implications** — what else must be true if findings are correct
+
+See `investigate.md` for detailed prompts.
 
 ---
 
