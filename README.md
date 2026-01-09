@@ -22,14 +22,8 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 # Resume case with new research direction
 /investigate corporate-fraud-acme-corp "follow the money"
 
-# List all cases
-/status --list
-
 # Run verification checkpoint
 /verify
-
-# Check investigation status
-/status
 ```
 
 ## Output
@@ -38,25 +32,23 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 
 ```
 ├── _state.json                   # ORCHESTRATOR STATE (machine-readable)
-├── _extraction.json              # Current extraction results (claims, people, entities, dates)
+├── _extraction.json              # Current extraction results (claims, people, entities)
+├── _tasks.json                   # Dynamic task queue
+├── _coverage.json                # Coverage metrics
 ├── evidence/                     # CAPTURED EVIDENCE (hallucination-proof)
 │   ├── web/S001/                 # Screenshots, PDFs, HTML per source
-│   ├── documents/                # Downloaded PDFs (SEC filings, court docs)
-│   ├── api/                      # API response captures
-│   └── media/                    # Videos, transcripts
+│   └── documents/                # Downloaded PDFs (SEC filings, court docs)
 ├── research-leads/               # AI research outputs (NOT citable - leads only)
 ├── summary.md                    # THE DELIVERABLE - self-contained, shareable
 ├── sources.md                    # Master source registry [S001], [S002]...
 ├── timeline.md                   # Chronological events
 ├── people.md                     # Person profiles
-├── organizations.md              # Company/entity profiles (corporations, agencies, NGOs)
+├── organizations.md              # Company/entity profiles
 ├── positions.md                  # ALL sides - each position with arguments and evidence
 ├── fact-check.md                 # Claim verdicts (all sides)
-├── theories.md                   # Fringe/alternative theories analysis
+├── theories.md                   # Alternative theories analysis
 ├── statements.md                 # Statement vs evidence, chain of knowledge
 ├── iterations.md                 # Progress log + verification checkpoints
-├── integrity-check.md            # Journalistic integrity assessment (generated)
-├── legal-review.md               # Pre-publication legal risk assessment (generated)
 └── articles.md                   # Publication-ready articles (generated)
 ```
 
@@ -66,11 +58,39 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 
 **Evidence capture is mandatory** - Every source has local screenshots/PDFs proving content existed.
 
-## Architecture: Orchestrator + Sub-Agents
+## Architecture: Dynamic Task Generation
+
+**The system generates investigation tasks dynamically** based on what the case needs—not hardcoded templates.
+
+### Key Innovation
+
+The LLM already knows about SEC filings, 990 analysis, OSINT sources, investigative frameworks. We don't hardcode investigation angles—we generate them based on the specific case.
+
+| Old Approach | New Approach |
+|--------------|--------------|
+| Fixed `/financial` with 6 angles | Tasks generated specific to THIS entity |
+| `/questions` by iteration count | Required perspectives in every task generation |
+| Phase triggers (entity types, keywords) | Tasks emerge from case analysis |
+| Same investigation for pharma and hedge fund | Case-specific: FDA for pharma, offshore for hedge fund |
+
+### Three-Layer Rigor System
+
+1. **Layer 1: Required Perspectives** (every task generation cycle)
+   - 10 core perspectives: Money, Timeline, Silence, Documents, Contradictions, Relationships, Hypotheses, Assumptions, Counterfactual, Blind Spots
+   - + Curiosity check (at least 2 tasks per cycle)
+
+2. **Layer 2: Adversarial Pass** (after initial task generation)
+   - What would disprove each claim?
+   - Strongest argument for unexplored positions?
+   - What assumptions are embedded?
+
+3. **Layer 3: Rigor Checkpoint** (before termination)
+   - Validate ALL 20 investigative frameworks addressed
+   - Cannot terminate with unexplained gaps
+
+## Orchestrator Pattern
 
 **The main Claude Code instance ONLY orchestrates. All actual work is done by sub-agents via the Task tool.**
-
-This prevents context bloat in the main loop and ensures all findings are persisted to files.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -82,21 +102,11 @@ This prevents context bloat in the main loop and ensures all findings are persis
 │    ✗ Processes or analyzes research results                                  │
 │                                                                              │
 │  The orchestrator ONLY:                                                      │
-│    ✓ Reads _state.json and file headers (brief)                              │
+│    ✓ Reads _state.json, _tasks.json, _coverage.json                          │
 │    ✓ Dispatches sub-agents via Task tool                                     │
-│    ✓ Tracks iteration count and termination                                  │
+│    ✓ Tracks termination gates                                                │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
-         │              │                │               │              │
-         ▼              ▼                ▼               ▼              ▼
-   ┌──────────┐  ┌────────────┐  ┌────────────┐  ┌──────────┐  ┌──────────┐
-   │ Research │  │ Extraction │  │Investigation│  │Verification│ │Synthesis │
-   │  Agent   │  │   Agent    │  │   Agent    │  │  Agent   │  │  Agent   │
-   └──────────┘  └────────────┘  └────────────┘  └──────────┘  └──────────┘
-         │              │                │               │              │
-         ▼              ▼                ▼               ▼              ▼
-   research-leads/  _extraction.json  people.md     iterations.md   summary.md
-                                      fact-check.md  _state.json    sources.md
 ```
 
 ### State Tracking
@@ -109,63 +119,80 @@ Each case has a `_state.json` for orchestrator state:
   "topic": "Original investigation topic",
   "status": "IN_PROGRESS",
   "current_iteration": 5,
-  "current_phase": "VERIFICATION",
+  "current_phase": "INVESTIGATION",
   "next_source_id": "S048",
-  "people_count": 12,
-  "entities_count": 8,
-  "sources_count": 47,
-  "gaps": ["gap1", "gap2"],
-  "last_verification": "2026-01-08T10:30:00Z",
   "verification_passed": false,
+  "adversarial_complete": false,
+  "rigor_checkpoint_passed": false,
+  "quality_checks_passed": false,
   "created_at": "2026-01-07T09:00:00Z",
   "updated_at": "2026-01-08T10:30:00Z"
 }
 ```
 
-Sub-agents update this file. Orchestrator reads it.
-
 ## How It Works
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│              THE VERIFIED INVESTIGATION LOOP                     │
-│                  (Orchestrator dispatches sub-agents)            │
+│              DYNAMIC INVESTIGATION LOOP                          │
 │                                                                  │
-│  PHASE 1: RESEARCH → Dispatch Research Agents (parallel)         │
-│    [Agent] Gemini deep research → research-leads/                │
-│    [Agent] OpenAI deep research → research-leads/                │
-│    [Agent] XAI real-time search → research-leads/                │
-│    [Agent] Statement searches → research-leads/                  │
+│  1. RESEARCH (multi-engine, parallel)                           │
+│     → Gemini, OpenAI, XAI deep research                         │
+│     → Save to research-leads/                                    │
 │                                                                  │
-│  PHASE 1.5: EVIDENCE CAPTURE                                     │
-│    [Agent] Capture primary sources → evidence/                   │
-│    [Agent] Verify claims exist → sources.md                      │
+│  2. EXTRACTION                                                   │
+│     → Parse findings into _extraction.json                       │
 │                                                                  │
-│  PHASE 2: EXTRACTION → Dispatch Extraction Agent                 │
-│    [Agent] Parse research-leads/ → _extraction.json              │
-│    [Agent] Update _state.json with items found                   │
+│  3. TASK GENERATION (core innovation)                           │
+│     → Generate tasks with 10 REQUIRED PERSPECTIVES               │
+│     → Generate 2+ CURIOSITY tasks                                │
+│     → Write to _tasks.json                                       │
 │                                                                  │
-│  PHASE 3: INVESTIGATION → Dispatch Investigation Agents          │
-│    [Agent] Person backgrounds → people.md                        │
-│    [Agent] Claim verification → fact-check.md                    │
-│    [Agent] Timeline events → timeline.md                         │
+│  4. ADVERSARIAL PASS                                            │
+│     → What would disprove each claim?                           │
+│     → Generate counter-tasks for blind spots                     │
 │                                                                  │
-│  PHASE 4: VERIFICATION → Dispatch Verification Agents            │
-│    [Agent] Anti-hallucination check → iterations.md              │
-│    [Agent] Cross-model critique → iterations.md                  │
-│    [Agent] Gap analysis → _state.json                            │
+│  5. EXECUTE TASKS (parallel where independent)                  │
+│     → Investigation agents work on tasks                        │
+│     → Update detail files, mark tasks complete                   │
 │                                                                  │
-│  PHASE 5: SYNTHESIS → Dispatch Synthesis Agent                   │
-│    [Agent] Compile findings → summary.md (complete rewrite)      │
-│    [Agent] Git commit                                            │
+│  6. UPDATE COVERAGE                                             │
+│     → Calculate metrics in _coverage.json                        │
 │                                                                  │
-│  TERMINATION CHECK (orchestrator reads _state.json)              │
-│    - verification_passed == true                                 │
-│    - gaps.length == 0                                            │
-│    - status == "COMPLETE"                                        │
+│  7. VERIFICATION                                                │
+│     → Anti-hallucination check                                  │
+│     → Cross-model critique                                      │
+│                                                                  │
+│  8. TERMINATION GATE CHECK (8 gates)                           │
+│     → All pass? → SYNTHESIS + ARTICLE                           │
+│     → Any fail? → Regenerate tasks → LOOP                       │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+## 8 Termination Gates
+
+**ALL must pass to complete:**
+
+```
+1. Coverage thresholds met:
+   - People: investigated/mentioned ≥ 90%
+   - Entities: investigated/mentioned ≥ 90%
+   - Claims: verified/total ≥ 80%
+   - Sources: captured/cited = 100%
+   - Positions: documented/identified = 100%
+   - Contradictions: explored/identified = 100%
+
+2. No HIGH priority tasks pending
+3. adversarial_complete == true
+4. rigor_checkpoint_passed == true (20 frameworks validated)
+5. verification_passed == true
+6. quality_checks_passed == true (integrity + legal)
+7. All positions steelmanned
+8. No unexplored contradictions
+```
+
+**If ANY gate fails → generate tasks to address → loop.**
 
 ## Commands
 
@@ -176,62 +203,16 @@ Sub-agents update this file. Orchestrator reads it.
 | `/investigate [case-id]` | Resume specific case by ID |
 | `/investigate [case-id] [topic]` | Resume case with new research direction |
 
-### Auto-Invoked by /investigate (fully agentic)
-These commands are automatically triggered during the investigation loop—no manual invocation needed:
-
-| Command | When Triggered |
-|---------|----------------|
-| `/questions` | Iteration 1, every 4th iteration, when stuck, entering finale |
-| `/financial` | When corporations, nonprofits, PACs, or money-related claims detected |
-| `/verify` | Verification phase + finale loop |
-| `/integrity` | Finale loop step 3 |
-| `/legal-review` | Finale loop step 4 |
-| `/article` | End of finale (all checks passed) |
-
-### Manual Diagnostics
+### Manual Overrides (auto-invoked by main loop)
 | Command | Purpose |
 |---------|---------|
-| `/status` | Show case progress |
-| `/status [case-id]` | Show status of specific case |
-| `/status --list` | List all cases |
+| `/verify` | Run verification checkpoint |
+| `/integrity` | Run journalistic integrity check |
+| `/legal-review` | Run legal risk assessment |
+| `/article` | Generate publication-ready articles |
 
 ### OSINT Sources
 Investigation agents have OSINT knowledge embedded directly—they automatically check SEC EDGAR, OpenCorporates, court records, ProPublica 990s, etc. based on entity type. Full source reference: `framework/data-sources.md`
-
-## The /questions Command: 20 Investigative Frameworks
-
-The `/questions` command generates investigative questions using **20 frameworks** organized into **6 categories**:
-
-| Category | Frameworks | Key Questions |
-|----------|------------|---------------|
-| **Core Investigation** | Money, Silence, Timeline, Documents, Contradictions, Uncomfortable | Who benefits? Who's not talking? What's the paper trail? |
-| **People & Networks** | Stakeholder Mapping, Network Analysis, Means/Motive/Opportunity, Relationships | Who has power? Who connects them? Who could have done it? |
-| **Hypothesis & Analysis** | ACH, Key Assumptions, Patterns | Which theory fits? What are we assuming? Has this happened before? |
-| **Adversarial** | Counterfactual, Pre-Mortem, Cognitive Bias | What would prove this wrong? If we're wrong, why? What are our blind spots? |
-| **Context & Framing** | Second-Order Effects, Meta Questions, Sense-Making | What happens next? Why is this story being told now? What does it mean? |
-| **Root Cause** | 5 Whys | Why was this possible? (drill down 5 levels) |
-
-### When to Use Which Frameworks
-
-| Stage | Frameworks |
-|-------|------------|
-| **Early** (gathering facts) | Core + Stakeholder Mapping + Relationships + Sense-Making |
-| **Mid** (building understanding) | Add Network Analysis, Means/Motive/Opportunity, ACH, Assumptions, Patterns, Meta, 5 Whys |
-| **Late** (stress testing) | Add Counterfactual, Pre-Mortem, Cognitive Bias, Second-Order Effects |
-| **When stuck** | Focus on Pre-Mortem, Bias Check, Uncomfortable Questions |
-
-## Financial Investigation Toolkit (/financial)
-
-Specialized tools for following the money:
-
-| Capability | Description |
-|------------|-------------|
-| **Corporate Structure Mapping** | Trace ownership chains, subsidiaries, beneficial owners |
-| **Transaction Pattern Analysis** | Identify red flags (round-trips, structuring, related-party) |
-| **Beneficial Ownership Tracing** | Penetrate shell companies, nominee directors, trusts |
-| **Money Flow Mapping** | Track source → intermediaries → destination |
-
-**Data Sources**: SEC EDGAR, OpenCorporates, ICIJ Offshore Leaks, FEC, PACER, state corporate registries, and more.
 
 ## Legal Risk Assessment (/legal-review)
 
@@ -270,8 +251,6 @@ Transform investigation findings into publication-ready journalism:
 | **Full Article** | 2,000-4,000 words, long-form investigative journalism |
 
 **Standards**: Professional newsroom quality (NYT/ProPublica style), preserves all source citations, no editorializing, balanced perspectives, hedging language for unverified claims.
-
-**Output**: Two complete articles ready for publication with source key and editorial notes.
 
 ## Evidence Capture System
 
@@ -320,20 +299,6 @@ node scripts/verify-claims.js /path/to/case
 
 **AI research outputs are NOT sources.** Save to `research-leads/`, then find and capture primary sources.
 
-## Investigation Loop Finale
-
-**After completing all research iterations, run these steps in order:**
-
-```
-1. /verify          → Verification checkpoint (completeness)
-2. /integrity       → Journalistic integrity check (balance, neutrality)
-3. Address integrity issues in case files
-4. /legal-review    → Legal risk assessment (defamation, evidence)
-5. Address legal issues in case files
-6. Final publication decision
-7. /article         → Generate publication-ready articles (short + long-form)
-```
-
 ## MCP Servers
 
 | Server | Purpose |
@@ -352,9 +317,6 @@ node scripts/verify-claims.js /path/to/case
 | `CLAUDE.md` | AI behavioral instructions |
 | `.claude/commands/investigate.md` | Full investigation procedure |
 | `.claude/commands/verify.md` | Verification checkpoint procedure |
-| `.claude/commands/status.md` | Status command procedure |
-| `.claude/commands/questions.md` | Question generation procedure |
-| `.claude/commands/financial.md` | Financial investigation toolkit (auto-invoked) |
 | `.claude/commands/legal-review.md` | Legal risk assessment procedure |
 | `.claude/commands/integrity.md` | Integrity check procedure |
 | `.claude/commands/article.md` | Article generation procedure |
