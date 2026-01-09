@@ -39,88 +39,85 @@ When modifying system behavior, keep in sync:
 | `/investigate --new [topic]` | Start new investigation |
 | `/investigate [case-id]` | Resume case |
 
-### Auto-Invoked by /investigate (agentic flow)
-| Command | When Triggered |
-|---------|----------------|
-| `/questions` | Iteration 1, every 4th iteration, when stuck, entering finale |
-| `/financial` | When financial entities or money-related claims detected |
-| `/verify` | Verification phase + finale loop |
-| `/integrity` | Finale loop step 3 |
-| `/legal-review` | Finale loop step 4 |
-| `/article` | End of finale (all checks passed) |
-
-### Manual Diagnostics
+### Manual Overrides (auto-invoked by main loop)
 | Command | Purpose |
 |---------|---------|
+| `/verify` | Run verification checkpoint |
+| `/integrity` | Run journalistic integrity check |
+| `/legal-review` | Run legal risk assessment |
+| `/article` | Generate publication-ready articles |
 | `/status` | Check investigation progress |
 
 ---
 
-## Investigation Finale
+## Dynamic Task Generation (Core Innovation)
 
-**The finale is a loop.** Addressing issues requires re-verification.
+**The system generates investigation tasks dynamically** based on what the case needs—not hardcoded templates.
 
-```
-FINALE LOOP (entry: verification_passed && gaps.length == 0)
+### Instead of Hardcoded Commands
 
-1. /questions   → Late-stage adversarial frameworks
-                  If critical new questions → back to INVESTIGATION LOOP
+| Old | New |
+|-----|-----|
+| `/financial` with 6 fixed angles | Tasks generated specific to THIS entity |
+| `/questions` by iteration count | Required perspectives in every task generation |
+| Phase triggers (entity types, keywords) | Tasks emerge from case analysis |
 
-2. /verify      → Full verification
-                  If FAILS → back to INVESTIGATION LOOP
+### Three-Layer Rigor System
 
-3. /integrity   → Journalistic integrity check
-                  If MAJOR issues → address → go to step 2
+1. **Layer 1: Required Perspectives** (every task generation cycle)
+   - Money, Timeline, Silence, Documents, Contradictions
+   - Relationships, Hypotheses, Assumptions, Counterfactual, Blind Spots
+   - + Curiosity check (at least 2 tasks per cycle)
 
-4. /legal-review → Legal risk assessment
-                   If HIGH risks → address → go to step 2
+2. **Layer 2: Adversarial Pass** (after initial task generation)
+   - What would disprove each claim?
+   - Strongest argument for unexplored positions?
+   - What assumptions are embedded?
 
-5. ALL CLEAR    → /article (generate articles)
-```
-
-**Why loop?** Fixing legal/integrity issues may introduce new unverified claims.
-
----
-
-## /questions Integration
-
-Run `/questions` at key points to prevent tunnel vision:
-
-| Trigger | Frameworks |
-|---------|------------|
-| `iteration == 1` | Early: Core (Money, Silence, Timeline, Documents, Contradictions, Relationships) |
-| `iteration % 4 == 0` | Mid: Add ACH, Assumptions, Patterns, Meta, 5 Whys |
-| Verification fails with unclear gaps | Stuck: Pre-Mortem, Bias Check, Uncomfortable Questions |
-| Entering finale | Late: Counterfactual, Pre-Mortem, Cognitive Bias, Second-Order |
+3. **Layer 3: Rigor Checkpoint** (before termination)
+   - Validate ALL 20 frameworks addressed
+   - Cannot terminate with unexplained gaps
 
 ---
 
-## /financial Integration
+## 8 Termination Gates
 
-Auto-invoke `/financial` when triggers detected in _extraction.json:
+**ALL must pass to complete:**
 
-| Trigger | Investigation Focus |
-|---------|---------------------|
-| Entity type: `corporation` | SEC filings, ownership chains, contracts |
-| Entity type: `nonprofit/foundation` | 990 analysis, compensation, related parties |
-| Entity type: `PAC` | FEC filings, donor analysis, expenditures |
-| Claims involving money/funding/contracts/fraud | Financial verification, money trails |
-| "Follow the Money" questions generated | Full financial toolkit |
+```
+1. Coverage thresholds met:
+   - People: investigated/mentioned ≥ 90%
+   - Entities: investigated/mentioned ≥ 90%
+   - Claims: verified/total ≥ 80%
+   - Sources: captured/cited = 100%
+   - Positions: documented/identified = 100%
+   - Contradictions: explored/identified = 100%
 
-**Why auto-invoke?** "Follow the Money" is framework #1. Financial angles are critical but easy to skip.
+2. No HIGH priority tasks pending
+3. adversarial_complete == true
+4. rigor_checkpoint_passed == true
+5. verification_passed == true
+6. quality_checks_passed == true
+7. All positions steelmanned
+8. No unexplored contradictions
+```
+
+**If ANY gate fails → generate tasks to address → loop.**
 
 ---
 
 ## OSINT Source Knowledge
 
-Investigation agents embed OSINT source knowledge directly (no manual /osint command).
+Investigation agents know OSINT sources—tasks generate relevant sources for THIS case.
 
-| Entity Type | Sources Checked |
-|-------------|-----------------|
+| Entity Type | Sources Known |
+|-------------|---------------|
 | Person | OpenCorporates, courts, OpenSanctions, ICIJ, campaign finance |
 | Corporation | SEC EDGAR, State SOS, OpenCorporates, USAspending, courts |
 | Nonprofit | ProPublica 990s, Candid, IRS, state charity registration |
 | Government | USAspending, GAO/OIG reports, FOIA libraries |
+
+**The LLM knows domain knowledge.** We don't spell it out—we generate what's relevant.
 
 Full source reference: `framework/data-sources.md`
 
@@ -132,16 +129,18 @@ Full source reference: `framework/data-sources.md`
 
 | Orchestrator DOES | Orchestrator does NOT |
 |-------------------|----------------------|
-| Read _state.json | Read full file contents |
+| Read _state.json, _tasks.json | Read full file contents |
 | Dispatch sub-agents | Call MCP tools directly |
-| Track iteration | Accumulate findings in memory |
+| Track termination gates | Accumulate findings in memory |
 
 ```
-1. READ: _state.json
-2. DECIDE: Next phase
-3. DISPATCH: Sub-agents (parallel when independent)
-4. WAIT: Agents write to files
-5. LOOP OR TERMINATE
+1. READ: _state.json, _tasks.json, _coverage.json
+2. GENERATE TASKS: With required perspectives + curiosity check
+3. RUN ADVERSARIAL PASS: Generate counter-tasks
+4. EXECUTE TASKS: Parallel where independent
+5. UPDATE COVERAGE: Track metrics
+6. CHECK 8 TERMINATION GATES
+7. LOOP OR TERMINATE
 ```
 
 ---
@@ -153,12 +152,15 @@ Every finding triggers more questions. Every person gets investigated. Every sou
 ```
 DO NOT STOP EARLY.
 
-Only stop when ALL are true:
-  1. No unexplored avenues
-  2. All positions documented
-  3. All alternative theories addressed
-  4. All major claims fact-checked (ALL sides)
+Only stop when ALL 8 TERMINATION GATES pass:
+  1. Coverage thresholds met
+  2. No HIGH priority tasks pending
+  3. Adversarial complete
+  4. Rigor checkpoint passed (20 frameworks)
   5. Verification passed
+  6. Quality checks passed
+  7. All positions steelmanned
+  8. No unexplored contradictions
 ```
 
 ---
@@ -169,8 +171,9 @@ Only stop when ALL are true:
 
 - **Sources**: `[S001]` format, append-only, every claim needs attribution
 - **Evidence**: Capture immediately with `./scripts/capture`
-- **Verification**: 6-item checklist, all must be YES
-- **Termination**: `verification_passed && gaps.length == 0`
+- **Tasks**: 10 required perspectives + curiosity check per cycle
+- **Coverage**: Track metrics in `_coverage.json`
+- **Termination**: All 8 gates must pass
 - **State ownership**: See `framework/rules.md`
 
 ---
@@ -187,6 +190,8 @@ Only stop when ALL are true:
 8. **Git repo per case** — Commit after every iteration
 9. **Capture evidence immediately** — Don't wait
 10. **AI research = leads only** — Find primary sources
+11. **Generate curiosity tasks** — At least 2 per cycle
+12. **Run adversarial pass** — Don't skip uncomfortable questions
 
 ---
 

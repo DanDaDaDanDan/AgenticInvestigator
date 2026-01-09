@@ -10,95 +10,150 @@ Technical design documentation for the multi-agent investigation framework.
 
 AgenticInvestigator is an orchestrated multi-agent system that investigates contested narratives through:
 
-1. **Triple deep research** across Gemini, OpenAI, and XAI engines
-2. **Insatiable curiosity looping** until exhaustion
-3. **Inner loops on all points** found in each iteration
-4. **Built-in verification checkpoints**
-5. **Cross-model critique** for validation
-6. **All-sides fact-checking** (every position)
-7. **Alternative theory handling** (investigate, don't ignore)
-8. **Modular file output** with self-contained summary.md deliverable
+1. **Dynamic task generation** — case-specific investigation tasks generated on-the-fly
+2. **Triple deep research** across Gemini, OpenAI, and XAI engines
+3. **Required perspective coverage** — enforced rigor through 10 core perspectives
+4. **Adversarial review** — systematic blind spot detection
+5. **20-framework rigor checkpoint** — termination gate validation
+6. **Coverage metrics** — quantitative tracking of investigation completeness
+7. **8 termination gates** — cannot complete without passing all
 
 ### Core Principles
 
-- **Insatiable curiosity**: Every finding triggers more questions
-- **Loop until exhausted**: No artificial iteration limits
-- **Verification checkpoints**: Periodic audits to catch gaps
-- **Loop on all points**: Process everything, never cherry-pick
-- **Triple deep research**: Gemini + OpenAI + XAI for triangulation
+- **Insatiable curiosity**: Every finding triggers more questions (curiosity tasks required each cycle)
+- **Dynamic, not hardcoded**: Tasks generated based on case specifics, not generic templates
+- **Structural rigor**: Coverage thresholds and framework validation enforce thoroughness
 - **Source attribution is sacred**: Every claim traces to a source ID
+- **The LLM knows domain knowledge**: We don't spell out SEC/OSINT sources—generate what's relevant
 
 ---
 
-## Looping Architecture
+## Dynamic Task Generation (Core Innovation)
+
+Instead of fixed phases with hardcoded triggers, the system:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           INVESTIGATION LOOP                                 │
+│                        DYNAMIC INVESTIGATION LOOP                            │
 │                                                                              │
-│  PHASE 1: RESEARCH                                                           │
-│    Run deep research (Gemini, OpenAI, XAI in parallel)                       │
-│    Save to research-leads/                                                   │
+│  1. INITIAL RESEARCH (multi-engine, parallel)                               │
+│     → Save to research-leads/                                                │
 │                                                                              │
-│  PHASE 2: EXTRACTION                                                         │
-│    Parse research-leads/ → _extraction.json                                  │
-│    Extract: people, entities, claims, events, statements, contradictions    │
+│  2. EXTRACTION                                                               │
+│     → Parse findings into _extraction.json                                   │
 │                                                                              │
-│  PHASE 2.5: QUESTIONS (conditional)                                          │
-│    Run /questions when triggered (see conditions below)                      │
-│    Generates new investigation angles via 20 frameworks                      │
+│  3. TASK GENERATION (core innovation)                                        │
+│     Generate tasks with REQUIRED PERSPECTIVES:                               │
+│     □ Money/Financial    □ Silence           □ Documents                     │
+│     □ Timeline           □ Contradictions    □ Relationships                 │
+│     □ Hypotheses         □ Assumptions       □ Counterfactual                │
+│     □ Blind Spots        + CURIOSITY CHECK (2+ tasks required)               │
+│     → Write to _tasks.json                                                   │
 │                                                                              │
-│  PHASE 3: INVESTIGATION                                                      │
-│    For each person/entity/claim → investigate in parallel                    │
-│    Capture evidence, verify claims, update detail files                      │
-│    Agents use OSINT sources from framework/data-sources.md                   │
+│  4. ADVERSARIAL PASS                                                         │
+│     For each task: What would DISPROVE it?                                   │
+│     Generate counter-tasks for blind spots                                   │
+│     → Append to _tasks.json under adversarial_tasks                          │
 │                                                                              │
-│  PHASE 3.5: FINANCIAL (conditional)                                          │
-│    Auto-invoke /financial when triggers present                              │
-│    Deep financial investigation on corporations, nonprofits, PACs            │
+│  5. EXECUTE TASKS (parallel where independent)                               │
+│     Investigation agents work on tasks                                       │
+│     → Update detail files, mark tasks complete                               │
 │                                                                              │
-│  PHASE 4: VERIFICATION                                                       │
-│    Anti-hallucination check (verify claims in evidence)                      │
-│    Cross-model critique (Gemini critiques Claude)                            │
-│    Gap analysis → update _state.json                                         │
+│  6. UPDATE COVERAGE                                                          │
+│     Calculate metrics: people, entities, claims, sources                     │
+│     Track perspective coverage                                               │
+│     → Write _coverage.json                                                   │
 │                                                                              │
-│  PHASE 5: SYNTHESIS                                                          │
-│    Rewrite summary.md (complete, not append)                                 │
-│    Git commit                                                                │
+│  7. VERIFICATION                                                             │
+│     Anti-hallucination, cross-model critique, core checklist                 │
+│     → Update verification_passed                                             │
 │                                                                              │
-│  TERMINATION CHECK                                                           │
-│    verification_passed && gaps.length == 0 → FINALE LOOP                     │
-│    else → CONTINUE                                                           │
+│  8. TERMINATION GATE CHECK                                                   │
+│     All 8 gates must pass → SYNTHESIS + ARTICLE                              │
+│     Any gate fails → Regenerate tasks → LOOP                                 │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### /questions Trigger Conditions
+### Why Dynamic?
 
-Run `/questions` when ANY of these are true:
+**The LLM already knows domain knowledge.** It knows about SEC filings, 990 analysis, defamation law, OSINT sources. We don't hardcode investigation angles—we generate them based on the specific case.
 
-| Condition | Frameworks to Apply |
-|-----------|---------------------|
-| `iteration == 1` | Early: Core (1-6), Stakeholder, Relationships, Sense-Making |
-| `iteration % 4 == 0` | Mid: Add ACH, Assumptions, Patterns, Meta, 5 Whys |
-| `verification_passed == false && gaps lack clear paths` | Stuck: Pre-Mortem, Bias Check, Uncomfortable Questions |
-| Claiming saturation/completion | Late: Counterfactual, Pre-Mortem, Cognitive Bias, Second-Order |
+| Old (Hardcoded) | New (Dynamic) |
+|-----------------|---------------|
+| `/financial` with 6 fixed angles | Generate financial tasks specific to THIS entity |
+| `/questions` with 20 frameworks by iteration count | Perspectives required in every task generation |
+| Phase triggers: entity types, keywords | Tasks emerge from case analysis |
+| Same investigation for pharma and hedge fund | Case-specific: FDA for pharma, offshore for hedge fund |
 
-**Purpose**: Prevent tunnel vision, surface blind spots, ensure systematic framework coverage.
+---
 
-### /financial Trigger Conditions
+## Three-Layer Rigor System
 
-Run `/financial` when ANY of these are true:
+Rigor is enforced structurally, not through prompting alone.
 
-| Condition | What It Does |
-|-----------|--------------|
-| _extraction.json contains `type: corporation` | Corporate structure, SEC filings, ownership chains |
-| _extraction.json contains `type: nonprofit/foundation` | 990 analysis, compensation, related parties |
-| _extraction.json contains `type: PAC` | FEC filings, donor analysis, expenditures |
-| Claims involve money/funding/contracts/fraud | Financial verification, money trails |
-| /questions generated "Follow the Money" | Full financial investigation toolkit |
+### Layer 1: Required Perspectives in Task Generation
 
-**Purpose**: "Follow the Money" is framework #1. Auto-invocation ensures financial angles are never skipped.
+Every task generation cycle MUST address 10 perspectives (or explain why N/A):
+
+```
+□ Money/Financial — who benefits, funding sources
+□ Timeline/Sequence — causation chains, key dates
+□ Silence — who's NOT talking
+□ Documents — paper trails that must exist
+□ Contradictions — conflicting accounts
+□ Relationships — connections, conflicts
+□ Alternative Hypotheses — other explanations
+□ Assumptions — what we're taking for granted
+□ Counterfactual — what would prove us wrong
+□ Blind Spots — what might we be missing
+
++ CURIOSITY CHECK (REQUIRED):
+  Generate at least 2 tasks from:
+  - What would a MORE curious investigator ask?
+  - What's the most important thing we DON'T know?
+  - What would SURPRISE us if true?
+```
+
+### Layer 2: Adversarial Pass
+
+After task generation, explicit adversarial review:
+
+1. For each major claim: What would DISPROVE it?
+2. Strongest argument for unexplored positions?
+3. What assumptions are EMBEDDED in these tasks?
+4. What evidence would CHANGE our conclusions?
+5. What would the SUBJECT refuse to answer?
+6. Who BENEFITS from us not investigating something?
+
+### Layer 3: Rigor Checkpoint (Termination Gate)
+
+Before termination, validate against ALL 20 frameworks:
+
+1. Follow the Money
+2. Follow the Silence
+3. Follow the Timeline
+4. Follow the Documents
+5. Follow the Contradictions
+6. Follow the Relationships
+7. Stakeholder Mapping
+8. Network Analysis
+9. Means/Motive/Opportunity
+10. Competing Hypotheses
+11. Assumptions Check
+12. Pattern Analysis
+13. Counterfactual
+14. Pre-Mortem
+15. Cognitive Bias Check
+16. Uncomfortable Questions
+17. Second-Order Effects
+18. Meta Questions
+19. 5 Whys (Root Cause)
+20. Sense-Making
+
+Each framework must be: ✓ Addressed (cite task/finding) | N/A (explain why) | ✗ Gap (generate task)
+
+**Cannot terminate with unexplained gaps.**
 
 ---
 
@@ -111,32 +166,23 @@ Run `/financial` when ANY of these are true:
 │                         ORCHESTRATOR (Main Loop)                             │
 │                                                                              │
 │  NEVER:                              ONLY:                                   │
-│  ✗ Call MCP tools directly           ✓ Read _state.json                     │
+│  ✗ Call MCP tools directly           ✓ Read _state.json, _tasks.json        │
 │  ✗ Read full file contents           ✓ Dispatch sub-agents (Task tool)      │
 │  ✗ Write large content               ✓ Wait for completion                  │
-│  ✗ Accumulate findings in memory     ✓ Track iteration/termination          │
+│  ✗ Accumulate findings in memory     ✓ Track termination gates              │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
          │                │                │                │
          ▼                ▼                ▼                ▼
    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
-   │ Research │    │Extraction│    │Investigat│    │ Synthesis│
-   │  Agent   │    │  Agent   │    │  Agent   │    │  Agent   │
+   │ Task Gen │    │Execute   │    │ Coverage │    │ Rigor    │
+   │  Agent   │    │ Agents   │    │  Agent   │    │ Checkpoint│
    └──────────┘    └──────────┘    └──────────┘    └──────────┘
          │                │                │                │
          ▼                ▼                ▼                ▼
-    research-       _extraction.      people.md        summary.md
-    leads/*.md           .json       timeline.md       sources.md
-                                    fact-check.md
+    _tasks.json     people.md        _coverage.json   Pass/Fail
+                    fact-check.md
 ```
-
-### Sub-Agent Contract
-
-Every sub-agent MUST:
-1. Receive clear task (file paths, what to investigate, where to write)
-2. Do the work (use MCP tools, read files, analyze)
-3. Write ALL findings to files (never return large content)
-4. Return brief status ("Completed [task], wrote N items")
 
 ---
 
@@ -146,27 +192,27 @@ Every sub-agent MUST:
 
 ```
 cases/[topic-slug]/
-├── _state.json               # Orchestrator state (machine-readable)
-├── _extraction.json          # Current extraction (claims, people, entities)
+├── _state.json               # Orchestrator state
+├── _extraction.json          # Extracted entities, claims, people
+├── _tasks.json               # Dynamic task queue (NEW)
+├── _coverage.json            # Coverage metrics (NEW)
 ├── .git/                     # Version control
 ├── evidence/                 # Captured sources
 │   ├── web/SXXX/            # Screenshots, PDFs, HTML per source
-│   ├── documents/           # Downloaded PDFs
-│   └── api/, media/         # Other evidence types
+│   └── documents/           # Downloaded PDFs
 ├── research-leads/           # AI research outputs (NOT citable)
 ├── summary.md                # THE DELIVERABLE (self-contained)
 ├── sources.md                # Source registry with evidence paths
 ├── timeline.md               # Chronological events
-├── people.md                 # Person profiles with role timelines
-├── organizations.md          # Entity profiles (corporations, agencies)
+├── people.md                 # Person profiles
+├── organizations.md          # Entity profiles
 ├── positions.md              # All positions with arguments
 ├── fact-check.md             # Claim verdicts
 ├── theories.md               # Alternative theory analysis
 ├── statements.md             # Statement vs evidence analysis
-├── iterations.md             # Progress log + checkpoints
-├── integrity-check.md        # Journalistic integrity assessment
-├── legal-review.md           # Legal risk assessment
-└── articles.md               # Publication-ready articles
+├── iterations.md             # Progress log
+├── articles.md               # Publication-ready articles
+└── (quality check files generated dynamically)
 ```
 
 ### _state.json Schema
@@ -177,21 +223,75 @@ cases/[topic-slug]/
   "topic": "Original investigation topic",
   "status": "IN_PROGRESS",
   "current_iteration": 5,
-  "current_phase": "VERIFICATION",
+  "current_phase": "INVESTIGATION",
   "next_source_id": "S048",
-  "people_count": 12,
-  "entities_count": 8,
-  "sources_count": 47,
-  "gaps": ["gap1", "gap2"],
   "verification_passed": false,
-  "last_verification": "2026-01-08T10:30:00Z",
+  "adversarial_complete": false,
+  "rigor_checkpoint_passed": false,
+  "quality_checks_passed": false,
   "created_at": "2026-01-07T09:00:00Z",
   "updated_at": "2026-01-08T10:30:00Z"
 }
 ```
 
 **Status values:** `IN_PROGRESS`, `COMPLETE`, `PAUSED`, `ERROR`
-**Phase values:** `SETUP`, `RESEARCH`, `EXTRACTION`, `QUESTIONS`, `INVESTIGATION`, `FINANCIAL`, `VERIFICATION`, `SYNTHESIS`, `FINALE`, `COMPLETE`
+
+### _tasks.json Schema
+
+```json
+{
+  "tasks": [
+    {
+      "id": "T001",
+      "description": "Investigate FDA approval history for [drug]",
+      "perspective": "Documents",
+      "entity": "PharmaCorp",
+      "priority": "HIGH",
+      "status": "pending|in_progress|completed",
+      "rationale": "Central to efficacy claims",
+      "approach": "FDA database, ClinicalTrials.gov, SEC 10-K",
+      "success_criteria": "Timeline of approval with key decision points",
+      "generated_at": "iteration_2",
+      "completed_at": null,
+      "findings_file": null
+    }
+  ],
+  "adversarial_tasks": [],
+  "rigor_gap_tasks": []
+}
+```
+
+### _coverage.json Schema
+
+```json
+{
+  "people": { "mentioned": 15, "investigated": 13 },
+  "entities": { "mentioned": 8, "investigated": 7 },
+  "claims": { "total": 24, "verified": 18 },
+  "sources": { "cited": 47, "captured": 47 },
+  "positions": { "identified": 4, "documented": 4 },
+  "contradictions": { "identified": 6, "explored": 6 },
+  "perspectives_covered": {
+    "Money": true,
+    "Timeline": true,
+    "Silence": false,
+    "Documents": true,
+    "Contradictions": true,
+    "Relationships": true,
+    "Hypotheses": true,
+    "Assumptions": false,
+    "Counterfactual": true,
+    "BlindSpots": true
+  },
+  "frameworks_validated": 16,
+  "depth_metrics": {
+    "primary_sources": 28,
+    "secondary_sources": 19,
+    "direct_evidence": 22,
+    "circumstantial": 12
+  }
+}
+```
 
 ### _extraction.json Schema
 
@@ -210,33 +310,48 @@ cases/[topic-slug]/
 
 ---
 
-## Phase State Machine
+## Termination Gates (8 Required)
+
+**ALL must be true to terminate:**
 
 ```
-SETUP → RESEARCH → EXTRACTION → QUESTIONS? → INVESTIGATION → FINANCIAL? → VERIFICATION
-                                    │               │               │           ↓
-                                    │               │               │   ↑←← gaps > 0 ←←|
-                    (conditional:   │   (conditional:               │   ↑              ↓
-                     iter==1,       │    financial entities)        │   RESEARCH ←← (!passed)
-                     iter%4==0,     │                               │              ↓
-                     stuck)         │                               │   SYNTHESIS ←←| (passed && gaps==0)
-                                    │                               │       ↓
-                                    ↓                               ↓       → RESEARCH (new iteration)
-                                    │          → FINALE (if passed && no gaps)
-                                    │
-                                    ↓
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  FINALE LOOP                                                                 │
-│                                                                              │
-│  QUESTIONS (late) → VERIFY → INTEGRITY → LEGAL-REVIEW → COMPLETE            │
-│       ↓                ↓          ↓            ↓                             │
-│   critical?         fails?     MAJOR?       HIGH?                            │
-│       ↓                ↓          ↓            ↓                             │
-│   → back to        → back to   address     address                           │
-│     RESEARCH         RESEARCH  → VERIFY    → VERIFY                          │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
+1. Coverage thresholds met:
+   □ People: investigated/mentioned ≥ 90%
+   □ Entities: investigated/mentioned ≥ 90%
+   □ Claims: verified/total ≥ 80%
+   □ Sources: captured/cited = 100%
+   □ Positions: documented/identified = 100%
+   □ Contradictions: explored/identified = 100%
+
+2. No HIGH priority tasks pending
+
+3. adversarial_complete == true
+
+4. rigor_checkpoint_passed == true (20 frameworks validated)
+
+5. verification_passed == true (anti-hallucination, core checklist)
+
+6. quality_checks_passed == true (integrity + legal)
+
+7. All positions steelmanned
+
+8. No unexplored contradictions
 ```
+
+**If ANY gate fails → generate tasks to address → loop.**
+
+### Termination Signals
+
+**You ARE likely done when:**
+- Same sources appear across all research engines
+- New task generation yields mostly duplicates
+- Rigor checkpoint finds all frameworks ✓ or N/A
+- Coverage metrics at thresholds
+
+**You are NOT done because:**
+- You've completed many iterations
+- It "feels" complete
+- Most gates are passing
 
 ---
 
@@ -304,27 +419,9 @@ Find the primary source URL, capture it, then cite that.
 | Cross-model critique | gemini | `generate_text` | thinking_level: high |
 | Check/resume timeout | gemini/openai | `check_research` | Use ID from error |
 
-### Deep Research Error Handling
-
-| Error Prefix | Recovery |
-|-------------|----------|
-| `TIMEOUT:` | Use `check_research` with ID |
-| `AUTH_ERROR:` | Check credentials |
-| `RATE_LIMIT:` | Wait and retry |
-| `NOT_FOUND:` | Start new research |
-
 ---
 
 ## Verification System
-
-### When Checkpoints Run
-
-| Trigger | Condition |
-|---------|-----------|
-| Periodic | Every 3-5 iterations |
-| Saturation claim | When claiming "no more threads" |
-| Completion claim | Before marking COMPLETE |
-| User request | When user says "wrap up" |
 
 ### Core Checklist (all must be YES)
 
@@ -350,27 +447,6 @@ node scripts/verify-claims.js cases/[case-id]
 
 ---
 
-## Termination
-
-**All conditions must be true:**
-- `verification_passed == true`
-- `gaps.length == 0`
-
-### Termination Signals
-
-**You ARE likely done when:**
-- Same sources appear across all research engines
-- New iterations yield <10% novel information
-- Cross-model critique finds only minor gaps
-- Remaining gaps are genuinely unanswerable
-
-**You are NOT done because:**
-- You've completed many iterations
-- It "feels" complete
-- Most checklist items are green
-
----
-
 ## summary.md Standards
 
 **summary.md is THE DELIVERABLE — a polished final product.**
@@ -383,115 +459,6 @@ node scripts/verify-claims.js cases/[case-id]
 | Publishable quality | Internal scratchpad |
 
 **Rewrite, don't append.** Each update is a complete rewrite.
-
-**Forbidden phrases:**
-- ❌ "We also found...", "Additionally...", "Further investigation revealed..."
-- ✅ Just state findings directly
-
-**The test:** Could you hand this to a journalist or executive right now?
-
----
-
-## Investigation Loop Finale
-
-**The finale is itself a loop.** Addressing issues may introduce new problems that require re-verification.
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              FINALE LOOP                                     │
-│                                                                              │
-│  ENTRY: verification_passed && gaps.length == 0                              │
-│                                                                              │
-│  ┌────────────────────────────────────────────────────────────────────────┐  │
-│  │  STEP 1: /questions (late stage - adversarial frameworks)              │  │
-│  │    Apply: Counterfactual, Pre-Mortem, Cognitive Bias, Uncomfortable    │  │
-│  │    Purpose: Final blind spot check before publication                   │  │
-│  │    If new critical questions → return to INVESTIGATION LOOP             │  │
-│  └────────────────────────────────────────────────────────────────────────┘  │
-│                                    ↓                                         │
-│  ┌────────────────────────────────────────────────────────────────────────┐  │
-│  │  STEP 2: /verify                                                       │  │
-│  │    Full verification checkpoint                                         │  │
-│  │    If FAILS → return to INVESTIGATION LOOP                              │  │
-│  └────────────────────────────────────────────────────────────────────────┘  │
-│                                    ↓                                         │
-│  ┌────────────────────────────────────────────────────────────────────────┐  │
-│  │  STEP 3: /integrity                                                    │  │
-│  │    Journalistic integrity check                                         │  │
-│  │    If MAJOR issues → address them → go to STEP 2                        │  │
-│  └────────────────────────────────────────────────────────────────────────┘  │
-│                                    ↓                                         │
-│  ┌────────────────────────────────────────────────────────────────────────┐  │
-│  │  STEP 4: /legal-review                                                 │  │
-│  │    Legal risk assessment                                                │  │
-│  │    If HIGH risks → address them → go to STEP 2                          │  │
-│  └────────────────────────────────────────────────────────────────────────┘  │
-│                                    ↓                                         │
-│  ┌────────────────────────────────────────────────────────────────────────┐  │
-│  │  STEP 5: ALL CLEAR                                                     │  │
-│  │    - verification_passed == true                                        │  │
-│  │    - integrity issues: none or minor only                               │  │
-│  │    - legal risks: acceptable                                            │  │
-│  │    → /article (generate publication-ready articles)                     │  │
-│  └────────────────────────────────────────────────────────────────────────┘  │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Finale Loop Rules
-
-| After... | If... | Then... |
-|----------|-------|---------|
-| /questions | Critical new questions found | Exit to INVESTIGATION LOOP |
-| /verify | Fails | Exit to INVESTIGATION LOOP |
-| /integrity | MAJOR issues | Address → re-run /verify |
-| /legal-review | HIGH risks | Address → re-run /verify |
-| /legal-review | All clear | Proceed to /article |
-
-**Why loop?** Addressing legal issues may change claims. Fixing integrity issues may introduce new unverified statements. Every change requires re-verification.
-
----
-
-## Parallel Dispatch
-
-**Launch independent sub-agents in ONE message.**
-
-### Research Phase Example
-
-```
-Task 1: Gemini deep research on [topic]
-Task 2: OpenAI deep research on [critical claims]
-Task 3: XAI multi-source search
-Task 4: X/Twitter discourse
-Task 5: Official records search
-Task 6: Alternative theories search
-```
-
-All write to `research-leads/`. Orchestrator waits for all to complete.
-
-### Investigation Phase Example
-
-```
-Task 1: Investigate Person A
-Task 2: Investigate Person B
-Task 3: Verify Claim X
-Task 4: Investigate Entity Y
-```
-
-All write to respective detail files.
-
----
-
-## Capture Scripts
-
-| Script | Purpose |
-|--------|---------|
-| `scripts/capture` | Main capture wrapper |
-| `scripts/capture-url.js` | Playwright capture |
-| `scripts/firecrawl-capture.js` | Bot-bypass capture |
-| `scripts/verify-sources.js` | Verify evidence integrity |
-| `scripts/verify-claims.js` | Anti-hallucination check |
-| `scripts/find-failed-captures.js` | Audit capture quality |
 
 ---
 
@@ -510,3 +477,16 @@ These sources are NOT indexed by Google — must query directly:
 | Deleted content | Wayback Machine, Archive.today |
 
 Full reference: `framework/data-sources.md`
+
+---
+
+## Capture Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/capture` | Main capture wrapper |
+| `scripts/capture-url.js` | Playwright capture |
+| `scripts/firecrawl-capture.js` | Bot-bypass capture |
+| `scripts/verify-sources.js` | Verify evidence integrity |
+| `scripts/verify-claims.js` | Anti-hallucination check |
+| `scripts/find-failed-captures.js` | Audit capture quality |
