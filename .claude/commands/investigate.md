@@ -321,6 +321,8 @@ Task tool:
 
 Dispatch investigation agents for each task. Parallel where independent.
 
+**AUDIT REQUIREMENT:** Every task must log start and completion to `_audit.json`.
+
 ### Person Investigation Agent
 
 ```
@@ -331,6 +333,9 @@ Task tool:
     TASK: [task description from _tasks.json]
     CASE: cases/[case-id]/
     TASK_ID: [T###]
+
+    FIRST: Log task start
+    node scripts/audit-append.js cases/[case-id] task-agent task_start --target [T###]
 
     Follow framework/rules.md for source attribution and evidence capture.
 
@@ -344,11 +349,16 @@ Task tool:
 
     For each source URL:
     - Capture: ./scripts/capture [SXXX] [URL]
+    - Log capture: node scripts/audit-append.js cases/[case-id] capture-agent capture_source --target [SXXX] --input '{"url":"..."}'
     - Verify claim exists in captured file
     - Get next_source_id from _state.json
 
     Update: people.md, sources.md, _state.json
+    Write findings to: findings/[T###]-[slug].md
     Mark task complete in _tasks.json with findings_file reference.
+
+    LAST: Log task complete
+    node scripts/audit-append.js cases/[case-id] task-agent task_complete --target [T###] --output '{"findings_file":"findings/[T###]-[slug].md","sources_added":N}'
 
     RETURN: Findings summary, sources added, success criteria met?
 ```
@@ -364,6 +374,9 @@ Task tool:
     CASE: cases/[case-id]/
     TASK_ID: [T###]
 
+    FIRST: Log task start
+    node scripts/audit-append.js cases/[case-id] task-agent task_start --target [T###]
+
     Follow framework/rules.md for source attribution and evidence capture.
 
     AVAILABLE SOURCES (from _sources.json):
@@ -375,7 +388,11 @@ Task tool:
     SUCCESS CRITERIA: [from task]
 
     Update: organizations.md, sources.md, _state.json
-    Mark task complete in _tasks.json.
+    Write findings to: findings/[T###]-[slug].md
+    Mark task complete in _tasks.json with findings_file reference.
+
+    LAST: Log task complete
+    node scripts/audit-append.js cases/[case-id] task-agent task_complete --target [T###] --output '{"findings_file":"findings/[T###]-[slug].md"}'
 
     RETURN: Findings summary, sources added, success criteria met?
 ```
@@ -391,6 +408,9 @@ Task tool:
     CASE: cases/[case-id]/
     TASK_ID: [T###]
 
+    FIRST: Log task start
+    node scripts/audit-append.js cases/[case-id] task-agent task_start --target [T###]
+
     Follow framework/rules.md for source attribution and evidence capture.
 
     AVAILABLE SOURCES (from _sources.json):
@@ -405,7 +425,11 @@ Task tool:
     Evidence quality: PRIMARY | SECONDARY | TERTIARY
 
     Update: fact-check.md, sources.md, _state.json
-    Mark task complete in _tasks.json.
+    Write findings to: findings/[T###]-[slug].md
+    Mark task complete in _tasks.json with findings_file reference.
+
+    LAST: Log task complete
+    node scripts/audit-append.js cases/[case-id] task-agent task_complete --target [T###] --output '{"verdict":"...","confidence":"...","sources_added":N}'
 
     RETURN: Verdict, source count, confidence, evidence quality
 ```
@@ -663,13 +687,20 @@ Task tool:
     TOPIC: [topic from user]
 
     1. Generate slug (lowercase, hyphens)
-    2. Create: cases/[slug]/{evidence/web,evidence/documents,research-leads}
+    2. Create: cases/[slug]/{evidence/web,evidence/documents,research-leads,findings}
     3. Initialize git repo
     4. Create _state.json (iteration: 0, phase: SETUP)
     5. Create empty _tasks.json, _coverage.json, _extraction.json
-    6. Create empty template files
-    7. Update cases/.active
-    8. Git commit: "Initialize case: [topic]"
+    6. Initialize _audit.json: node scripts/audit-append.js cases/[slug] --init
+    7. Initialize iterations.md with header:
+       # Investigation Progress Log
+
+       Case: [topic]
+       Created: [timestamp]
+    8. Create empty template files
+    9. Update cases/.active
+    10. Log to audit: node scripts/audit-append.js cases/[slug] orchestrator phase_start --target SETUP
+    11. Git commit: "Initialize case: [topic]"
 
     RETURN: Case ID (slug)
 ```
