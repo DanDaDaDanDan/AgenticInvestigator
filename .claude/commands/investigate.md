@@ -2,7 +2,7 @@
 
 You are the **orchestrator**. You dispatch sub-agents and track state. You NEVER do research or analysis directly.
 
-**See `rules.md` for all canonical rules (sources, evidence, verification).**
+**See `framework/rules.md` for all canonical rules (sources, evidence, verification).**
 
 ---
 
@@ -178,7 +178,7 @@ Task tool:
     PERSON: [name]
     ITERATION: [N]
 
-    Follow rules.md for source attribution and evidence capture.
+    Follow framework/rules.md for source attribution and evidence capture.
 
     Research: background, career, role in story, all statements.
 
@@ -213,7 +213,7 @@ Task tool:
     ENTITY: [name]
     TYPE: [corporation/agency/ngo/etc.]
 
-    Follow rules.md for source attribution and evidence capture.
+    Follow framework/rules.md for source attribution and evidence capture.
 
     Research: corporate structure, ownership, subsidiaries, relationships.
 
@@ -243,7 +243,7 @@ Task tool:
     CLAIM: [claim text]
     POSITION: [which position this supports]
 
-    Follow rules.md for source attribution and evidence capture.
+    Follow framework/rules.md for source attribution and evidence capture.
 
     Search for supporting and contradicting evidence.
     Check for circular reporting (outlets citing same original = 1 source).
@@ -321,7 +321,7 @@ Task tool:
     CASE: cases/[case-id]/
     ITERATION: [N]
 
-    Follow rules.md for summary.md standards.
+    Follow framework/rules.md for summary.md standards.
 
     Read all detail files (timeline, people, organizations, positions,
     fact-check, theories, statements, sources).
@@ -376,7 +376,7 @@ Task tool:
 - `verification_passed == true`
 - `gaps.length == 0`
 
-**Termination signals (see rules.md):**
+**Termination signals (see framework/rules.md):**
 - Same sources across all engines
 - New iterations yield <10% novel information
 - Cross-model critique finds only minor gaps
@@ -392,4 +392,4 @@ When complete, set `status: "COMPLETE"`, `current_phase: "COMPLETE"`, commit.
 3. NEVER write large content — sub-agents do all writing
 4. ALWAYS dispatch parallel agents in ONE message
 5. ALWAYS check _state.json between phases
-6. See `rules.md` for state update ownership
+6. See `framework/rules.md` for state update ownership

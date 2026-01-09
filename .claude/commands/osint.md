@@ -21,7 +21,7 @@ You are helping the user identify the best OSINT (Open Source Intelligence) data
 
 ### If no topic specified:
 
-Display the Quick Reference table and OSINT Frameworks from `docs/investigative_data_sources.md`:
+Display the Quick Reference table and OSINT Frameworks from `framework/data-sources.md`:
 
 ```markdown
 ## Quick Reference by Investigation Type
@@ -52,7 +52,7 @@ Display the Quick Reference table and OSINT Frameworks from `docs/investigative_
 | **Journalist's Toolbox** | journaliststoolbox.ai | SPJ's collection |
 | **Bellingcat Toolkit** | bellingcat.gitbook.io | Verification, satellites, geolocation |
 
-For full reference with 100+ sources: `docs/investigative_data_sources.md`
+For full reference with 100+ sources: `framework/data-sources.md`
 ```
 
 ### If topic specified:
@@ -365,7 +365,7 @@ When running `/investigate` investigations, the Official Records research agent 
 For complete source database with 100+ sources:
 
 ```
-docs/investigative_data_sources.md
+framework/data-sources.md
 ```
 
 Includes:
