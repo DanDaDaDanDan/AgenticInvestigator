@@ -217,20 +217,19 @@ Every task generation cycle MUST include curiosity check:
 
 ---
 
-## OSINT Source Knowledge
+## Dynamic Source Discovery
 
-Investigation agents have OSINT knowledge embedded directly—no manual command exists.
+**Sources are discovered dynamically for each case, not hardcoded.**
 
-| Entity Type | Sources Agents Know |
-|-------------|---------------------|
-| Person | OpenCorporates, courts, OpenSanctions, ICIJ, campaign finance, property |
-| Corporation | SEC EDGAR, State SOS, OpenCorporates, USAspending, courts, GLEIF |
-| Nonprofit | ProPublica 990s, Candid, IRS Tax Exempt, state charity registration |
-| Government | USAspending, GAO/OIG reports, FOIA libraries, Federal Register |
+1. SOURCE DISCOVERY phase runs after extraction
+2. Baseline sources selected from `framework/data-sources.md` based on entity types
+3. Deep research finds case-specific sources (e.g., FDA for pharma, FINRA for finance)
+4. Combined sources saved to `_sources.json`
+5. Task generation and investigation agents use `_sources.json`
 
-Full reference: `framework/data-sources.md`
+Full baseline reference: `framework/data-sources.md`
 
-**The LLM knows domain knowledge.** Tasks generate specific sources relevant to THIS case—not generic templates.
+**The baseline seeds discovery. Case-specific sources emerge dynamically.**
 
 ---
 
