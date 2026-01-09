@@ -1,127 +1,31 @@
 # AgenticInvestigator - Claude Instructions
 
-Behavioral rules and quick reference for Claude Code operating in this project.
+Behavioral rules for Claude Code operating in this project.
 
-**Canonical rules: `framework/rules.md` | Architecture: `framework/architecture.md`**
+**Canonical sources:** `framework/rules.md` (rules) | `framework/architecture.md` (schemas, workflow)
 
 ---
 
 ## Document Sync
 
-When modifying system behavior, keep in sync:
-
-| File | Update When... |
-|------|----------------|
-| `framework/rules.md` | Rules change |
-| `framework/architecture.md` | Data formats, case structure, workflow |
-| `CLAUDE.md` | Behavioral guidance |
-| `README.md` | User-facing documentation |
-
----
-
-## Philosophy
-
-1. **Fail fast** — Surface problems immediately
-2. **Be curious** — Explore, question assumptions, dig deeper
-3. **Don't guess, research** — Investigate first
-4. **No mock code** — Write real code or don't write it
-5. **No silent rollbacks** — Surface failures and wait
-6. **Finish the job** — Verify completion
-7. **Commit often** — Git is our safety net
+When modifying system behavior, update:
+- `framework/rules.md` — Rules change
+- `framework/architecture.md` — Data formats, workflow
+- `CLAUDE.md` — Behavioral guidance
+- `README.md` — User-facing docs
 
 ---
 
 ## Commands
 
-### Entry Point
 | Command | Purpose |
 |---------|---------|
 | `/investigate --new [topic]` | Start new investigation |
 | `/investigate [case-id]` | Resume case |
-
-### Manual Overrides (auto-invoked by main loop)
-| Command | Purpose |
-|---------|---------|
-| `/verify` | Run verification checkpoint |
-| `/integrity` | Run journalistic integrity check |
-| `/legal-review` | Run legal risk assessment |
-| `/article` | Generate publication-ready articles |
-
----
-
-## Dynamic Task Generation (Core Innovation)
-
-**The system generates investigation tasks dynamically** based on what the case needs—not hardcoded templates.
-
-### Instead of Hardcoded Commands
-
-| Old | New |
-|-----|-----|
-| `/financial` with 6 fixed angles | Tasks generated specific to THIS entity |
-| `/questions` by iteration count | Required perspectives in every task generation |
-| Phase triggers (entity types, keywords) | Tasks emerge from case analysis |
-
-### Three-Layer Rigor System
-
-1. **Layer 1: Required Perspectives** (every task generation cycle)
-   - Money, Timeline, Silence, Documents, Contradictions
-   - Relationships, Hypotheses, Assumptions, Counterfactual, Blind Spots
-   - + Curiosity check (at least 2 tasks per cycle)
-
-2. **Layer 2: Adversarial Pass** (after initial task generation)
-   - What would disprove each claim?
-   - Strongest argument for unexplored positions?
-   - What assumptions are embedded?
-
-3. **Layer 3: Rigor Checkpoint** (before termination)
-   - Validate ALL 20 frameworks addressed
-   - Cannot terminate with unexplained gaps
-
----
-
-## 8 Termination Gates
-
-**ALL must pass to complete:**
-
-```
-1. Coverage thresholds met:
-   - People: investigated/mentioned ≥ 90%
-   - Entities: investigated/mentioned ≥ 90%
-   - Claims: verified/total ≥ 80%
-   - Sources: captured/cited = 100%
-   - Positions: documented/identified = 100%
-   - Contradictions: explored/identified = 100%
-
-2. No HIGH priority tasks pending
-3. adversarial_complete == true
-4. rigor_checkpoint_passed == true
-5. verification_passed == true
-6. quality_checks_passed == true
-7. All positions steelmanned
-8. No unexplored contradictions
-```
-
-**If ANY gate fails → generate tasks to address → loop.**
-
----
-
-## Dynamic Source Discovery
-
-**Instead of static reference files, discover case-specific sources dynamically.**
-
-After extraction, run SOURCE DISCOVERY phase:
-1. Read `framework/data-sources.md` for baseline sources
-2. Use deep research to find sources specific to THIS investigation
-3. Save combined sources to `_sources.json`
-4. Task generation and investigation agents use `_sources.json`
-
-**Example**: Pharmaceutical fraud investigation
-- Baseline: SEC EDGAR, OpenCorporates (generic corporate)
-- Discovered: FDA MAUDE, ClinicalTrials.gov adverse events, FDA warning letters, state pharmacy boards (case-specific)
-
-**Why dynamic?** A static file can't anticipate every investigation type. Deep research finds sources tailored to THIS case. The baseline seeds discovery; case-specific sources emerge dynamically.
-
-Full source reference: `framework/data-sources.md`
+| `/verify` | Verification checkpoint |
+| `/integrity` | Journalistic integrity check |
+| `/legal-review` | Legal risk assessment |
+| `/article` | Generate articles |
 
 ---
 
@@ -135,52 +39,9 @@ Full source reference: `framework/data-sources.md`
 | Dispatch sub-agents | Call MCP tools directly |
 | Track termination gates | Accumulate findings in memory |
 
-```
-1. READ: _state.json, _tasks.json, _coverage.json
-2. GENERATE TASKS: With required perspectives + curiosity check
-3. RUN ADVERSARIAL PASS: Generate counter-tasks
-4. EXECUTE TASKS: Parallel where independent
-5. UPDATE COVERAGE: Track metrics
-6. CHECK 8 TERMINATION GATES
-7. LOOP OR TERMINATE
-```
-
 ---
 
-## Core Philosophy: INSATIABLE CURIOSITY
-
-Every finding triggers more questions. Every person gets investigated. Every source gets traced. Every contradiction gets explored. **Every claim from ALL sides gets fact-checked.**
-
-```
-DO NOT STOP EARLY.
-
-Only stop when ALL 8 TERMINATION GATES pass:
-  1. Coverage thresholds met
-  2. No HIGH priority tasks pending
-  3. Adversarial complete
-  4. Rigor checkpoint passed (20 frameworks)
-  5. Verification passed
-  6. Quality checks passed
-  7. All positions steelmanned
-  8. No unexplored contradictions
-```
-
----
-
-## Rules Quick Reference
-
-**See `framework/rules.md` for canonical rules.**
-
-- **Sources**: `[S001]` format, append-only, every claim needs attribution
-- **Evidence**: Capture immediately with `./scripts/capture`
-- **Tasks**: 10 required perspectives + curiosity check per cycle
-- **Coverage**: Track metrics in `_coverage.json`
-- **Termination**: All 8 gates must pass
-- **State ownership**: See `framework/rules.md`
-
----
-
-## Essential Behavioral Rules
+## Core Behavioral Rules
 
 1. **Never fabricate sources** — If no evidence, say so
 2. **Steelman ALL positions** — Strongest version of EVERY side
@@ -189,11 +50,41 @@ Only stop when ALL 8 TERMINATION GATES pass:
 5. **Detect circular reporting** — Multiple outlets citing same source = 1 source
 6. **Fact-check ALL sides** — Every position gets verified
 7. **Address alternative theories** — Investigate, don't ignore
-8. **Git repo per case** — Commit after every iteration
-9. **Capture evidence immediately** — Don't wait
-10. **AI research = leads only** — Find primary sources
-11. **Generate curiosity tasks** — At least 2 per cycle
-12. **Run adversarial pass** — Don't skip uncomfortable questions
+8. **Capture evidence immediately** — Don't wait
+9. **AI research = leads only** — Find primary sources
+10. **Generate curiosity tasks** — At least 2 per cycle
+11. **Run adversarial pass** — Don't skip uncomfortable questions
+
+---
+
+## Philosophy
+
+1. **Fail fast** — Surface problems immediately
+2. **Be curious** — Explore, question assumptions, dig deeper
+3. **Don't guess, research** — Investigate first
+4. **Finish the job** — Verify completion
+5. **Commit often** — Git is our safety net
+
+---
+
+## DO NOT STOP EARLY
+
+Only stop when ALL 8 TERMINATION GATES pass. See `framework/rules.md` for complete gate definitions, coverage thresholds, and termination signals.
+
+---
+
+## Quick Reference
+
+| Topic | Canonical Source |
+|-------|------------------|
+| Source attribution (`[S001]`) | `framework/rules.md` |
+| File ownership | `framework/rules.md` |
+| Termination gates (8) | `framework/rules.md` |
+| Three-layer rigor system | `framework/architecture.md` |
+| Schema definitions | `framework/architecture.md` |
+| Dynamic source discovery | `framework/architecture.md` |
+| Investigation procedure | `.claude/commands/investigate.md` |
+| Baseline data sources | `framework/data-sources.md` |
 
 ---
 
@@ -205,15 +96,3 @@ Only stop when ALL 8 TERMINATION GATES pass:
 | Deep research (max) | mcp-openai | `deep_research` |
 | Real-time search | mcp-xai | `research`, `x_search` |
 | Cross-model critique | mcp-gemini | `generate_text` |
-| Resume timeout | gemini/openai | `check_research` |
-
----
-
-## Detailed Documentation
-
-| Topic | File |
-|-------|------|
-| Canonical rules | `framework/rules.md` |
-| Architecture | `framework/architecture.md` |
-| Investigation | `.claude/commands/investigate.md` |
-| Data sources | `framework/data-sources.md` |

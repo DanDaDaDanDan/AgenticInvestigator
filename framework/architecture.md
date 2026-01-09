@@ -86,13 +86,6 @@ Instead of fixed phases with hardcoded triggers, the system:
 
 **The LLM discovers case-specific knowledge.** Instead of relying on static reference files, the system uses deep research to find data sources tailored to THIS investigation. A pharma fraud case gets FDA databases; a hedge fund case gets FINRA sources. The baseline (data-sources.md) seeds the discovery, but case-specific sources are found dynamically.
 
-| Old (Hardcoded) | New (Dynamic) |
-|-----------------|---------------|
-| `/financial` with 6 fixed angles | Generate financial tasks specific to THIS entity |
-| `/questions` with 20 frameworks by iteration count | Perspectives required in every task generation |
-| Phase triggers: entity types, keywords | Tasks emerge from case analysis |
-| Same investigation for pharma and hedge fund | Case-specific: FDA for pharma, offshore for hedge fund |
-
 ---
 
 ## Three-Layer Rigor System
