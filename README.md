@@ -219,8 +219,8 @@ Each case has a `_state.json` for orchestrator state:
 | `/legal-review` | Run legal risk assessment |
 | `/article` | Generate publication-ready articles |
 
-### OSINT Sources
-Investigation agents have OSINT knowledge embedded directly—they automatically check SEC EDGAR, OpenCorporates, court records, ProPublica 990s, etc. based on entity type. Full source reference: `framework/data-sources.md`
+### Data Sources
+Investigation agents use dynamically discovered sources from `_sources.json`. The SOURCE DISCOVERY phase finds case-specific databases (FDA for pharma, FINRA for finance) via deep research, merged with baseline sources from `framework/data-sources.md`.
 
 ## Legal Risk Assessment (/legal-review)
 
