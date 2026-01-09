@@ -348,15 +348,15 @@ Find the primary source URL, capture it, then cite that.
 
 ### Extended Reasoning Checkpoints
 
-GPT 5.2 Pro with extended thinking provides deep adversarial reasoning at critical junctures:
+GPT 5.2 Pro with extended thinking (`reasoning_effort: high/xhigh`) at critical junctures:
 
-1. **Post-emergence adversarial** (iteration ≥ 3) — catch blind spots in forming narrative
-2. **Contradiction resolution** — reason through conflicting sources
-3. **Theory steelmanning** — genuinely strengthen uncomfortable positions
-4. **Pre-termination review** — final deep check before declaring done
-5. **Second-order implications** — what else must be true if findings are correct
+- **iteration ≥ 3**: Adversarial review of emerging narrative
+- **Contradictions found**: Reason through conflicting sources
+- **Alternative theories**: Genuinely steelman uncomfortable positions
+- **All gates passing**: Pre-termination deep review
+- **Major finding**: Second-order implications
 
-See `investigate.md` for detailed prompts.
+Provide context, ask for the type of reasoning needed. The model knows how to think deeply.
 
 ---
 
