@@ -33,6 +33,7 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 ```
 ├── _state.json                   # ORCHESTRATOR STATE (machine-readable)
 ├── _extraction.json              # Current extraction results (claims, people, entities)
+├── _sources.json                 # Case-specific data sources (dynamically discovered)
 ├── _tasks.json                   # Dynamic task queue
 ├── _coverage.json                # Coverage metrics
 ├── evidence/                     # CAPTURED EVIDENCE (hallucination-proof)
@@ -62,16 +63,18 @@ Every finding triggers more questions. Every person mentioned gets investigated.
 
 **The system generates investigation tasks dynamically** based on what the case needs—not hardcoded templates.
 
-### Key Innovation
+### Key Innovation: Dynamic Source Discovery
 
-The LLM already knows about SEC filings, 990 analysis, OSINT sources, investigative frameworks. We don't hardcode investigation angles—we generate them based on the specific case.
+Instead of relying on static reference files, the system **discovers case-specific data sources dynamically** using deep research. A pharmaceutical fraud investigation gets FDA MAUDE, ClinicalTrials.gov adverse events, and state pharmacy boards. A hedge fund investigation gets FINRA BrokerCheck, Form ADV, and SEC enforcement actions.
+
+The baseline (`framework/data-sources.md`) seeds the discovery. Case-specific sources are found via deep research and saved to `_sources.json`. This ensures:
 
 | Old Approach | New Approach |
 |--------------|--------------|
-| Fixed `/financial` with 6 angles | Tasks generated specific to THIS entity |
-| `/questions` by iteration count | Required perspectives in every task generation |
-| Phase triggers (entity types, keywords) | Tasks emerge from case analysis |
-| Same investigation for pharma and hedge fund | Case-specific: FDA for pharma, offshore for hedge fund |
+| Static source list for entity type | Sources discovered for THIS specific case |
+| Generic "corporate" sources for all | FDA for pharma, FINRA for finance, etc. |
+| May miss novel investigation types | Adapts to any topic dynamically |
+| Reference file may be stale | Always current via deep research |
 
 ### Three-Layer Rigor System
 
@@ -143,27 +146,32 @@ Each case has a `_state.json` for orchestrator state:
 │  2. EXTRACTION                                                   │
 │     → Parse findings into _extraction.json                       │
 │                                                                  │
-│  3. TASK GENERATION (core innovation)                           │
+│  3. SOURCE DISCOVERY (dynamic)                                   │
+│     → Deep research to find case-specific data sources           │
+│     → Merge baseline + discovered → _sources.json                │
+│                                                                  │
+│  4. TASK GENERATION (core innovation)                           │
 │     → Generate tasks with 10 REQUIRED PERSPECTIVES               │
+│     → Use sources from _sources.json                             │
 │     → Generate 2+ CURIOSITY tasks                                │
 │     → Write to _tasks.json                                       │
 │                                                                  │
-│  4. ADVERSARIAL PASS                                            │
+│  5. ADVERSARIAL PASS                                            │
 │     → What would disprove each claim?                           │
 │     → Generate counter-tasks for blind spots                     │
 │                                                                  │
-│  5. EXECUTE TASKS (parallel where independent)                  │
-│     → Investigation agents work on tasks                        │
+│  6. EXECUTE TASKS (parallel where independent)                  │
+│     → Investigation agents use _sources.json                     │
 │     → Update detail files, mark tasks complete                   │
 │                                                                  │
-│  6. UPDATE COVERAGE                                             │
+│  7. UPDATE COVERAGE                                             │
 │     → Calculate metrics in _coverage.json                        │
 │                                                                  │
-│  7. VERIFICATION                                                │
+│  8. VERIFICATION                                                │
 │     → Anti-hallucination check                                  │
 │     → Cross-model critique                                      │
 │                                                                  │
-│  8. TERMINATION GATE CHECK (8 gates)                           │
+│  9. TERMINATION GATE CHECK (8 gates)                           │
 │     → All pass? → SYNTHESIS + ARTICLE                           │
 │     → Any fail? → Regenerate tasks → LOOP                       │
 │                                                                  │

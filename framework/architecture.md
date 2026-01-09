@@ -42,33 +42,40 @@ Instead of fixed phases with hardcoded triggers, the system:
 │  2. EXTRACTION                                                               │
 │     → Parse findings into _extraction.json                                   │
 │                                                                              │
-│  3. TASK GENERATION (core innovation)                                        │
+│  3. SOURCE DISCOVERY (dynamic)                                               │
+│     → Use deep research to find case-specific data sources                   │
+│     → Merge baseline (data-sources.md) + discovered sources                  │
+│     → Write to _sources.json                                                 │
+│                                                                              │
+│  4. TASK GENERATION (core innovation)                                        │
 │     Generate tasks with REQUIRED PERSPECTIVES:                               │
 │     □ Money/Financial    □ Silence           □ Documents                     │
 │     □ Timeline           □ Contradictions    □ Relationships                 │
 │     □ Hypotheses         □ Assumptions       □ Counterfactual                │
 │     □ Blind Spots        + CURIOSITY CHECK (2+ tasks required)               │
+│     → Use sources from _sources.json                                         │
 │     → Write to _tasks.json                                                   │
 │                                                                              │
-│  4. ADVERSARIAL PASS                                                         │
+│  5. ADVERSARIAL PASS                                                         │
 │     For each task: What would DISPROVE it?                                   │
 │     Generate counter-tasks for blind spots                                   │
 │     → Append to _tasks.json under adversarial_tasks                          │
 │                                                                              │
-│  5. EXECUTE TASKS (parallel where independent)                               │
+│  6. EXECUTE TASKS (parallel where independent)                               │
 │     Investigation agents work on tasks                                       │
+│     → Use sources from _sources.json                                         │
 │     → Update detail files, mark tasks complete                               │
 │                                                                              │
-│  6. UPDATE COVERAGE                                                          │
+│  7. UPDATE COVERAGE                                                          │
 │     Calculate metrics: people, entities, claims, sources                     │
 │     Track perspective coverage                                               │
 │     → Write _coverage.json                                                   │
 │                                                                              │
-│  7. VERIFICATION                                                             │
+│  8. VERIFICATION                                                             │
 │     Anti-hallucination, cross-model critique, core checklist                 │
 │     → Update verification_passed                                             │
 │                                                                              │
-│  8. TERMINATION GATE CHECK                                                   │
+│  9. TERMINATION GATE CHECK                                                   │
 │     All 8 gates must pass → SYNTHESIS + ARTICLE                              │
 │     Any gate fails → Regenerate tasks → LOOP                                 │
 │                                                                              │
@@ -77,7 +84,7 @@ Instead of fixed phases with hardcoded triggers, the system:
 
 ### Why Dynamic?
 
-**The LLM already knows domain knowledge.** It knows about SEC filings, 990 analysis, defamation law, OSINT sources. We don't hardcode investigation angles—we generate them based on the specific case.
+**The LLM discovers case-specific knowledge.** Instead of relying on static reference files, the system uses deep research to find data sources tailored to THIS investigation. A pharma fraud case gets FDA databases; a hedge fund case gets FINRA sources. The baseline (data-sources.md) seeds the discovery, but case-specific sources are found dynamically.
 
 | Old (Hardcoded) | New (Dynamic) |
 |-----------------|---------------|
@@ -194,8 +201,9 @@ Each framework must be: ✓ Addressed (cite task/finding) | N/A (explain why) | 
 cases/[topic-slug]/
 ├── _state.json               # Orchestrator state
 ├── _extraction.json          # Extracted entities, claims, people
-├── _tasks.json               # Dynamic task queue (NEW)
-├── _coverage.json            # Coverage metrics (NEW)
+├── _sources.json             # Case-specific data sources (dynamically discovered)
+├── _tasks.json               # Dynamic task queue
+├── _coverage.json            # Coverage metrics
 ├── .git/                     # Version control
 ├── evidence/                 # Captured sources
 │   ├── web/SXXX/            # Screenshots, PDFs, HTML per source
@@ -292,6 +300,33 @@ cases/[topic-slug]/
   }
 }
 ```
+
+### _sources.json Schema
+
+```json
+{
+  "baseline": [
+    {
+      "name": "SEC EDGAR",
+      "url": "sec.gov/edgar",
+      "contains": "Corporate filings (10-K, 10-Q, 8-K, DEF 14A)",
+      "category": "Corporate"
+    }
+  ],
+  "discovered": [
+    {
+      "name": "FDA MAUDE Database",
+      "url": "accessdata.fda.gov/scripts/cdrh/cfdocs/cfmaude/search.cfm",
+      "contains": "Medical device adverse event reports",
+      "category": "Regulatory",
+      "relevance": "Specific to medical device investigation"
+    }
+  ],
+  "case_notes": "Pharma investigation - FDA sources prioritized over generic corporate"
+}
+```
+
+**Source Discovery**: The baseline comes from `framework/data-sources.md`. Discovered sources are found via deep research tailored to the specific investigation. This ensures case-specific sources (FDA for pharma, FINRA for finance) are surfaced dynamically.
 
 ### _extraction.json Schema
 

@@ -1,8 +1,12 @@
 # Investigative Data Sources
 
+**Baseline for Dynamic Source Discovery.** This file seeds the SOURCE DISCOVERY phase. Case-specific sources are found dynamically via deep research and merged with these baselines.
+
 Deep-web databases and open archives for investigative journalism. These are **publicly accessible but not indexed by general search engines** - you must query them directly.
 
 > **Why these matter**: Search engines only index the "surface web." The vast majority of public records, court documents, corporate filings, and government data live in databases that require direct queries. Knowing where to look is half the investigation.
+
+> **How this file is used**: During SOURCE DISCOVERY, relevant sections are selected based on entity types. Deep research then finds ADDITIONAL sources specific to the investigation (e.g., FDA databases for pharma, FINRA for finance). Both baseline and discovered sources are saved to `_sources.json` for use by investigation agents.
 
 ---
 
