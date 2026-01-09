@@ -169,29 +169,34 @@ Sub-agents update this file. Orchestrator reads it.
 
 ## Commands
 
+### Entry Point
 | Command | Purpose |
 |---------|---------|
 | `/investigate --new [topic]` | Start new investigation (topic required) |
 | `/investigate [case-id]` | Resume specific case by ID |
 | `/investigate [case-id] [topic]` | Resume case with new research direction |
-| `/verify` | Run verification checkpoint |
-| `/verify [case-id]` | Verify specific case |
+
+### Auto-Invoked by /investigate (fully agentic)
+These commands are automatically triggered during the investigation loop—no manual invocation needed:
+
+| Command | When Triggered |
+|---------|----------------|
+| `/questions` | Iteration 1, every 4th iteration, when stuck, entering finale |
+| `/financial` | When corporations, nonprofits, PACs, or money-related claims detected |
+| `/verify` | Verification phase + finale loop |
+| `/integrity` | Finale loop step 3 |
+| `/legal-review` | Finale loop step 4 |
+| `/article` | End of finale (all checks passed) |
+
+### Manual Diagnostics
+| Command | Purpose |
+|---------|---------|
 | `/status` | Show case progress |
 | `/status [case-id]` | Show status of specific case |
 | `/status --list` | List all cases |
-| `/osint` | OSINT quick reference |
-| `/osint [topic]` | OSINT sources for specific investigation type |
-| `/questions` | Generate investigative questions for active case |
-| `/questions [case-id]` | Generate questions for specific case |
-| `/financial [entity]` | Financial investigation toolkit |
-| `/financial [case-id]` | Financial analysis for existing case |
-| `/financial [case-id] [entity]` | Add financial focus to existing case |
-| `/legal-review` | Pre-publication legal risk assessment |
-| `/legal-review [case-id]` | Legal review for specific case |
-| `/integrity` | Journalistic integrity & neutrality check |
-| `/integrity [case-id]` | Integrity check for specific case |
-| `/article` | Generate publication-ready articles |
-| `/article [case-id]` | Generate articles for specific case |
+
+### OSINT Sources
+Investigation agents have OSINT knowledge embedded directly—they automatically check SEC EDGAR, OpenCorporates, court records, ProPublica 990s, etc. based on entity type. Full source reference: `framework/data-sources.md`
 
 ## The /questions Command: 20 Investigative Frameworks
 
@@ -348,9 +353,8 @@ node scripts/verify-claims.js /path/to/case
 | `.claude/commands/investigate.md` | Full investigation procedure |
 | `.claude/commands/verify.md` | Verification checkpoint procedure |
 | `.claude/commands/status.md` | Status command procedure |
-| `.claude/commands/osint.md` | OSINT database sources |
 | `.claude/commands/questions.md` | Question generation procedure |
-| `.claude/commands/financial.md` | Financial investigation toolkit |
+| `.claude/commands/financial.md` | Financial investigation toolkit (auto-invoked) |
 | `.claude/commands/legal-review.md` | Legal risk assessment procedure |
 | `.claude/commands/integrity.md` | Integrity check procedure |
 | `.claude/commands/article.md` | Article generation procedure |

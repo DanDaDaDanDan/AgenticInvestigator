@@ -108,6 +108,37 @@ Run `/questions` at these points (not every iteration):
 
 ---
 
+## /financial Trigger Rules
+
+Auto-invoke `/financial` when ANY of these are true:
+
+| Condition | Investigation Focus |
+|-----------|---------------------|
+| Entity type: `corporation` | SEC filings, ownership, contracts, litigation |
+| Entity type: `nonprofit` or `foundation` | 990 analysis, compensation, related parties |
+| Entity type: `PAC` | FEC filings, donor analysis, expenditures |
+| Claims involve money/funding/contracts/fraud | Financial verification, money trails |
+| "Follow the Money" questions generated | Full financial investigation toolkit |
+
+**Why auto-invoke?** "Follow the Money" is framework #1. Financial angles are critical to most investigations but easy to skip without explicit triggers.
+
+---
+
+## OSINT Source Embedding
+
+Investigation agents have OSINT knowledge embedded directly—no manual /osint command exists.
+
+| Entity Type | Sources Agents Check |
+|-------------|---------------------|
+| Person | OpenCorporates, courts, OpenSanctions, ICIJ, campaign finance, property |
+| Corporation | SEC EDGAR, State SOS, OpenCorporates, USAspending, courts, GLEIF |
+| Nonprofit | ProPublica 990s, Candid, IRS Tax Exempt, state charity registration |
+| Government | USAspending, GAO/OIG reports, FOIA libraries, Federal Register |
+
+Full reference: `framework/data-sources.md`
+
+---
+
 ## Termination Signals
 
 **You ARE likely done when:**

@@ -51,6 +51,11 @@ AgenticInvestigator is an orchestrated multi-agent system that investigates cont
 │  PHASE 3: INVESTIGATION                                                      │
 │    For each person/entity/claim → investigate in parallel                    │
 │    Capture evidence, verify claims, update detail files                      │
+│    Agents use OSINT sources from framework/data-sources.md                   │
+│                                                                              │
+│  PHASE 3.5: FINANCIAL (conditional)                                          │
+│    Auto-invoke /financial when triggers present                              │
+│    Deep financial investigation on corporations, nonprofits, PACs            │
 │                                                                              │
 │  PHASE 4: VERIFICATION                                                       │
 │    Anti-hallucination check (verify claims in evidence)                      │
@@ -80,6 +85,20 @@ Run `/questions` when ANY of these are true:
 | Claiming saturation/completion | Late: Counterfactual, Pre-Mortem, Cognitive Bias, Second-Order |
 
 **Purpose**: Prevent tunnel vision, surface blind spots, ensure systematic framework coverage.
+
+### /financial Trigger Conditions
+
+Run `/financial` when ANY of these are true:
+
+| Condition | What It Does |
+|-----------|--------------|
+| _extraction.json contains `type: corporation` | Corporate structure, SEC filings, ownership chains |
+| _extraction.json contains `type: nonprofit/foundation` | 990 analysis, compensation, related parties |
+| _extraction.json contains `type: PAC` | FEC filings, donor analysis, expenditures |
+| Claims involve money/funding/contracts/fraud | Financial verification, money trails |
+| /questions generated "Follow the Money" | Full financial investigation toolkit |
+
+**Purpose**: "Follow the Money" is framework #1. Auto-invocation ensures financial angles are never skipped.
 
 ---
 
@@ -172,7 +191,7 @@ cases/[topic-slug]/
 ```
 
 **Status values:** `IN_PROGRESS`, `COMPLETE`, `PAUSED`, `ERROR`
-**Phase values:** `SETUP`, `RESEARCH`, `EXTRACTION`, `QUESTIONS`, `INVESTIGATION`, `VERIFICATION`, `SYNTHESIS`, `FINALE`, `COMPLETE`
+**Phase values:** `SETUP`, `RESEARCH`, `EXTRACTION`, `QUESTIONS`, `INVESTIGATION`, `FINANCIAL`, `VERIFICATION`, `SYNTHESIS`, `FINALE`, `COMPLETE`
 
 ### _extraction.json Schema
 
@@ -194,15 +213,15 @@ cases/[topic-slug]/
 ## Phase State Machine
 
 ```
-SETUP → RESEARCH → EXTRACTION → QUESTIONS? → INVESTIGATION → VERIFICATION
-                                    │                             ↓
-                                    │          ↑←←← gaps > 0 ←←←←←|
-                    (conditional:   │          ↑                   ↓
-                     iter==1,       │  RESEARCH ←← (!passed)       |
-                     iter%4==0,     │                              ↓
-                     stuck)         │      SYNTHESIS ←←←←←←←←←←←←←| (passed && gaps==0)
-                                    │          ↓
-                                    │          → RESEARCH (new iteration)
+SETUP → RESEARCH → EXTRACTION → QUESTIONS? → INVESTIGATION → FINANCIAL? → VERIFICATION
+                                    │               │               │           ↓
+                                    │               │               │   ↑←← gaps > 0 ←←|
+                    (conditional:   │   (conditional:               │   ↑              ↓
+                     iter==1,       │    financial entities)        │   RESEARCH ←← (!passed)
+                     iter%4==0,     │                               │              ↓
+                     stuck)         │                               │   SYNTHESIS ←←| (passed && gaps==0)
+                                    │                               │       ↓
+                                    ↓                               ↓       → RESEARCH (new iteration)
                                     │          → FINALE (if passed && no gaps)
                                     │
                                     ↓
