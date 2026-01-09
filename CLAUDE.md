@@ -46,7 +46,6 @@ When modifying system behavior, keep in sync:
 | `/integrity` | Run journalistic integrity check |
 | `/legal-review` | Run legal risk assessment |
 | `/article` | Generate publication-ready articles |
-| `/status` | Check investigation progress |
 
 ---
 
