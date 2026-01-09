@@ -54,24 +54,37 @@ cases/[topic-slug]/
 ```
 
 **Status values:** `IN_PROGRESS`, `COMPLETE`, `PAUSED`, `ERROR`
-**Phase values:** `SETUP`, `RESEARCH`, `EXTRACTION`, `INVESTIGATION`, `VERIFICATION`, `SYNTHESIS`, `COMPLETE`
+**Phase values:** `SETUP`, `RESEARCH`, `EXTRACTION`, `QUESTIONS`, `INVESTIGATION`, `FINANCIAL`, `VERIFICATION`, `SYNTHESIS`, `FINALE`, `COMPLETE`
 
 ---
 
 ## Phase State Machine
 
 ```
-SETUP → RESEARCH → EXTRACTION → INVESTIGATION → VERIFICATION
-                                                    ↓
-                    ↑←←← gaps.length > 0 ←←←←←←←←←←←|
-                    ↑                                ↓
-RESEARCH ←←←←←←←←←←←| (!passed && gaps.length == 0) |
-                                                    ↓
-                    SYNTHESIS ←←←←←←←←←←←←←←←←←←←←←←| (passed)
-                        ↓
-                        → RESEARCH (new iteration)
-                        → COMPLETE (if passed && no gaps)
+SETUP → RESEARCH → EXTRACTION → QUESTIONS? → INVESTIGATION → FINANCIAL? → VERIFICATION
+                                    │                            │              ↓
+                                    │                            │   ↑←← gaps > 0 ←←|
+                    (conditional:   │      (conditional:         │   ↑              ↓
+                     iter==1,       │       financial entities)  │   RESEARCH ←← (!passed)
+                     iter%4==0,     │                            │              ↓
+                     stuck)         │                            │   SYNTHESIS ←←| (passed && gaps==0)
+                                    │                            │       ↓
+                                    ↓                            ↓       → FINALE (if passed && no gaps)
+
+FINALE LOOP: /questions (late) → /verify → /integrity → /legal-review → /article
+             (any failure returns to RESEARCH or re-runs /verify)
 ```
+
+### /questions Triggers
+- `iteration == 1` (early mapping)
+- `iteration % 4 == 0` (periodic fresh perspective)
+- Verification fails with unclear gaps (stuck)
+- Entering finale (adversarial check)
+
+### /financial Triggers
+- _extraction.json contains entities with type: `corporation`, `nonprofit`, `PAC`, `foundation`
+- Claims involve: money, funding, contracts, fraud, spending, compensation
+- Questions generated include financial frameworks (Follow the Money)
 
 ---
 
@@ -179,8 +192,22 @@ Task tool:
     ITERATION: [N]
 
     Follow framework/rules.md for source attribution and evidence capture.
+    Consult framework/data-sources.md for OSINT databases.
 
     Research: background, career, role in story, all statements.
+
+    OSINT SOURCES (deep web - not Google-indexed):
+    - OpenCorporates: Business connections, officer/director positions
+    - State SOS registries: Corporate roles, registered agent
+    - SEC EDGAR: Insider transactions, beneficial ownership (if public co)
+    - OpenSanctions: PEP status, sanctions, watchlists
+    - ICIJ Offshore Leaks: Offshore connections
+    - CourtListener/PACER: Federal lawsuits (plaintiff/defendant)
+    - State court portals: State-level litigation
+    - OpenSecrets/FEC: Political donations, PAC affiliations
+    - County assessor: Property ownership (if jurisdiction known)
+    - Professional license DBs: Disciplinary actions (lawyers, doctors, etc.)
+    - LinkedIn/professional associations: Career timeline verification
 
     Statement searches:
     - "[name] testimony Congress hearing deposition"
@@ -198,7 +225,7 @@ Task tool:
 
     Update: people.md, sources.md, _state.json (people_count, next_source_id)
 
-    RETURN: Brief status (sources added, contradictions found)
+    RETURN: Brief status (sources added, contradictions found, OSINT hits)
 ```
 
 ### Entity Investigation Agent
@@ -211,24 +238,52 @@ Task tool:
     TASK: Investigate entity
     CASE: cases/[case-id]/
     ENTITY: [name]
-    TYPE: [corporation/agency/ngo/etc.]
+    TYPE: [corporation/nonprofit/agency/PAC/foundation/etc.]
 
     Follow framework/rules.md for source attribution and evidence capture.
+    Consult framework/data-sources.md for OSINT databases.
 
     Research: corporate structure, ownership, subsidiaries, relationships.
 
-    Searches:
-    - SEC EDGAR filings
-    - State Secretary of State
-    - OpenCorporates, ICIJ Offshore Leaks
-    - Court records, regulatory actions
+    OSINT SOURCES BY ENTITY TYPE:
+
+    FOR CORPORATIONS:
+    - SEC EDGAR: 10-K, 10-Q, 8-K, proxy statements, insider transactions
+    - State SOS: Incorporation docs, officers, registered agent, amendments
+    - OpenCorporates: Cross-jurisdictional presence, officer networks
+    - ICIJ Offshore Leaks: Offshore subsidiaries, hidden structures
+    - OpenSanctions: Sanctions, PEP connections
+    - USAspending.gov: Federal contracts and grants received
+    - CourtListener/PACER: Litigation history
+    - GLEIF: Legal Entity Identifier, ownership chain
+
+    FOR NONPROFITS:
+    - ProPublica Nonprofit Explorer: 990 filings (revenue, compensation, grants)
+    - Candid/GuideStar: Ratings, financials, board
+    - IRS Tax Exempt Search: EIN verification, status
+    - State charity registration: Compliance status
+    - Schedule J (990): Executive compensation details
+    - Related party transactions in 990
+
+    FOR GOVERNMENT AGENCIES:
+    - Agency websites: Leadership, org charts, budgets
+    - USAspending.gov: Spending data
+    - GAO/OIG reports: Audits, investigations
+    - FOIA libraries: Released documents
+    - Federal Register: Regulatory actions
+
+    FOR PACs/POLITICAL:
+    - FEC database: Contributions, expenditures
+    - OpenSecrets: Donor analysis, spending patterns
+    - State campaign finance portals
 
     Map: parent company, subsidiaries, beneficial owners, key relationships.
     Document timeline: founded, acquisitions, leadership changes, events.
+    Flag red flags: multiple holding layers, secrecy jurisdictions, nominee directors.
 
     Update: organizations.md, sources.md, _state.json
 
-    RETURN: Brief status (structure mapped, sources added, red flags)
+    RETURN: Brief status (structure mapped, sources added, red flags found)
 ```
 
 ### Claim Verification Agent
@@ -242,20 +297,83 @@ Task tool:
     CASE: cases/[case-id]/
     CLAIM: [claim text]
     POSITION: [which position this supports]
+    CLAIM_TYPE: [financial/legal/factual/statement/statistical]
 
     Follow framework/rules.md for source attribution and evidence capture.
+    Consult framework/data-sources.md for OSINT databases.
 
-    Search for supporting and contradicting evidence.
+    Search for supporting AND contradicting evidence.
     Check for circular reporting (outlets citing same original = 1 source).
+
+    SOURCE SUGGESTIONS BY CLAIM TYPE:
+
+    FINANCIAL CLAIMS (money amounts, contracts, spending):
+    - USAspending.gov: Federal contract/grant verification
+    - SEC EDGAR: Financial disclosures, revenue figures
+    - ProPublica 990s: Nonprofit financials
+    - OpenSecrets: Political spending verification
+
+    LEGAL CLAIMS (lawsuits, charges, verdicts):
+    - CourtListener/PACER: Federal case verification
+    - State court portals: State case verification
+    - Google Scholar Case Law: Appellate opinions
+
+    STATEMENT CLAIMS (someone said X):
+    - Original source: Find the actual transcript/video/document
+    - Wayback Machine: If original deleted
+    - Compare across multiple independent reports
+
+    STATISTICAL CLAIMS (numbers, percentages, studies):
+    - Original study/report: Find primary source
+    - Government statistics: BLS, Census, agency data
+    - Academic databases: Google Scholar, JSTOR
+
+    CORPORATE CLAIMS (company did X):
+    - SEC filings: Official disclosures
+    - Press releases: Company statements
+    - Court records: Legal proceedings
+
     Capture evidence, verify claim exists in captured file.
 
     Verdict: VERIFIED | DEBUNKED | PARTIAL | UNVERIFIED | CONTESTED
     Confidence: range [low, high]
+    Evidence quality: PRIMARY (original source) | SECONDARY (reporting) | TERTIARY (aggregated)
 
     Update: fact-check.md, sources.md, _state.json
 
-    RETURN: Verdict, source count, confidence range
+    RETURN: Verdict, source count, confidence range, evidence quality
 ```
+
+---
+
+## Phase 3.5: FINANCIAL (conditional)
+
+**Auto-invoke /financial when trigger conditions met.**
+
+Check _extraction.json for triggers:
+- Entities with type: `corporation`, `nonprofit`, `PAC`, `foundation`
+- Claims containing keywords: money, funding, contracts, fraud, spending, compensation, revenue, profit
+- Any "Follow the Money" questions generated
+
+```
+IF financial_triggers_present:
+  Invoke /financial skill for each financial entity
+
+  The /financial skill dispatches parallel agents for:
+  - Corporate structure (ownership, subsidiaries, directors)
+  - SEC/regulatory filings (10-K, 10-Q, proxy, enforcement)
+  - Offshore/shell company search (ICIJ leaks, OpenSanctions)
+  - Political money (FEC, lobbying, government contracts)
+  - Litigation & enforcement (lawsuits, SEC actions, bankruptcies)
+  - Real-time financial news
+
+  Results written to: research-leads/financial-[entity]-*.md
+  Synthesis written to: financial-[entity].md
+
+  Update _state.json: phase → FINANCIAL
+```
+
+**Why auto-invoke?** "Follow the Money" is framework #1. Financial investigations are critical but easy to skip. Auto-invocation ensures financial angles are always explored when relevant.
 
 ---
 

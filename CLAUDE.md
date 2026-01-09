@@ -33,18 +33,26 @@ When modifying system behavior, keep in sync:
 
 ## Commands
 
+### Entry Point
 | Command | Purpose |
 |---------|---------|
 | `/investigate --new [topic]` | Start new investigation |
 | `/investigate [case-id]` | Resume case |
-| `/verify` | Verification checkpoint |
-| `/status` | Case progress |
-| `/questions` | Generate investigative questions |
-| `/financial [entity]` | Financial investigation |
-| `/legal-review` | Legal risk assessment |
-| `/integrity` | Journalistic integrity check |
-| `/article` | Generate articles |
-| `/osint` | OSINT reference |
+
+### Auto-Invoked by /investigate (agentic flow)
+| Command | When Triggered |
+|---------|----------------|
+| `/questions` | Iteration 1, every 4th iteration, when stuck, entering finale |
+| `/financial` | When financial entities or money-related claims detected |
+| `/verify` | Verification phase + finale loop |
+| `/integrity` | Finale loop step 3 |
+| `/legal-review` | Finale loop step 4 |
+| `/article` | End of finale (all checks passed) |
+
+### Manual Diagnostics
+| Command | Purpose |
+|---------|---------|
+| `/status` | Check investigation progress |
 
 ---
 
@@ -84,6 +92,37 @@ Run `/questions` at key points to prevent tunnel vision:
 | `iteration % 4 == 0` | Mid: Add ACH, Assumptions, Patterns, Meta, 5 Whys |
 | Verification fails with unclear gaps | Stuck: Pre-Mortem, Bias Check, Uncomfortable Questions |
 | Entering finale | Late: Counterfactual, Pre-Mortem, Cognitive Bias, Second-Order |
+
+---
+
+## /financial Integration
+
+Auto-invoke `/financial` when triggers detected in _extraction.json:
+
+| Trigger | Investigation Focus |
+|---------|---------------------|
+| Entity type: `corporation` | SEC filings, ownership chains, contracts |
+| Entity type: `nonprofit/foundation` | 990 analysis, compensation, related parties |
+| Entity type: `PAC` | FEC filings, donor analysis, expenditures |
+| Claims involving money/funding/contracts/fraud | Financial verification, money trails |
+| "Follow the Money" questions generated | Full financial toolkit |
+
+**Why auto-invoke?** "Follow the Money" is framework #1. Financial angles are critical but easy to skip.
+
+---
+
+## OSINT Source Knowledge
+
+Investigation agents embed OSINT source knowledge directly (no manual /osint command).
+
+| Entity Type | Sources Checked |
+|-------------|-----------------|
+| Person | OpenCorporates, courts, OpenSanctions, ICIJ, campaign finance |
+| Corporation | SEC EDGAR, State SOS, OpenCorporates, USAspending, courts |
+| Nonprofit | ProPublica 990s, Candid, IRS, state charity registration |
+| Government | USAspending, GAO/OIG reports, FOIA libraries |
+
+Full source reference: `framework/data-sources.md`
 
 ---
 
