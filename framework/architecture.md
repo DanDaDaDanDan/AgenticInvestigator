@@ -216,170 +216,68 @@ cases/[topic-slug]/
 └── (quality check files generated dynamically)
 ```
 
-### _state.json Schema
+### State Files
 
-```json
-{
-  "case_id": "topic-slug",
-  "topic": "Original investigation topic",
-  "status": "IN_PROGRESS",
-  "current_iteration": 5,
-  "current_phase": "INVESTIGATION",
-  "next_source_id": "S048",
-  "verification_passed": false,
-  "adversarial_complete": false,
-  "rigor_checkpoint_passed": false,
-  "quality_checks_passed": false,
-  "created_at": "2026-01-07T09:00:00Z",
-  "updated_at": "2026-01-08T10:30:00Z"
-}
-```
+State files enable agent coordination. Only required fields are specified—the LLM structures the rest naturally.
 
-**Status values:** `IN_PROGRESS`, `COMPLETE`, `PAUSED`, `ERROR`
+**_state.json** — Orchestrator state
 
-### _tasks.json Schema
+| Required Field | Purpose |
+|----------------|---------|
+| `case_id`, `topic` | Case identification |
+| `status` | `IN_PROGRESS` &#124; `COMPLETE` &#124; `PAUSED` &#124; `ERROR` |
+| `current_phase` | Workflow phase for orchestrator decisions |
+| `current_iteration` | Iteration counter (updated by Synthesis Agent) |
+| `next_source_id` | Next available source ID (e.g., "S048") |
+| `verification_passed` | Termination gate flag |
+| `adversarial_complete` | Termination gate flag |
+| `rigor_checkpoint_passed` | Termination gate flag |
+| `quality_checks_passed` | Termination gate flag |
 
-```json
-{
-  "tasks": [
-    {
-      "id": "T001",
-      "description": "Investigate FDA approval history for [drug]",
-      "perspective": "Documents",
-      "entity": "PharmaCorp",
-      "priority": "HIGH",
-      "status": "pending|in_progress|completed",
-      "rationale": "Central to efficacy claims",
-      "approach": "FDA database, ClinicalTrials.gov, SEC 10-K",
-      "success_criteria": "Timeline of approval with key decision points",
-      "generated_at": "iteration_2",
-      "completed_at": null,
-      "findings_file": null
-    }
-  ],
-  "adversarial_tasks": [],
-  "rigor_gap_tasks": []
-}
-```
+**_tasks.json** — Dynamic task queue
 
-### _coverage.json Schema
+Three arrays: `tasks`, `adversarial_tasks`, `rigor_gap_tasks`
 
-```json
-{
-  "people": { "mentioned": 15, "investigated": 13 },
-  "entities": { "mentioned": 8, "investigated": 7 },
-  "claims": { "total": 24, "verified": 18 },
-  "sources": { "cited": 47, "captured": 47 },
-  "positions": { "identified": 4, "documented": 4 },
-  "contradictions": { "identified": 6, "explored": 6 },
-  "perspectives_covered": {
-    "Money": true,
-    "Timeline": true,
-    "Silence": false,
-    "Documents": true,
-    "Contradictions": true,
-    "Relationships": true,
-    "Hypotheses": true,
-    "Assumptions": false,
-    "Counterfactual": true,
-    "BlindSpots": true
-  },
-  "frameworks_validated": 16,
-  "depth_metrics": {
-    "primary_sources": 28,
-    "secondary_sources": 19,
-    "direct_evidence": 22,
-    "circumstantial": 12
-  }
-}
-```
+Each task requires: `id` (T### format), `status` (pending/in_progress/completed), `priority` (HIGH/MEDIUM/LOW)
 
-### _sources.json Schema
+Tasks naturally include description, perspective, rationale, approach, success_criteria, etc.
 
-```json
-{
-  "baseline": [
-    {
-      "name": "SEC EDGAR",
-      "url": "sec.gov/edgar",
-      "contains": "Corporate filings (10-K, 10-Q, 8-K, DEF 14A)",
-      "category": "Corporate"
-    }
-  ],
-  "discovered": [
-    {
-      "name": "FDA MAUDE Database",
-      "url": "accessdata.fda.gov/scripts/cdrh/cfdocs/cfmaude/search.cfm",
-      "contains": "Medical device adverse event reports",
-      "category": "Regulatory",
-      "relevance": "Specific to medical device investigation"
-    }
-  ],
-  "case_notes": "Pharma investigation - FDA sources prioritized over generic corporate"
-}
-```
+**_coverage.json** — Coverage metrics for termination gates
 
-**Source Discovery**: The baseline comes from `framework/data-sources.md`. Discovered sources are found via deep research tailored to the specific investigation. This ensures case-specific sources (FDA for pharma, FINRA for finance) are surfaced dynamically.
+| Required Category | Fields | Threshold |
+|-------------------|--------|-----------|
+| `people` | mentioned, investigated | ≥ 90% |
+| `entities` | mentioned, investigated | ≥ 90% |
+| `claims` | total, verified | ≥ 80% |
+| `sources` | cited, captured | = 100% |
+| `positions` | identified, documented | = 100% |
+| `contradictions` | identified, explored | = 100% |
 
-### _extraction.json Schema
+**_sources.json** — Case-specific data sources
 
-```json
-{
-  "iteration": 5,
-  "people": [{"name": "...", "role": "...", "needs_investigation": true}],
-  "entities": [{"name": "...", "type": "corporation", "jurisdiction": "..."}],
-  "claims": [{"text": "...", "position": "Critics", "needs_verification": true}],
-  "events": [{"date": "...", "event": "...", "entities_involved": [...]}],
-  "statements": [{"speaker": "...", "date": "...", "venue": "...", "summary": "..."}],
-  "contradictions": [{"description": "...", "sources": [...]}],
-  "sources_to_capture": [{"url": "...", "type": "news", "priority": "HIGH"}]
-}
-```
+Two arrays: `baseline` (from `framework/data-sources.md`), `discovered` (found via deep research for this case)
+
+Each source naturally includes name, url, what it contains, category, relevance.
+
+**_extraction.json** — Extracted entities from research
+
+Internal to extraction agent. Typically includes people, entities, claims, events, contradictions, sources_to_capture.
+
+**State update ownership**: See `framework/rules.md` for which agent updates each field.
 
 ---
 
-## Termination Gates (8 Required)
+## Termination
 
-**ALL must be true to terminate:**
+**8 gates must pass to terminate.** See `framework/rules.md` for complete gate definitions.
 
-```
-1. Coverage thresholds met:
-   □ People: investigated/mentioned ≥ 90%
-   □ Entities: investigated/mentioned ≥ 90%
-   □ Claims: verified/total ≥ 80%
-   □ Sources: captured/cited = 100%
-   □ Positions: documented/identified = 100%
-   □ Contradictions: explored/identified = 100%
-
-2. No HIGH priority tasks pending
-
-3. adversarial_complete == true
-
-4. rigor_checkpoint_passed == true (20 frameworks validated)
-
-5. verification_passed == true (anti-hallucination, core checklist)
-
-6. quality_checks_passed == true (integrity + legal)
-
-7. All positions steelmanned
-
-8. No unexplored contradictions
-```
+In brief: coverage thresholds (see _coverage.json above), no HIGH tasks pending, all four `_passed` flags true, all positions steelmanned, no unexplored contradictions.
 
 **If ANY gate fails → generate tasks to address → loop.**
 
-### Termination Signals
+**You ARE likely done when:** Same sources across engines, task generation yields duplicates, coverage at thresholds.
 
-**You ARE likely done when:**
-- Same sources appear across all research engines
-- New task generation yields mostly duplicates
-- Rigor checkpoint finds all frameworks ✓ or N/A
-- Coverage metrics at thresholds
-
-**You are NOT done because:**
-- You've completed many iterations
-- It "feels" complete
-- Most gates are passing
+**You are NOT done because:** Many iterations completed, it "feels" done, most gates passing.
 
 ---
 
