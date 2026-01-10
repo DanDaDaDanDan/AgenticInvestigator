@@ -13,14 +13,20 @@ You are a **capture agent**. Your job is to capture web sources as evidence and 
 /capture-source --document S002 https://sec.gov/file.pdf  # Capture PDF document
 ```
 
+Case resolution order:
+1. Explicit `[case-id]` (when provided by orchestrator)
+2. `cases/.active` (set via `node scripts/active-case.js set <case-id>`)
+3. Current working directory (if run inside a case)
+4. Error with hint
+
 ---
 
 ## Purpose
 
 Evidence capture is critical for anti-hallucination:
-1. **Prove existence** — Source existed at research time
-2. **Prove content** — Evidence actually contains cited claims
-3. **Permanence** — Content preserved even if URL disappears
+1. **Prove existence** - Source existed at research time
+2. **Prove content** - Evidence actually contains cited claims
+3. **Permanence** - Content preserved even if URL disappears
 
 ---
 
@@ -28,11 +34,11 @@ Evidence capture is critical for anti-hallucination:
 
 ```
 1. VALIDATE: Check URL is valid
-2. ASSIGN: Get next source ID from _state.json (next_source_id)
+2. ASSIGN: Get next source ID from state.json (or infer from sources.json)
 3. CAPTURE: Run capture script
 4. VERIFY: Check evidence folder exists with required files
 5. REGISTER: Add to sources.md with evidence path
-6. UPDATE: Increment next_source_id in _state.json
+6. UPDATE: Increment next_source_id in state.json (optional convenience counter)
 ```
 
 ---
@@ -42,24 +48,24 @@ Evidence capture is critical for anti-hallucination:
 ### Web Page Capture
 
 ```bash
-node scripts/capture-url.js S001 https://example.com cases/[case-id]/evidence/web/S001
+node scripts/capture.js S001 https://example.com cases/[case-id]
 ```
 
 Creates:
-- `evidence/web/S001/capture.html` — Raw HTML
-- `evidence/web/S001/capture.png` — Full-page screenshot
-- `evidence/web/S001/capture.pdf` — PDF rendering
-- `evidence/web/S001/metadata.json` — Timestamps, hashes, status
+- `evidence/web/S001/capture.html` - Raw HTML
+- `evidence/web/S001/capture.png` - Full-page screenshot
+- `evidence/web/S001/capture.pdf` - PDF rendering
+- `evidence/web/S001/metadata.json` - Timestamps, hashes, status
 
 ### Document Capture
 
 ```bash
-node scripts/capture-evidence.js --document S002 https://sec.gov/file.pdf cases/[case-id]/evidence/documents
+node scripts/capture.js --document S002 https://sec.gov/file.pdf cases/[case-id]
 ```
 
 Creates:
-- `evidence/documents/S002_filename.pdf` — The document
-- `evidence/documents/S002_filename.pdf.meta.json` — Metadata
+- `evidence/documents/S002_filename.pdf` - The document
+- `evidence/documents/S002_filename.pdf.meta.json` - Metadata
 
 ### Bot-Bypass Capture (Cloudflare-protected sites)
 
@@ -91,7 +97,7 @@ cat cases/[case-id]/evidence/web/S001/metadata.json | jq '.files'
 
 ```bash
 node scripts/verify-sources.js cases/[case-id]
-# Check S001 shows ✓ (valid) not ✗ (missing)
+# Check S001 shows OK (valid) not NO (missing)
 ```
 
 ---
@@ -104,7 +110,7 @@ After successful capture, add to `sources.md`:
 | S001 | Primary | [Description] | [URL] | [Captured Date] |
 ```
 
-And update `_sources.json` (if exists):
+And update `sources.json` (if exists):
 
 ```json
 {
@@ -122,10 +128,10 @@ And update `_sources.json` (if exists):
 
 ## Anti-Hallucination Rules
 
-1. **Never cite before capture** — No `[S001]` until evidence exists
-2. **Never fake capture dates** — Only write date after successful capture
-3. **Always verify** — Check evidence folder before registering
-4. **Report failures** — If capture fails, don't hide it
+1. **Never cite before capture** - No `[S001]` until evidence exists
+2. **Never fake capture dates** - Only write date after successful capture
+3. **Always verify** - Check evidence folder before registering
+4. **Report failures** - If capture fails, don't hide it
 
 ---
 
@@ -133,10 +139,10 @@ And update `_sources.json` (if exists):
 
 If capture fails:
 
-1. **Try alternate method** — Firecrawl for bot-protected, wget for simple pages
-2. **Check Wayback Machine** — `./scripts/find-wayback-url.js`
-3. **Document failure** — Note in sources.md that capture failed
-4. **Do NOT cite** — Cannot use `[SXXX]` without evidence
+1. **Try alternate method** - Firecrawl for bot-protected, wget for simple pages
+2. **Check Wayback Machine** - `./scripts/find-wayback-url.js`
+3. **Document failure** - Note in sources.md that capture failed
+4. **Do NOT cite** - Cannot use `[SXXX]` without evidence
 
 ---
 

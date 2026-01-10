@@ -18,33 +18,47 @@ For Firecrawl (optional but recommended for bot-protected sites):
 
 ## Core Scripts
 
-### `capture`
+### `active-case.js`
 
-Main entry point for capturing web page evidence. Creates screenshots, PDFs, and HTML captures.
+Set or resolve the active case (`cases/.active`) so tools can omit the case argument.
+
+```bash
+node scripts/active-case.js set old-raleigh-murder
+node scripts/active-case.js get
+node scripts/active-case.js resolve
+```
+
+---
+
+### `capture.js` (recommended)
+
+Cross-platform entry point for capturing web page evidence. Creates screenshots/PDFs/HTML when Playwright is available, and falls back to HTML-only capture when it isn't.
 
 **Web Page Capture:**
 ```bash
-./scripts/capture S001 https://example.com/article
-./scripts/capture S001 https://example.com/article /path/to/case
+node scripts/capture.js S001 https://example.com/article cases/[case-id]
+node scripts/capture.js S001 https://example.com/article   # uses cases/.active or current dir
 ```
 
 **Document Download:**
 ```bash
-./scripts/capture --document S015 https://sec.gov/filing.pdf
-./scripts/capture --document S015 https://sec.gov/filing.pdf 10k_2024.pdf
+node scripts/capture.js --document S015 https://sec.gov/filing.pdf
+node scripts/capture.js --document S015 https://sec.gov/filing.pdf 10k_2024.pdf cases/[case-id]
 ```
+
+**Note:** `scripts/capture` is a bash wrapper (WSL/Git Bash). On Windows, prefer `node scripts/capture.js`.
 
 **Output:**
 ```
 evidence/
-├── web/S001/
-│   ├── capture.png      # Full-page screenshot
-│   ├── capture.pdf      # PDF rendering
-│   ├── capture.html     # Raw HTML source
-│   └── metadata.json    # Capture metadata with hashes
-└── documents/
-    ├── S015_10k_2024.pdf
-    └── S015_10k_2024.pdf.meta.json
++-- web/S001/
+|   +-- capture.png      # Full-page screenshot
+|   +-- capture.pdf      # PDF rendering
+|   +-- capture.html     # Raw HTML source
+|   +-- metadata.json    # Capture metadata with hashes
++-- documents/
+    +-- S015_10k_2024.pdf
+    +-- S015_10k_2024.pdf.meta.json
 ```
 
 ---
@@ -140,7 +154,7 @@ node scripts/capture-evidence.js urls.txt /path/to/case --archivebox
 
 ### `verify-all-gates.js`
 
-**Master termination gate checker.** Runs all 9 gates and outputs `_gate_results.json`.
+**Master termination gate checker.** Runs all 9 gates and outputs `gate_results.json`.
 
 ```bash
 node scripts/verify-all-gates.js cases/[case-id]
@@ -180,6 +194,25 @@ node scripts/verify-source-content.js cases/[case-id] --json
 
 ---
 
+### `verify-citation-density.js`
+
+**Citation density validator.** Ensures summary.md has sufficient source citations.
+
+```bash
+node scripts/verify-citation-density.js cases/[case-id]
+node scripts/verify-citation-density.js cases/[case-id] --verbose  # Show uncited lines
+```
+
+**Checks:**
+- summary.md exists and has content
+- 100% of factual statements have `[SXXX]` citations (configurable via `scripts/config.js`)
+- Key sections (Key Findings, Timeline, etc.) have citations
+- No large blocks of uncited factual content
+
+**CRITICAL:** Investigation cannot terminate if summary.md has zero citations or low citation density.
+
+---
+
 ### `verify-state-consistency.js`
 
 **State vs filesystem validator.** Compares what state files claim vs what exists.
@@ -190,58 +223,108 @@ node scripts/verify-state-consistency.js cases/[case-id] --fix  # Show fix sugge
 ```
 
 **Checks:**
-- `_sources.json` entries vs `evidence/web/` folders
-- `_coverage.json` counts vs actual files
-- `_tasks.json` completed tasks vs output files
-- `_state.json` flags vs verification results
+- `sources.md` entries vs `evidence/web/` folders
+- Coverage counts computed from actual files (evidence, findings, claims)
+- `tasks/*.json` completed tasks vs output files
+- `state.json` minimal schema sanity (flat, small)
 
 ---
 
-### `verify-audit-trail.js`
+### `validate-schema.js`
 
-**Audit trail completeness checker.** Verifies all actions are logged.
+**Minimal schema validator** for core case files (prevents silent drift).
 
 ```bash
-node scripts/verify-audit-trail.js cases/[case-id]
-node scripts/verify-audit-trail.js cases/[case-id] --fix
+node scripts/validate-schema.js cases/[case-id]
+node scripts/validate-schema.js cases/[case-id] --json
 ```
-
-**Checks:**
-- `_audit.json` exists with entries
-- `iterations.md` exists with content
-- Completed tasks are logged
-- Source captures are logged
 
 ---
 
-## Audit Trail Scripts
+### `verify-sources-dedup.js`
 
-### `audit-append.js`
+Detect duplicate URLs mapped to multiple `S###` IDs (can inflate "independent" corroboration).
 
-**Append entries to `_audit.json`.** Atomic append-only logging.
+```bash
+node scripts/verify-sources-dedup.js cases/[case-id]
+node scripts/verify-sources-dedup.js cases/[case-id] --json
+```
+
+---
+
+### `verify-circular-reporting.js`
+
+Heuristic circular reporting detection (AP/Reuters/etc). Flags claims whose supporting sources appear to share the same origin.
+
+```bash
+node scripts/verify-circular-reporting.js cases/[case-id]
+node scripts/verify-circular-reporting.js cases/[case-id] --json
+```
+
+---
+
+### `verify-integrity.js`
+
+Ledger and file ownership checks (append-only audit trail, balanced file locks).
+
+```bash
+node scripts/verify-integrity.js cases/[case-id]
+node scripts/verify-integrity.js cases/[case-id] --json
+```
+
+---
+
+### `orchestrator-verify.js`
+
+Strict, summary-only wrapper: runs gap generation + termination gates and prints only counts/reasons/paths.
+
+```bash
+node scripts/orchestrator-verify.js cases/[case-id]
+node scripts/orchestrator-verify.js cases/[case-id] --json
+```
+
+---
+
+### `ledger-append.js`
+
+**Unified append-only ledger for investigation coordination.** The ledger (`ledger.json`) is the single source of truth for all investigation actions.
 
 ```bash
 # Initialize
-node scripts/audit-append.js cases/[case-id] --init
+node scripts/ledger-append.js cases/[case-id] --init
 
-# Append entry
-node scripts/audit-append.js cases/[case-id] <actor> <action> [options]
-
-# Examples
-node scripts/audit-append.js cases/topic-slug orchestrator phase_start --target RESEARCH
-node scripts/audit-append.js cases/topic-slug task-agent task_complete --target T001 --output '{"findings_file":"findings/T001.md"}'
-node scripts/audit-append.js cases/topic-slug capture-agent capture_source --target S001 --input '{"url":"https://..."}'
+# Append entries
+node scripts/ledger-append.js cases/[case-id] <type> [options]
 ```
 
-**Options:**
-- `--target <value>` - Target of action (task ID, source ID, phase name)
-- `--input <json>` - Input data as JSON
-- `--output <json>` - Output data as JSON
-- `--verification <json>` - Verification result
+**Entry Types:**
 
-**Actors:** `orchestrator`, `task-agent`, `capture-agent`, `verify-agent`, `research-agent`
+| Type | Purpose | Required Options |
+|------|---------|------------------|
+| `iteration_start` | Begin VERIFY -> PLAN -> EXECUTE cycle | `--iteration N` |
+| `iteration_complete` | End of cycle | `--iteration N` |
+| `phase_start` | Begin phase | `--phase NAME --iteration N` |
+| `phase_complete` | End phase | `--phase NAME --iteration N` |
+| `agent_dispatch` | Sub-agent dispatched | `--agent NAME --output FILE` |
+| `agent_complete` | Sub-agent finished | `--agent NAME --output FILE` |
+| `task_create` | New task created | `--task ID --priority HIGH/MEDIUM/LOW` |
+| `task_complete` | Task finished | `--task ID --output FILE` |
+| `source_capture` | Evidence captured | `--source ID --url URL --path PATH` |
+| `claim_create` | New claim registered | `--claim CXXXX --risk HIGH/MEDIUM/LOW` |
+| `claim_update` | Claim updated | `--claim CXXXX` |
+| `gate_check` | Gate verification | `--gate NAME --passed true/false` |
+| `synthesis_complete` | Final report | `--iteration N --output FILE` |
+| `file_lock` | Claim file ownership | `--file PATH --agent NAME` |
+| `file_unlock` | Release ownership | `--file PATH --agent NAME` |
 
-**Actions:** `phase_start`, `phase_complete`, `task_start`, `task_complete`, `capture_source`, `verification_run`, `gate_check`
+**Examples:**
+```bash
+node scripts/ledger-append.js cases/topic iteration_start --iteration 3
+node scripts/ledger-append.js cases/topic task_create --task R001 --priority HIGH --gap G0001
+node scripts/ledger-append.js cases/topic source_capture --source S001 --url "https://..." --path evidence/web/S001/
+node scripts/ledger-append.js cases/topic claim_update --claim C0042 --sources S014,S015 --status verified
+node scripts/ledger-append.js cases/topic gate_check --gate corroboration --passed false --reason "2 claims below threshold"
+```
 
 ---
 
@@ -301,7 +384,7 @@ When AI research returns a claim:
 1. **Find primary source** (search for actual URL)
 2. **Capture immediately:**
    ```bash
-   ./scripts/capture S042 https://actual-source.com/article
+   node scripts/capture.js S042 https://actual-source.com/article
    ```
 3. **Verify claim exists** in captured content
 4. **Register in sources.md** with evidence path

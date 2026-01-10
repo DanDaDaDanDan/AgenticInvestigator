@@ -21,6 +21,7 @@ const { execSync, spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { pathToFileURL } = require('url');
 
 const SCRIPTS_DIR = __dirname;
 
@@ -133,7 +134,7 @@ async function generatePdfs(caseDir) {
     try {
       const page = await browser.newPage();
       const absoluteHtmlPath = path.resolve(htmlPath);
-      await page.goto(`file://${absoluteHtmlPath}`, { waitUntil: 'networkidle' });
+      await page.goto(pathToFileURL(absoluteHtmlPath).href, { waitUntil: 'networkidle' });
       await page.pdf({
         path: pdfPath,
         format: 'A4',

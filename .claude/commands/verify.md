@@ -1,6 +1,6 @@
 # Investigation Verification (Orchestrator Mode)
 
-You are the **orchestrator**. You dispatch verification agents — you do NOT run verification directly.
+You are the **orchestrator**. You dispatch verification agents - you do NOT run verification directly.
 
 **See `framework/rules.md` for verification rules and termination signals.**
 
@@ -13,26 +13,51 @@ You are the **orchestrator**. You dispatch verification agents — you do NOT ru
 /verify [case-id]    # Verify specific case
 ```
 
+Case resolution order:
+1. Explicit `[case-id]`
+2. `cases/.active` (set via `node scripts/active-case.js set <case-id>`)
+3. Error with hint
+
 ---
 
 ## Purpose
 
 Verification ensures investigations are:
-1. **Complete** — All threads explored, all positions covered
-2. **Honest** — Not deceiving ourselves about coverage
-3. **Balanced** — Claims from ALL positions fact-checked
-4. **Evidence-backed** — Claims verified against captured evidence
+1. **Complete** - All threads explored, all positions covered
+2. **Honest** - Not deceiving ourselves about coverage
+3. **Balanced** - Claims from ALL positions fact-checked
+4. **Evidence-backed** - Claims verified against captured evidence
 
 ---
 
 ## Orchestrator Flow
 
+**FIRST: Run gap generation**
+```bash
+node scripts/generate-gaps.js cases/[case-id]
 ```
-1. READ: _state.json
-2. DISPATCH: Verification agents (parallel)
-3. WAIT: Agents write to iterations.md, update _state.json
-4. READ: _state.json for verification_passed and gaps
-5. REPORT: PASS/FAIL with gap list
+
+For strict/summary-only output (recommended for orchestrators):
+```bash
+node scripts/orchestrator-verify.js cases/[case-id]
+```
+
+```
+1. RUN: node scripts/generate-gaps.js -> control/gaps.json
+2. READ: control/gaps.json (blocking vs non-blocking)
+3. IF blocking gaps exist:
+   -> DISPATCH: agents to address gaps
+   -> Loop back to step 1
+4. IF no blocking gaps:
+   -> RUN: node scripts/verify-all-gates.js
+   -> IF exit 0: PASS
+   -> IF exit 1: address failing gates
+5. REPORT: PASS/FAIL with blocking gap list
+```
+
+**Log verification:**
+```bash
+node scripts/ledger-append.js cases/[case-id] gate_check --gate verification --passed true/false
 ```
 
 ---
@@ -55,17 +80,18 @@ Task tool:
   prompt: |
     TASK: [Check type]
     CASE: cases/[case-id]/
-    ITERATION: [N]
 
     Be RUTHLESS. Find ALL gaps.
 
     [For anti-hallucination]:
     Run: node scripts/verify-claims.js cases/[case-id]
-    CONTRADICTED → urgent gap
-    NOT_FOUND → must fix
+    Check claims/C####.json for corroboration status
+    CONTRADICTED -> urgent gap
+    NOT_FOUND -> must fix
+    Requires: GEMINI_API_KEY (via env or .env)
 
     [For cross-model critique]:
-    Run mcp__mcp-gemini__generate_text (thinking_level: high)
+    Run your configured critique tool (see prompts/_tooling.md)
     Find: missing evidence, unexplored claims, bias, statement gaps
 
     [For position audit]:
@@ -73,11 +99,10 @@ Task tool:
     Check all positions have claims verified
 
     [For gap analysis]:
-    Evaluate core checklist (6 items from framework/rules.md)
+    Read control/gaps.json
+    Evaluate blocking vs non-blocking gaps
 
-    Update iterations.md, _state.json (gaps, verification_passed)
-
-    RETURN: PASS/FAIL, issue count
+    RETURN: PASS/FAIL, blocking gap count
 ```
 
 ---

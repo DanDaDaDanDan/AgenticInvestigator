@@ -1,0 +1,17 @@
+# Rigor Checkpoint (Fixture)
+
+PASS
+PASS
+PASS
+PASS
+PASS
+PASS
+PASS
+PASS
+PASS
+PASS
+PASS
+PASS
+PASS
+PASS
+PASS

@@ -1,0 +1,9 @@
+{
+  "id": "T005",
+  "status": "completed",
+  "priority": "MEDIUM",
+  "type": "investigation",
+  "perspective": "Contradictions",
+  "created_at": "2026-01-01T00:00:00Z",
+  "findings_file": "findings/T005-findings.md"
+}

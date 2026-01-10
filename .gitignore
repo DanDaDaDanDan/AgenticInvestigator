@@ -8,6 +8,10 @@ cases/
 # OS files
 .DS_Store
 Thumbs.db
+nul
+
+# Local scratch
+suggestions_old.md
 
 # Editor/IDE
 .vscode/

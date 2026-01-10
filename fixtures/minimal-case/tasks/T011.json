@@ -1,0 +1,9 @@
+{
+  "id": "T011",
+  "status": "completed",
+  "priority": "MEDIUM",
+  "type": "curiosity",
+  "perspective": "Curiosity",
+  "created_at": "2026-01-01T00:00:00Z",
+  "findings_file": "findings/T011-findings.md"
+}

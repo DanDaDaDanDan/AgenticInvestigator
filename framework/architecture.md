@@ -1,586 +1,858 @@
 # AgenticInvestigator Architecture
 
-Technical design documentation for the multi-agent investigation framework.
+Technical design for the verification-first multi-agent investigation framework.
 
-**See `framework/rules.md` for canonical rules (sources, evidence, verification, state ownership).**
+**See `framework/rules.md` for canonical rules.**
 
 ---
 
 ## System Overview
 
-AgenticInvestigator is an orchestrated multi-agent system that investigates contested narratives through:
+AgenticInvestigator uses a verification-driven loop:
 
-1. **Dynamic task generation** — case-specific investigation tasks generated on-the-fly
-2. **Triple deep research** across Gemini, OpenAI, and XAI engines
-3. **Required perspective coverage** — enforced rigor through 10 core perspectives
-4. **Adversarial review** — systematic blind spot detection
-5. **20-framework rigor checkpoint** — termination gate validation
-6. **Coverage metrics** — quantitative tracking of investigation completeness
-7. **9 termination gates** — mechanically verified, cannot complete without all passing
-8. **State-filesystem consistency** — verification scripts compare claims vs reality
+```
+VERIFY -> PLAN -> EXECUTE -> VERIFY
+```
+
+Everything that matters produces **structured failures** (gaps). Tasks are generated **only** to close those gaps + required curiosity/adversarial coverage.
 
 ### Core Principles
 
-- **Insatiable curiosity**: Every finding triggers more questions (curiosity tasks required each cycle)
-- **Dynamic, not hardcoded**: Tasks generated based on case specifics, not generic templates
-- **Structural rigor**: Coverage thresholds and framework validation enforce thoroughness
-- **Source attribution is sacred**: Every claim traces to a source ID
-- **The LLM knows domain knowledge**: We don't spell out SEC/OSINT sources—generate what's relevant
+1. **Orchestrator believes only:** filesystem + verifier outputs
+2. **Verification-first:** Run verifiers every iteration, not just near termination
+3. **Gap-driven:** Tasks come from failures, not generic topic exploration
+4. **Question-shaped:** Tasks are questions with evidence requirements
+5. **Corroboration as data:** Claims have explicit evidence bundles
+6. **Continuous legal/integrity:** Not final checkboxes, but gap-emitting verifiers
 
 ---
 
-## Dynamic Task Generation (Core Innovation)
+## The Verification-First Loop
 
-Instead of fixed phases with hardcoded triggers, the system:
+### Step 0: VERIFY (Generate Gaps)
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        DYNAMIC INVESTIGATION LOOP                            │
-│                                                                              │
-│  1. INITIAL RESEARCH (multi-engine, parallel)                               │
-│     → Save to research-leads/                                                │
-│                                                                              │
-│  2. EXTRACTION                                                               │
-│     → Parse findings into _extraction.json                                   │
-│                                                                              │
-│  3. SOURCE DISCOVERY (dynamic)                                               │
-│     → Use deep research to find case-specific data sources                   │
-│     → Merge baseline (data-sources.md) + discovered sources                  │
-│     → Write to _sources.json                                                 │
-│                                                                              │
-│  4. TASK GENERATION (core innovation)                                        │
-│     Generate tasks with REQUIRED PERSPECTIVES:                               │
-│     □ Money/Financial    □ Silence           □ Documents                     │
-│     □ Timeline           □ Contradictions    □ Relationships                 │
-│     □ Hypotheses         □ Assumptions       □ Counterfactual                │
-│     □ Blind Spots        + CURIOSITY CHECK (2+ tasks required)               │
-│     → Use sources from _sources.json                                         │
-│     → Write to _tasks.json                                                   │
-│                                                                              │
-│  5. ADVERSARIAL PASS                                                         │
-│     For each task: What would DISPROVE it?                                   │
-│     Generate counter-tasks for blind spots                                   │
-│     → Append to _tasks.json under adversarial_tasks                          │
-│                                                                              │
-│  6. EXECUTE TASKS (parallel where independent)                               │
-│     Investigation agents work on tasks                                       │
-│     → Use sources from _sources.json                                         │
-│     → Update detail files, mark tasks complete                               │
-│                                                                              │
-│  7. UPDATE COVERAGE                                                          │
-│     Calculate metrics: people, entities, claims, sources                     │
-│     Track perspective coverage                                               │
-│     → Write _coverage.json                                                   │
-│                                                                              │
-│  8. VERIFICATION                                                             │
-│     Anti-hallucination, cross-model critique, core checklist                 │
-│     → Update verification_passed                                             │
-│                                                                              │
-│  9. TERMINATION GATE CHECK                                                   │
-│     All 9 gates must pass → SYNTHESIS + ARTICLE                              │
-│     Any gate fails → Regenerate tasks → LOOP                                 │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
+Run all verifiers every iteration:
+
+```bash
+node scripts/generate-gaps.js cases/[case-id]
 ```
 
-### Why Dynamic?
+This runs:
+- `validate-schema.js` - Core file schema sanity
+- `verify-sources.js` - Evidence folder for every [SXXX]
+- `verify-sources-dedup.js` - Detect duplicate URLs under multiple S###
+- `verify-citation-density.js` - Enforce 100% citation density in summary.md
+- `verify-source-content.js` - Cited claims exist in evidence
+- `verify-corroboration.js` - Claims meet min_sources threshold
+- `verify-circular-reporting.js` - Detect shared-origin "corroboration" (wire/syndication)
+- `verify-state-consistency.js` - State matches filesystem
+- `verify-tasks.js` - Completed tasks have findings
+- `verify-legal.js` - Legal risks, PII, attribution
+- `verify-integrity.js` - File ownership, ledger consistency
 
-**The LLM discovers case-specific knowledge.** Instead of relying on static reference files, the system uses deep research to find data sources tailored to THIS investigation. A pharma fraud case gets FDA databases; a hedge fund case gets FINRA sources. The baseline (data-sources.md) seeds the discovery, but case-specific sources are found dynamically.
+**Output:** `control/gaps.json`
+
+### Step 1: PLAN (Gaps -> Tasks)
+
+Task generation is deterministic from gaps:
+
+**Input:**
+- `control/gaps.json` - What failed
+- `extraction.json` - Entities/claims/contradictions
+- `sources.json` - Available data sources
+- Required perspectives + curiosity requirement
+
+**Output:**
+- `tasks/R###.json` - Rigor gap tasks (from gaps)
+- `tasks/T###.json` - Investigation tasks
+- `tasks/A###.json` - Adversarial tasks
+
+### Step 2: EXECUTE (Tasks -> Evidence)
+
+Each task must produce:
+1. Findings file (`findings/T###-findings.md`)
+2. Updated claim records (`claims/C####.json`)
+3. Captured evidence (`evidence/web/S###/`)
+
+**Rule:** Task cannot complete without evidence accounting.
+
+### Step 3: VERIFY Again
+
+Re-run verifiers. Regenerate gaps. Repeat.
+
+**Termination:** `control/gaps.json.blocking` is empty AND `verify-all-gates.js` exits 0.
 
 ---
 
-## Three-Layer Rigor System
-
-Rigor is enforced structurally, not through prompting alone.
-
-### Layer 1: Required Perspectives in Task Generation
-
-Every task generation cycle MUST address 10 perspectives (or explain why N/A):
-
-```
-□ Money/Financial — who benefits, funding sources
-□ Timeline/Sequence — causation chains, key dates
-□ Silence — who's NOT talking
-□ Documents — paper trails that must exist
-□ Contradictions — conflicting accounts
-□ Relationships — connections, conflicts
-□ Alternative Hypotheses — other explanations
-□ Assumptions — what we're taking for granted
-□ Counterfactual — what would prove us wrong
-□ Blind Spots — what might we be missing
-
-+ CURIOSITY CHECK (REQUIRED):
-  Generate at least 2 tasks from:
-  - What would a MORE curious investigator ask?
-  - What's the most important thing we DON'T know?
-  - What would SURPRISE us if true?
-```
-
-### Layer 2: Adversarial Pass
-
-After task generation, explicit adversarial review:
-
-1. For each major claim: What would DISPROVE it?
-2. Strongest argument for unexplored positions?
-3. What assumptions are EMBEDDED in these tasks?
-4. What evidence would CHANGE our conclusions?
-5. What would the SUBJECT refuse to answer?
-6. Who BENEFITS from us not investigating something?
-
-### Layer 3: Rigor Checkpoint (Termination Gate)
-
-Before termination, validate against ALL 20 frameworks:
-
-1. Follow the Money
-2. Follow the Silence
-3. Follow the Timeline
-4. Follow the Documents
-5. Follow the Contradictions
-6. Follow the Relationships
-7. Stakeholder Mapping
-8. Network Analysis
-9. Means/Motive/Opportunity
-10. Competing Hypotheses
-11. Assumptions Check
-12. Pattern Analysis
-13. Counterfactual
-14. Pre-Mortem
-15. Cognitive Bias Check
-16. Uncomfortable Questions
-17. Second-Order Effects
-18. Meta Questions
-19. 5 Whys (Root Cause)
-20. Sense-Making
-
-Each framework must be: ✓ Addressed (cite task/finding) | N/A (explain why) | ✗ Gap (generate task)
-
-**Cannot terminate with unexplained gaps.**
-
----
-
-## Orchestrator Pattern
-
-**The main Claude Code instance ONLY orchestrates.** All work is done by sub-agents via Task tool.
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         ORCHESTRATOR (Main Loop)                             │
-│                                                                              │
-│  NEVER:                              ONLY:                                   │
-│  ✗ Call MCP tools directly           ✓ Read _state.json, _tasks.json        │
-│  ✗ Read full file contents           ✓ Dispatch sub-agents (Task tool)      │
-│  ✗ Write large content               ✓ Wait for completion                  │
-│  ✗ Accumulate findings in memory     ✓ Track termination gates              │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-         │                │                │                │
-         ▼                ▼                ▼                ▼
-   ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
-   │ Task Gen │    │Execute   │    │ Coverage │    │ Rigor    │
-   │  Agent   │    │ Agents   │    │  Agent   │    │ Checkpoint│
-   └──────────┘    └──────────┘    └──────────┘    └──────────┘
-         │                │                │                │
-         ▼                ▼                ▼                ▼
-    _tasks.json     people.md        _coverage.json   Pass/Fail
-                    fact-check.md
-```
-
----
-
-## Case Structure
-
-**Each case has its own git repository. Commit after every iteration.**
+## Case Directory Structure
 
 ```
 cases/[topic-slug]/
-├── _state.json               # Orchestrator state
-├── _extraction.json          # Extracted entities, claims, people
-├── _sources.json             # Case-specific data sources (dynamically discovered)
-├── _tasks.json               # Dynamic task queue
-├── _coverage.json            # Coverage metrics
-├── .git/                     # Version control
-├── evidence/                 # Captured sources
-│   ├── web/SXXX/            # Screenshots, PDFs, HTML per source
-│   └── documents/           # Downloaded PDFs
-├── research-leads/           # AI research outputs (NOT citable)
-├── summary.md                # THE DELIVERABLE (self-contained)
-├── sources.md                # Source registry with evidence paths
-├── timeline.md               # Chronological events
-├── people.md                 # Person profiles
-├── organizations.md          # Entity profiles
-├── positions.md              # All positions with arguments
-├── fact-check.md             # Claim verdicts
-├── theories.md               # Alternative theory analysis
-├── statements.md             # Statement vs evidence analysis
-├── iterations.md             # Progress log
-├── articles.md               # Publication-ready articles
-└── (quality check files generated dynamically)
++-- state.json              # Minimal orchestrator state (10 lines)
++-- ledger.json             # Append-only action log
++-- extraction.json         # Extracted entities, claims, people
++-- sources.json            # Captured source registry
++-- control/                 # Verifier outputs
+|   +-- gaps.json           # Current iteration gaps
+|   +-- digest.json         # Iteration summary
+|   +-- gate_results.json   # Gate verification results
++-- claims/                  # Claim evidence bundles
+|   +-- index.json          # Claim rollup for orchestrator
+|   +-- C0001.json
+|   +-- ...
++-- tasks/                   # One file per task
+|   +-- T001.json
+|   +-- A001.json
+|   +-- R001.json
+|   +-- ...
++-- evidence/                # Captured sources
+|   +-- web/S001/
+|   |   +-- metadata.json
+|   |   +-- capture.html
+|   |   +-- capture.png
+|   |   +-- extracted_text.txt
+|   +-- documents/
++-- research-leads/          # AI research (NOT citable)
++-- findings/                # Task outputs
+|   +-- T001-findings.md
++-- legal/                   # Legal review iterations
+|   +-- iteration-1/         # First legal review pass
+|   |   +-- subject-classifications.md
+|   |   +-- claim-risk.md
+|   |   +-- evidence-gaps.md
+|   |   +-- attribution-audit.md
+|   +-- iteration-2/         # Subsequent passes
+|   |   +-- ...
+|   +-- legal-review.md      # Consolidated latest review
++-- integrity/               # Integrity review iterations
+|   +-- iteration-1/         # First integrity pass
+|   |   +-- balance-analysis.md
+|   |   +-- language-audit.md
+|   |   +-- adversarial-review.md
+|   |   +-- steelman-check.md
+|   +-- iteration-2/
+|   |   +-- ...
+|   +-- integrity-review.md  # Consolidated latest review
++-- summary.md               # Investigation record (source of truth)
++-- sources.md               # Source registry (human-readable)
++-- timeline.md
++-- people.md
++-- organizations.md
++-- positions.md
++-- fact-check.md
++-- theories.md
++-- iterations.md            # Progress log
++-- articles/                # PUBLICATION DELIVERABLES
+    +-- article-short.md     # Quick-read (400-800 words)
+    +-- article-full.md      # Full professional (2,000-4,000 words)
 ```
 
-### State Files
-
-State files enable agent coordination. Only required fields are specified—the LLM structures the rest naturally.
-
-**_state.json** — Orchestrator state
-
-| Required Field | Purpose |
-|----------------|---------|
-| `case_id`, `topic` | Case identification |
-| `status` | `IN_PROGRESS` &#124; `COMPLETE` &#124; `PAUSED` &#124; `ERROR` |
-| `current_phase` | Workflow phase for orchestrator decisions |
-| `current_iteration` | Iteration counter (updated by Synthesis Agent) |
-| `next_source_id` | Next available source ID (e.g., "S048") |
-| `verification_passed` | Termination gate flag |
-| `adversarial_complete` | Termination gate flag |
-| `rigor_checkpoint_passed` | Termination gate flag |
-| `quality_checks_passed` | Termination gate flag |
-
-**_tasks.json** — Dynamic task queue
-
-Three arrays: `tasks`, `adversarial_tasks`, `rigor_gap_tasks`
-
-Each task requires: `id` (T### format), `status` (pending/in_progress/completed), `priority` (HIGH/MEDIUM/LOW)
-
-Tasks naturally include description, perspective, rationale, approach, success_criteria, etc.
-
-**_coverage.json** — Coverage metrics for termination gates
-
-| Required Category | Fields | Threshold |
-|-------------------|--------|-----------|
-| `people` | mentioned, investigated | ≥ 90% |
-| `entities` | mentioned, investigated | ≥ 90% |
-| `claims` | total, verified | ≥ 80% |
-| `sources` | cited, captured | = 100% |
-| `positions` | identified, documented | = 100% |
-| `contradictions` | identified, explored | = 100% |
-
-**_sources.json** — Case-specific data sources
-
-Two arrays: `baseline` (from `framework/data-sources.md`), `discovered` (found via deep research for this case)
-
-Each source naturally includes name, url, what it contains, category, relevance.
-
-**_extraction.json** — Extracted entities from research
-
-Internal to extraction agent. Typically includes people, entities, claims, events, contradictions, sources_to_capture.
-
-**State update ownership**: See `framework/rules.md` for which agent updates each field.
-
 ---
 
-## Termination
+## Iteration Folder Structure
 
-**9 gates must pass to terminate.** See `framework/rules.md` for complete gate definitions.
+Legal and Integrity reviews support multiple iterations. Each iteration creates a subfolder, with a consolidated review file updated after each pass.
 
-### Mechanical Verification Required
-
-```bash
-# MUST run before termination
-node scripts/verify-all-gates.js cases/[case-id]
-
-# Outputs _gate_results.json with pass/fail for each gate
-# Exit code 0 = all pass, can terminate
-# Exit code 1 = failures, must continue
-```
-
-### Gate Summary
-
-| Gate | Verification |
-|------|--------------|
-| 1. Coverage | Thresholds met, required files exist |
-| 2. Tasks | All completed, outputs exist |
-| 3. Adversarial | Complete, findings files exist |
-| 4. Sources | Evidence folders for all [SXXX] |
-| 5. Content | Claims found in evidence text |
-| 6. Claims | AI verification passes |
-| 7. Contradictions | All explored |
-| 8. Rigor | 20 frameworks validated |
-| 9. Legal | Legal review file exists |
-
-**If ANY gate fails → generate tasks to address → loop.**
-
-**Do NOT self-report completion.** The verification scripts are the only authority.
-
-**You ARE likely done when:** `verify-all-gates.js` returns exit code 0.
-
-**You are NOT done because:** Many iterations completed, it "feels" done, most gates passing.
-
----
-
-## Evidence Capture
-
-### Purpose
-
-**Hallucination-proof source verification.** Every source has local evidence that proves:
-1. The source existed at research time
-2. The content actually contained the cited claims
-3. Content can be verified even if original URL disappears
-
-### Workflow
+### Legal Review Iterations
 
 ```
-Source Found → IMMEDIATE CAPTURE → Verify Claim → Register Source
-                     ↓
-              ./scripts/capture SXXX URL
-                     ↓
-              evidence/web/SXXX/
-              ├── capture.png
-              ├── capture.pdf
-              ├── capture.html
-              └── metadata.json
+legal/
++-- iteration-1/
+|   +-- subject-classifications.md  # Public/private figure analysis
+|   +-- claim-risk.md               # Per-claim defamation risk
+|   +-- evidence-gaps.md            # Missing evidence for legal safety
+|   +-- attribution-audit.md        # Hedging and attribution check
++-- iteration-2/
+|   +-- ...                         # Same files, updated analysis
++-- legal-review.md                 # CONSOLIDATED latest review
 ```
 
-### AI Research Handling
+**Workflow:**
+1. Create `iteration-N/` folder
+2. Dispatch 4 parallel agents (one per analysis file)
+3. Wait for completion
+4. Read all iteration files, consolidate into `legal-review.md`
+5. If NOT READY, loop to iteration N+1
 
-**AI research outputs are NOT sources.**
+**Iteration History:** The consolidated `legal-review.md` includes a table tracking:
+- Each iteration date
+- Rating per iteration
+- Issues found
+- Resolution status
 
-| What | Where | Citable? |
-|------|-------|----------|
-| Gemini/OpenAI deep research | `research-leads/*.md` | **NO** |
-| Primary source found via AI | `evidence/web/SXXX/` | **YES** |
-
-Find the primary source URL, capture it, then cite that.
-
----
-
-## MCP Server Architecture
+### Integrity Review Iterations
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              Claude Code                                     │
-└─────────────────────────────────────────────────────────────────────────────┘
-         │                │                │
-         ▼                ▼                ▼
-┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
-│   mcp-gemini    │ │   mcp-openai    │ │    mcp-xai      │
-├─────────────────┤ ├─────────────────┤ ├─────────────────┤
-│ deep_research   │ │ deep_research   │ │ x_search        │
-│ check_research  │ │ check_research  │ │ web_search      │
-│ generate_text   │ │ generate_text   │ │ news_search     │
-└─────────────────┘ │ web_search      │ │ research        │
-                    └─────────────────┘ └─────────────────┘
+integrity/
++-- iteration-1/
+|   +-- balance-analysis.md         # Source distribution by position
+|   +-- language-audit.md           # Neutrality scan, loaded language
+|   +-- adversarial-review.md       # Anticipated subject objections
+|   +-- steelman-check.md           # Strongest version of each position
++-- iteration-2/
+|   +-- ...
++-- integrity-review.md             # CONSOLIDATED latest review
 ```
 
-### Tool Selection
+**Same workflow as legal review.** Issues found become gaps in next `generate-gaps.js` run.
 
-| Task | Server | Tool | Notes |
-|------|--------|------|-------|
-| Deep research (fast) | gemini | `deep_research` | 5-30 min |
-| Deep research (max depth) | openai | `deep_research` | 10-60 min |
-| Real-time multi-source | xai | `research` | sources: ["x","web","news"] |
-| Cross-model critique | gemini | `generate_text` | thinking_level: high |
-| Extended reasoning | openai | `generate_text` | reasoning_effort: high/xhigh |
-| Check/resume timeout | gemini/openai | `check_research` | Use ID from error |
+### Publication Readiness Status
 
-### Extended Reasoning Checkpoints
+Both reviews must output one of:
+- **READY** - Can publish
+- **READY WITH CHANGES** - Can publish after specific changes
+- **NOT READY** - Blocking issues remain, must iterate
 
-GPT 5.2 Pro with extended thinking (`reasoning_effort: high/xhigh`) at critical junctures:
-
-- **iteration ≥ 3**: Adversarial review of emerging narrative
-- **Contradictions found**: Reason through conflicting sources
-- **Alternative theories**: Genuinely steelman uncomfortable positions
-- **All gates passing**: Pre-termination deep review
-- **Major finding**: Second-order implications
-
-Provide context, ask for the type of reasoning needed. The model knows how to think deeply.
+Gate verification checks the actual status text, not just file existence.
 
 ---
 
-## Verification System
+## Schema: `control/gaps.json`
 
-### Core Checklist (all must be YES)
-
-1. All major people investigated
-2. All major claims fact-checked (ALL positions)
-3. All positions steelmanned
-4. Alternative theories addressed with evidence
-5. All sources have captured evidence
-6. No CONTRADICTED claims (from verify-claims.js)
-
-### Anti-Hallucination Check
-
-```bash
-node scripts/verify-claims.js cases/[case-id]
-```
-
-| Verdict | Action |
-|---------|--------|
-| VERIFIED | None |
-| NOT_FOUND | Find evidence or revise claim |
-| CONTRADICTED | Urgent fix required |
-| NO_EVIDENCE | Capture the source |
-
----
-
-## summary.md Standards
-
-**summary.md is THE DELIVERABLE — a polished final product.**
-
-| Is | Is Not |
-|----|----|
-| Self-contained final report | Log of iterative discoveries |
-| Written as if in one sitting | Ledger with "additionally found..." |
-| Ready to share with anyone | Working document with artifacts |
-| Publishable quality | Internal scratchpad |
-
-**Rewrite, don't append.** Each update is a complete rewrite.
-
----
-
-## Deep-Web Data Sources
-
-These sources are NOT indexed by Google — must query directly:
-
-| Type | Sources |
-|------|---------|
-| Government spending | USAspending.gov, state checkbooks |
-| Corporate entities | OpenCorporates, SEC EDGAR, state SOS |
-| Nonprofits | ProPublica Nonprofit Explorer, IRS 990 |
-| Court cases | PACER, RECAP/CourtListener |
-| Campaign finance | OpenSecrets, FEC database |
-| Shell companies | ICIJ Offshore Leaks, OpenSanctions |
-| Deleted content | Wayback Machine, Archive.today |
-
-Full reference: `framework/data-sources.md`
-
----
-
-## Capture Scripts
-
-| Script | Purpose |
-|--------|---------|
-| `scripts/capture` | Main capture wrapper |
-| `scripts/capture-url.js` | Playwright capture |
-| `scripts/firecrawl-capture.js` | Bot-bypass capture |
-| `scripts/verify-sources.js` | Verify evidence files exist (Layer 3) |
-| `scripts/verify-source-content.js` | Verify claims in evidence text (Layer 4) |
-| `scripts/verify-claims.js` | AI-based claim verification (Layer 5) |
-| `scripts/verify-all-gates.js` | Master termination gate checker |
-| `scripts/verify-state-consistency.js` | State vs filesystem validation |
-| `scripts/find-failed-captures.js` | Audit capture quality |
-
----
-
-## New State Files (Per Case)
-
-### _gate_results.json
-
-Generated by `verify-all-gates.js`. Contains mechanical verification results.
+**The single orchestrator input for "what to do next".**
 
 ```json
 {
-  "timestamp": "2026-01-09T15:00:00Z",
-  "gates": {
-    "coverage": {"passed": true},
-    "tasks": {"passed": true},
-    "adversarial": {"passed": true},
-    "sources": {"passed": false, "reason": "5 sources missing evidence"},
-    "content": {"passed": false, "reason": "3 claims not found"},
-    "claims": {"passed": true},
-    "contradictions": {"passed": true},
-    "rigor": {"passed": true},
-    "legal": {"passed": true}
-  },
-  "audit_trail": {
-    "passed": true,
-    "reason": "2 audit trail warnings (non-blocking)",
-    "details": {"total_issues": 2, "critical_issues": 0},
-    "warnings": ["task_audit_consistency: 3 completed tasks not in audit log"]
-  },
-  "summary": {"passed": 7, "failed": 2, "total": 9},
-  "overall": false,
-  "blocking_gates": ["sources", "content"]
+  "iteration": 4,
+  "generated_at": "2026-01-10T14:30:00Z",
+  "blocking": [
+    {
+      "gap_id": "G0123",
+      "type": "INSUFFICIENT_CORROBORATION",
+      "object": {"claim_id": "C0042"},
+      "severity": "BLOCKER",
+      "message": "Claim C0042 has 1 source; requires >=2 independent",
+      "suggested_actions": [
+        "find_independent_source",
+        "capture",
+        "update_claim_record"
+      ]
+    },
+    {
+      "gap_id": "G0125",
+      "type": "MISSING_EVIDENCE",
+      "object": {"source_id": "S047"},
+      "severity": "BLOCKER",
+      "message": "S047 cited but evidence/web/S047/ does not exist",
+      "suggested_actions": ["capture_source", "remove_citation"]
+    }
+  ],
+  "non_blocking": [
+    {
+      "gap_id": "G0124",
+      "type": "LEGAL_WORDING_RISK",
+      "object": {"file": "summary.md", "claim_id": "C0047"},
+      "severity": "HIGH",
+      "message": "Wording states guilt as fact; should attribute",
+      "suggested_actions": [
+        "revise_summary_language",
+        "add_attribution"
+      ]
+    },
+    {
+      "gap_id": "G0126",
+      "type": "PERSPECTIVE_MISSING",
+      "object": {"perspective": "Follow the Silence"},
+      "severity": "MEDIUM",
+      "message": "No task addresses 'who is not talking'",
+      "suggested_actions": ["create_silence_task"]
+    }
+  ],
+  "stats": {
+    "total_gaps": 4,
+    "blocking_count": 2,
+    "high_count": 1,
+    "medium_count": 1
+  }
 }
 ```
 
-### _audit.json (Required)
+### Gap Types
 
-**Append-only action log. Every agent action must be logged.**
+| Type | Severity | Description |
+|------|----------|-------------|
+| `MISSING_EVIDENCE` | BLOCKER | Citation without evidence folder |
+| `INSUFFICIENT_CORROBORATION` | BLOCKER | Claim below min_sources |
+| `CONTENT_MISMATCH` | BLOCKER | Cited claim not in evidence text |
+| `CONTRADICTED_CLAIM` | BLOCKER | Evidence contradicts claim |
+| `LEGAL_WORDING_RISK` | HIGH | Statement needs qualification |
+| `PRIVACY_RISK` | HIGH | PII detected |
+| `UNCITED_ASSERTION` | HIGH | Damaging claim without source |
+| `PERSPECTIVE_MISSING` | MEDIUM | Required perspective not addressed |
+| `ADVERSARIAL_INCOMPLETE` | MEDIUM | A### tasks not complete |
+| `CURIOSITY_DEFICIT` | LOW | <2 curiosity tasks this cycle |
 
-Initialize with `node scripts/audit-append.js <case_dir> --init`
+---
 
-Append entries with `node scripts/audit-append.js <case_dir> <actor> <action> [--target X] [--input JSON] [--output JSON]`
+## Schema: `claims/C####.json`
+
+**Evidence bundles for corroboration tracking.**
 
 ```json
 {
-  "log": [
+  "id": "C0042",
+  "claim": "Company X received $5M from Agency Z on 2024-03-15.",
+  "type": "factual",
+  "status": "pending",
+  "risk_level": "HIGH",
+  "file_locations": [
+    {"file": "summary.md", "line": 47},
+    {"file": "findings/T003-findings.md", "line": 23}
+  ],
+  "supporting_sources": ["S014"],
+  "counter_sources": [],
+  "primary_source": null,
+  "corroboration": {
+    "min_sources": 2,
+    "independence_rule": "different_domain_or_primary",
+    "requires_primary": true,
+    "notes": "Government funding claim - prefer official docs"
+  },
+  "verification": {
+    "last_checked": "2026-01-10T14:00:00Z",
+    "result": "insufficient",
+    "details": "1 source found, need 2"
+  },
+  "created_at": "2026-01-10T10:00:00Z",
+  "updated_at": "2026-01-10T14:00:00Z"
+}
+```
+
+### Claim Index: `claims/index.json`
+
+Small rollup for orchestrator/verifiers:
+
+```json
+{
+  "total": 45,
+  "by_status": {
+    "verified": 32,
+    "pending": 8,
+    "insufficient": 4,
+    "contradicted": 1
+  },
+  "by_risk": {
+    "HIGH": 12,
+    "MEDIUM": 20,
+    "LOW": 13
+  },
+  "claims": [
+    {"id": "C0001", "status": "verified", "sources": 3},
+    {"id": "C0042", "status": "insufficient", "sources": 1}
+  ]
+}
+```
+
+---
+
+## Schema: `tasks/*.json`
+
+**Question-shaped tasks with evidence requirements.**
+
+```json
+{
+  "id": "R014",
+  "status": "pending",
+  "priority": "HIGH",
+  "type": "rigor_gap",
+  "perspective": "Contradictions",
+  "question": "What independent source corroborates claim C0042?",
+  "evidence_requirements": {
+    "min_supporting_sources": 2,
+    "independence_rule": "different_domain",
+    "allow_single_primary": true
+  },
+  "approach": "Search for primary docs; then independent reporting",
+  "success_criteria": "Add >=1 corroborating source to C0042",
+  "gap_id": "G0123",
+  "created_at": "2026-01-10T14:30:00Z",
+  "assigned_at": null,
+  "completed_at": null,
+  "findings_file": null,
+  "sources_added": [],
+  "claims_updated": []
+}
+```
+
+### Task Types
+
+| Prefix | Type | Generated From |
+|--------|------|----------------|
+| `T###` | Investigation | Task generation, perspectives |
+| `A###` | Adversarial | Adversarial pass |
+| `R###` | Rigor gap | `control/gaps.json` |
+
+### Task States
+
+| State | Meaning |
+|-------|---------|
+| `pending` | Not started |
+| `in_progress` | Agent working |
+| `completed` | Done, findings file exists, claims updated |
+
+---
+
+## Schema: `state.json`
+
+**Minimal orchestrator state (10 lines max).**
+
+```json
+{
+  "case_id": "topic-slug",
+  "topic": "Investigation topic",
+  "status": "IN_PROGRESS",
+  "iteration": 3,
+  "next_source_id": 48,
+  "next_claim_id": 46,
+  "created": "2026-01-10T10:00:00Z"
+}
+```
+
+Notes:
+- `next_source_id` and `next_claim_id` are optional convenience counters; verifiers only require the minimal fields.
+- `created_at` is accepted as a synonym for `created`.
+
+**FORBIDDEN in state.json:**
+- Gap lists
+- Coverage metrics
+- Detailed analysis
+- Any content > 1 line per field
+
+---
+
+## Schema: `control/digest.json`
+
+**Tiny iteration summary for orchestrator.**
+
+```json
+{
+  "iteration": 4,
+  "timestamp": "2026-01-10T15:00:00Z",
+  "sources_captured": ["S104", "S105"],
+  "claims_verified": ["C0042", "C0043"],
+  "claims_contradicted": [],
+  "tasks_completed": ["T018", "R003"],
+  "gaps_closed": 3,
+  "gaps_remaining": 2,
+  "blocking_gaps": 0
+}
+```
+
+---
+
+## Schema: `ledger.json`
+
+**Append-only action log.**
+
+```json
+{
+  "case_id": "topic-slug",
+  "created_at": "2026-01-10T10:00:00Z",
+  "entries": [
     {
-      "id": "A001",
-      "timestamp": "2026-01-09T14:30:00Z",
-      "actor": "capture-agent",
-      "action": "capture_source",
-      "target": "S001",
-      "input": {"url": "https://..."},
-      "output": {"path": "evidence/web/S001/", "files": 3},
-      "verification": {"method": "fs_check", "passed": true}
+      "id": "L001",
+      "ts": "2026-01-10T10:00:00Z",
+      "type": "iteration_start",
+      "iteration": 1
     },
     {
-      "id": "A002",
-      "timestamp": "2026-01-09T14:35:00Z",
-      "actor": "task-agent",
-      "action": "complete_task",
-      "target": "T001",
-      "input": {"task": "Investigate financial connections"},
-      "output": {"findings_file": "findings/T001-financial.md", "sources_added": 3}
+      "id": "L002",
+      "ts": "2026-01-10T10:05:00Z",
+      "type": "gap_generated",
+      "gap_id": "G0001",
+      "gap_type": "MISSING_EVIDENCE"
+    },
+    {
+      "id": "L003",
+      "ts": "2026-01-10T10:10:00Z",
+      "type": "task_create",
+      "task_id": "R001",
+      "from_gap": "G0001"
+    },
+    {
+      "id": "L004",
+      "ts": "2026-01-10T10:30:00Z",
+      "type": "source_capture",
+      "source_id": "S001",
+      "url": "https://...",
+      "evidence_path": "evidence/web/S001/"
+    },
+    {
+      "id": "L005",
+      "ts": "2026-01-10T10:35:00Z",
+      "type": "claim_update",
+      "claim_id": "C0001",
+      "added_sources": ["S001"],
+      "new_status": "verified"
+    },
+    {
+      "id": "L006",
+      "ts": "2026-01-10T10:40:00Z",
+      "type": "task_complete",
+      "task_id": "R001",
+      "findings_file": "findings/R001-findings.md"
     }
   ]
 }
 ```
 
-**Required Actions to Log:**
-| Action | Actor | When |
-|--------|-------|------|
-| `phase_start` | orchestrator | Beginning of each phase |
-| `phase_complete` | orchestrator | End of each phase |
-| `task_start` | task-agent | Before starting a task |
-| `task_complete` | task-agent | After completing a task |
-| `capture_source` | capture-agent | After capturing evidence |
-| `verification_run` | verify-agent | After running verification |
-| `gate_check` | orchestrator | After checking termination gates |
+### Entry Types
 
-### iterations.md (Required)
-
-**Human-readable progress log. Updated at each iteration boundary.**
-
-```markdown
-# Investigation Progress Log
-
-## Iteration 1 — 2026-01-09T14:00:00Z
-
-### Phase Summary
-| Phase | Status | Duration | Key Actions |
-|-------|--------|----------|-------------|
-| RESEARCH | Complete | 5m | 6 research agents dispatched |
-| EXTRACTION | Complete | 2m | 45 entities, 30 claims extracted |
-| SOURCE_DISCOVERY | Complete | 3m | 12 baseline + 8 discovered sources |
-| TASK_GENERATION | Complete | 2m | 15 tasks generated |
-
-### Tasks Completed This Iteration
-| Task ID | Description | Result | Sources |
-|---------|-------------|--------|---------|
-| T001 | Investigate CEO background | Found 3 prior lawsuits | S001, S002 |
-| T002 | Verify revenue claims | Partially verified | S003 |
-
-### Coverage Snapshot
-- People: 12/15 (80%)
-- Entities: 8/10 (80%)
-- Claims: 20/30 (67%)
-- Sources: 5/5 (100%)
-
-### Gate Status
-| Gate | Status | Notes |
-|------|--------|-------|
-| Coverage | ❌ | Below 90% threshold |
-| Tasks | ✅ | All iteration tasks complete |
-| Sources | ✅ | All captured |
-
-### Next Iteration Focus
-- Investigate remaining 3 people
-- Verify 10 pending claims
-- Run adversarial pass
+| Type | Required Fields |
+|------|-----------------|
+| `iteration_start` | iteration |
+| `iteration_complete` | iteration, gaps_closed, gaps_remaining |
+| `gap_generated` | gap_id, gap_type |
+| `task_create` | task_id, from_gap (optional) |
+| `task_complete` | task_id, findings_file |
+| `source_capture` | source_id, url, evidence_path |
+| `claim_update` | claim_id, added_sources/removed_sources, new_status |
+| `gate_check` | gate, passed, reason |
 
 ---
 
-## Iteration 2 — 2026-01-09T15:00:00Z
-...
+## Orchestrator Pattern
+
+**Main Claude Code instance ONLY orchestrates.**
+
+### Orchestrator CAN Read
+
+- `state.json` - Always (10 lines)
+- `control/gaps.json` - Current gaps
+- `control/digest.json` - Iteration summary
+- `control/gate_results.json` - Gate status
+- `claims/index.json` - Claim rollup
+- `tasks/*.json` - Status fields
+
+### Orchestrator CANNOT Read
+
+- `findings/*.md` - Too large
+- `research-leads/*.md` - Not citable
+- `evidence/` - Raw content
+- `summary.md` - Except existence check
+- `claims/C####.json` - Full claim details
+
+### Orchestrator Responsibilities
+
+1. Read `gaps.json`, determine next actions
+2. Dispatch sub-agents with prompts from `.claude/commands/prompts/`
+3. Track iteration progress via TodoWrite
+4. Log all actions via `ledger-append.js`
+5. Run `verify-all-gates.js` to check termination
+
+### Orchestrator MUST NOT
+
+- Call MCP tools directly
+- Reason about investigation completeness
+- Make substantive claims about findings
+- Skip skills by "combining" them
+- Self-report gate passage
+
+---
+
+## Sub-Agent Context Rules
+
+**Prevent context explosion.**
+
+### Sub-Agents (EXCEPT Synthesis) Read ONLY:
+
+- `state.json` - Current iteration (10 lines)
+- `tasks/[assigned].json` - Their task file
+- `claims/[relevant].json` - Claims they're updating
+- `extraction.json` - Entities/claims list
+- `control/gaps.json` - To understand what's needed
+
+### Sub-Agents MUST NOT Read:
+
+- `findings/*.md` - Other task outputs
+- `research-leads/*.md` - Raw research
+- Full `summary.md` - Too large
+
+**Exception:** Synthesis agent reads everything to produce integrated output.
+
+---
+
+## Verifier Scripts
+
+### `generate-gaps.js`
+
+Master script that runs all verifiers and outputs `control/gaps.json`:
+
+```bash
+node scripts/generate-gaps.js cases/[case-id]
 ```
+
+### Individual Verifiers
+
+| Script | Checks | Emits |
+|--------|--------|-------|
+| `verify-sources.js` | Evidence folders exist | MISSING_EVIDENCE |
+| `verify-source-content.js` | Claims in evidence text | CONTENT_MISMATCH |
+| `verify-corroboration.js` | Claims meet min_sources | INSUFFICIENT_CORROBORATION |
+| `verify-claims.js` | AI verification | CONTRADICTED_CLAIM |
+| `verify-legal.js` | Legal risks | LEGAL_*, PRIVACY_* |
+| `verify-integrity.js` | File/ledger consistency | Various |
+| `verify-tasks.js` | Task completion | TASK_INCOMPLETE |
+| `verify-state-consistency.js` | State vs filesystem | STATE_* |
+
+### `verify-all-gates.js`
+
+Master termination checker:
+
+```bash
+node scripts/verify-all-gates.js cases/[case-id]
+# Exit 0 = all 9 gates pass
+# Exit 1 = blocking gates remain
+```
+
+Outputs `control/gate_results.json`.
+
+---
+
+## 9 Termination Gates
+
+| Gate | Verification | Script |
+|------|--------------|--------|
+| 1. Coverage | Required files exist | Built-in |
+| 2. Tasks | All HIGH priority completed | `verify-tasks.js` |
+| 3. Adversarial | A### tasks complete | `verify-tasks.js` |
+| 4. Sources | Evidence for all [SXXX] | `verify-sources.js` |
+| 5. Content | Claims in evidence | `verify-source-content.js` |
+| 6. Corroboration | Claims meet thresholds | `verify-corroboration.js` |
+| 7. Contradictions | All explored | Built-in |
+| 8. Rigor | 20 frameworks addressed | Built-in |
+| 9. Legal | No blocking legal gaps | `verify-legal.js` |
+
+**All thresholds = 100%. No exceptions.**
+
+---
+
+## MCP Server Usage
+
+| Task | Server | Tool | Config |
+|------|--------|------|--------|
+| Deep research (fast) | mcp-gemini | `deep_research` | - |
+| Deep research (thorough) | mcp-openai | `deep_research` | - |
+| Real-time multi-source | mcp-xai | `research`, `x_search` | - |
+| Cross-model critique | mcp-gemini | `generate_text` | - |
+| Extended reasoning | mcp-openai | `generate_text` | `reasoning_effort: xhigh` |
+| **20-Framework Rigor** | mcp-openai | `generate_text` | `model: gpt-5.2-pro`, `reasoning_effort: xhigh` |
+| **Deep Adversarial** | mcp-openai | `generate_text` | `model: gpt-5.2-pro`, `reasoning_effort: xhigh` |
+
+### Extended Thinking (GPT-5.2 Pro)
+
+For deep exploration tasks requiring exhaustive analysis, use GPT-5.2 Pro with extended thinking:
+
+```
+mcp__mcp-openai__generate_text:
+  model: "gpt-5.2-pro"
+  reasoning_effort: "xhigh"
+  max_output_tokens: 16384
+```
+
+**When to Use Extended Thinking:**
+
+| Task Type | Use Extended Thinking? | Why |
+|-----------|------------------------|-----|
+| 20-Framework Rigor | **YES** | Need exhaustive exploration of all angles |
+| Adversarial Analysis | **YES** | Finding non-obvious counter-arguments |
+| Curiosity Question Gen | **YES** | Creative depth for novel questions |
+| Hypothesis Testing | **YES** | Must consider all competing explanations |
+| Simple Task Execution | No | Overkill for routine work |
+| Evidence Capture | No | Mechanical task |
+
+**Agent Templates:**
+- `prompts/deep-thinking-agent.md` - Master template for extended thinking
+- `prompts/rigor-exploration-agent.md` - 20-framework analysis
+- `prompts/adversarial-agent.md` - Counter-hypothesis generation
+
+### Fast Mode (`--fast`)
+
+For development/testing, use `--fast` flag to skip extended thinking:
+
+| Mode | Model | Reasoning Effort |
+|------|-------|------------------|
+| Normal (default) | `gpt-5.2-pro` | `xhigh` |
+| Fast (`--fast`) | `gpt-5.2` | `none` |
+
+**Same prompts, same expectations - just different model.** All analysis depth, output requirements, and verification gates remain identical.
+
+---
+
+## Evidence Capture
+
+### Workflow
+
+```
+Source Found -> IMMEDIATE CAPTURE -> Verify Content -> Register Source -> Update Claims
+                    v
+             node scripts/capture.js S### URL [case-id|case_dir]
+                    v
+             evidence/web/S###/
+             +-- capture.png
+             +-- capture.pdf
+             +-- capture.html
+             +-- metadata.json
+             +-- extracted_text.txt
+```
+
+### AI Research Handling
+
+| What | Where | Citable? |
+|------|-------|----------|
+| Gemini/OpenAI deep research | `research-leads/*.md` | **NO** |
+| Primary source found via AI | `evidence/web/S###/` | **YES** |
+
+Find the primary URL, capture it, then cite that.
+
+---
+
+## Corroboration Model
+
+### Independence Rules
+
+| Rule | Definition |
+|------|------------|
+| `different_domain` | Sources from different root domains |
+| `primary_plus_secondary` | 1 primary doc + 1 independent report |
+| `different_domain_or_primary` | Different domain OR includes primary |
+| `outlet_ownership` | Different parent companies (for news) |
+
+### Source Categories
+
+| Category | Examples | Trust Level |
+|----------|----------|-------------|
+| Primary | Court filings, SEC filings, official records | Highest |
+| Government | Agency databases, .gov sites | High |
+| News (Tier 1) | Major outlets with editorial standards | Medium-High |
+| News (Tier 2) | Regional, specialized outlets | Medium |
+| Social | Twitter/X, blogs, forums | Low (corroboration required) |
+
+### Claim Risk Levels
+
+| Risk | Corroboration Required |
+|------|------------------------|
+| HIGH | 2+ sources, prefer primary |
+| MEDIUM | 2+ sources |
+| LOW | 1 source acceptable |
+
+---
+
+## Legal Verification
+
+### Continuous Checks
+
+Legal verification runs every iteration, emitting gaps:
+
+```json
+{
+  "gap_id": "G0124",
+  "type": "LEGAL_WORDING_RISK",
+  "object": {"file": "summary.md", "line": 47, "claim_id": "C0047"},
+  "severity": "HIGH",
+  "message": "States 'CEO committed fraud' as fact without conviction",
+  "suggested_actions": [
+    "change_to_alleged",
+    "add_attribution",
+    "add_legal_proceeding_status"
+  ]
+}
+```
+
+### Legal Gap Types
+
+| Type | Severity | Action |
+|------|----------|--------|
+| `LEGAL_DEFAMATION_RISK` | BLOCKER | Revise or add proof |
+| `LEGAL_WORDING_RISK` | HIGH | Add attribution/qualification |
+| `PRIVACY_RISK` | HIGH | Remove or anonymize |
+| `LEGAL_ATTRIBUTION_MISSING` | MEDIUM | Add source attribution |
+
+---
+
+## iterations.md Format
+
+Human-readable progress log:
+
+```markdown
+# Investigation Progress
+
+## Iteration 4 - 2026-01-10T15:00:00Z
+
+### Gaps
+- Blocking: 0 (was 3)
+- High: 2
+- Closed this iteration: 5
+
+### Tasks Completed
+| Task | Question | Result | Sources |
+|------|----------|--------|---------|
+| R003 | Corroboration for C0042? | Found S105 | S105 |
+| T018 | Timeline of payments? | Documented 3 events | S047, S048 |
+
+### Claims Updated
+| Claim | Status | Sources |
+|-------|--------|---------|
+| C0042 | verified (was insufficient) | S014, S105 |
+
+### Gate Status
+| Gate | Status |
+|------|--------|
+| Sources | PASS |
+| Corroboration | PASS |
+| Legal | PASS |
+
+### Next Focus
+- Execute remaining T### tasks
+- Run synthesis if no new gaps
+
+---
+```
+
+---
+
+## Parallel Agent Safety
+
+### Rules
+
+1. **Exclusive ownership:** One writer per file
+2. **Task parallelism:** Different tasks = different files
+3. **Sequential merges:** Shared outputs written sequentially
+
+### Lock Protocol
+
+```json
+{"type": "file_lock", "file": "findings/T001-findings.md", "agent": "exec-1"}
+```
+
+### Safe Parallel Execution
+
+```
+PARALLEL OK:
++-- Agent 1 -> findings/T001-findings.md, claims/C0042.json
++-- Agent 2 -> findings/T002-findings.md, claims/C0043.json
++-- Agent 3 -> findings/T003-findings.md, claims/C0044.json
+
+NOT PARALLEL (sequential):
++-- Synthesis -> summary.md (after all tasks complete)
+```
+
+---
+
+## Scripts Reference
+
+| Script | Purpose |
+|--------|---------|
+| `generate-gaps.js` | Run all verifiers, output `gaps.json` |
+| `verify-all-gates.js` | Check all 9 gates, output `gate_results.json` |
+| `verify-sources.js` | Check evidence folders exist |
+| `verify-source-content.js` | Check claims in evidence text |
+| `verify-corroboration.js` | Check claim evidence bundles |
+| `verify-claims.js` | AI claim verification |
+| `verify-legal.js` | Legal risk checking |
+| `verify-integrity.js` | File/ledger consistency |
+| `verify-tasks.js` | Task completion checking |
+| `verify-state-consistency.js` | State vs filesystem |
+| `ledger-append.js` | Append to `ledger.json` |
+| `capture-url.js` | Capture web page evidence |
+| `firecrawl-capture.js` | Bot-bypass capture |

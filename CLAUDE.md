@@ -6,13 +6,52 @@ Behavioral rules for Claude Code operating in this project.
 
 ---
 
-## Document Sync
+## Core Invariant
 
-When modifying system behavior, update:
-- `framework/rules.md` — Rules change
-- `framework/architecture.md` — Data formats, workflow
-- `CLAUDE.md` — Behavioral guidance
-- `README.md` — User-facing docs
+**The orchestrator believes only two things:**
+
+1. The filesystem (captured evidence, task files, findings files)
+2. The verifier outputs (`control/gaps.json`)
+
+Nothing else. No self-reported completion. No "feels done."
+
+---
+
+## The Loop: VERIFY -> PLAN -> EXECUTE
+
+```
++-----------------------------+
+| 0) VERIFY                   |
+|    node scripts/generate-gaps.js    |
++--------------+--------------+
+               | produces
+               v
++-----------------------------+
+| control/gaps.json          |
++--------------+--------------+
+               | drives
+               v
++-----------------------------+
+| 1) PLAN                     |
+|    gaps -> R### tasks        |
+|    + A### adversarial       |
+|    + T### investigation     |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| 2) EXECUTE                  |
+|    capture evidence         |
+|    update claims            |
+|    write findings           |
++--------------+--------------+
+               |
+               v
+       (back to VERIFY)
+```
+
+**Termination:** `control/gaps.json.blocking` empty AND `node scripts/verify-all-gates.js` exits 0.
+**Orchestrator-friendly summary:** `node scripts/orchestrator-verify.js cases/[case-id]`
 
 ---
 
@@ -22,7 +61,7 @@ When modifying system behavior, update:
 |---------|---------|
 | `/investigate --new [topic]` | Start new investigation |
 | `/investigate [case-id]` | Resume case |
-| `/verify` | Verification checkpoint |
+| `/verify` | Run verification |
 | `/integrity` | Journalistic integrity check |
 | `/legal-review` | Legal risk assessment |
 | `/article` | Generate articles |
@@ -33,101 +72,207 @@ When modifying system behavior, update:
 
 **Main instance ONLY orchestrates. Sub-agents do all work.**
 
-### Orchestrator MUST DO
+### Orchestrator CAN Read
 
-- Read state files: `_state.json`, `_tasks.json`, `_coverage.json`
-- Dispatch sub-agents with specific tasks
-- Track gate status via mechanical verification scripts
-- Log all agent dispatches
+- `state.json` - Minimal state (10 lines)
+- `control/gaps.json` - Current gaps (THE input for decisions)
+- `control/digest.json` - Iteration summary
+- `control/gate_results.json` - Gate status
+- `claims/index.json` - Claim rollup
+- `tasks/*.json` - Status fields only
+
+### Orchestrator CANNOT Read
+
+- `findings/*.md` - Too large
+- `research-leads/*.md` - Not citable
+- `evidence/` - Raw content
+- `summary.md` - Except existence check
+
+### Orchestrator Responsibilities
+
+1. Run `node scripts/generate-gaps.js` at start of each iteration
+2. Read `gaps.json.blocking` to determine actions
+3. Dispatch sub-agents with prompts from `.claude/commands/prompts/`
+4. Track progress via TodoWrite (Claude Code todo list)
+5. Run `node scripts/verify-all-gates.js` to check termination
 
 ### Orchestrator MUST NOT
 
-- Read full content of `findings/*.md`, `outlet-profiles/*.md`
-- Reason about investigation completeness (use verify scripts)
+- Call MCP tools directly
+- Reason about investigation completeness
 - Make substantive claims about findings
 - Skip skills by "combining" them
 - Self-report gate passage
 
-### Strict Delegation
+---
 
-| Agent Type | Responsibility |
-|------------|----------------|
-| Research agents | Gather information, write to findings/ |
-| Capture agents | Run capture scripts, verify evidence |
-| Verification agents | Run verify scripts, report results |
-| Orchestrator | Dispatch, track state, enforce gates |
+## Sub-Agent Delegation
+
+| Agent Type | Responsibility | Prompt Template |
+|------------|----------------|-----------------|
+| Research | Gather information | `prompts/research-agent.md` |
+| Extraction | Parse and structure | `prompts/extraction-agent.md` |
+| Task generation | Create tasks from gaps | `prompts/task-gen-agent.md` |
+| Execution | Investigate tasks | `prompts/execution-agent.md` |
+| Adversarial | Find blind spots | `prompts/adversarial-agent.md` |
+| Synthesis | Write final report | `prompts/synthesis-agent.md` |
 
 ---
 
-## Core Behavioral Rules
+## Context Minimalism
 
-1. **Never fabricate sources** — If no evidence, say so
-2. **Steelman ALL positions** — Strongest version of EVERY side
-3. **Separate fact from inference** — Be explicit
-4. **Document uncertainty** — "We don't know" is valid
-5. **Detect circular reporting** — Multiple outlets citing same source = 1 source
-6. **Fact-check ALL sides** — Every position gets verified
-7. **Address alternative theories** — Investigate, don't ignore
-8. **Capture evidence immediately** — Don't wait
-9. **AI research = leads only** — Find primary sources
-10. **Generate curiosity tasks** — At least 2 per cycle
-11. **Run adversarial pass** — Don't skip uncomfortable questions
+**Prevent context explosion in orchestrator and sub-agents.**
 
----
+### Sub-Agents (EXCEPT Synthesis) Read ONLY:
 
-## Philosophy
+- `state.json` - 10 lines max
+- `tasks/[assigned].json` - Their task
+- `claims/[relevant].json` - Claims being updated
+- `control/gaps.json` - To understand what's needed
 
-1. **Fail fast** — Surface problems immediately
-2. **Be curious** — Explore, question assumptions, dig deeper
-3. **Don't guess, research** — Investigate first
-4. **Finish the job** — Verify completion
-5. **Commit often** — Git is our safety net
+### Sub-Agents MUST NOT Read:
+
+- `findings/*.md` - Other outputs
+- `research-leads/*.md` - Raw research
+- Full `summary.md`
+
+**Exception:** Synthesis agent reads all files for integration.
 
 ---
 
-## DO NOT STOP EARLY
+## Core Rules
 
-Only stop when ALL 9 TERMINATION GATES pass mechanically.
+1. **CAPTURE BEFORE CITE** - No `[SXXX]` without `evidence/web/SXXX/`
+2. **EVERY FACT NEEDS A SOURCE** - Every factual statement in `summary.md` MUST have `[SXXX]` citation
+3. **Question-shaped tasks** - Not topics, but questions with evidence requirements
+4. **Corroboration is data** - Claims have explicit evidence bundles in `claims/`
+5. **Gaps drive tasks** - Tasks generated from `gaps.json`, not generic exploration
+6. **Continuous verification** - Legal/integrity run every iteration, not end-of-run
+7. **Steelman ALL positions** - Strongest version of EVERY side
+8. **Document uncertainty** - "We don't know" is valid
+9. **Detect circular reporting** - Multiple outlets citing same source = 1 source
 
-### Mechanical Verification Required
+### Citation Density Enforcement
+
+The system will reject any `summary.md` that has:
+- Zero `[SXXX]` citations (automatic FAIL)
+- Citation density below the configured threshold (default: 100% of factual lines) (gate FAIL)
+
+Run `node scripts/verify-citation-density.js <case>` to check before completing synthesis.
+
+---
+
+## Parallel Agent Safety
+
+**Each file has exactly ONE writer.**
+
+```
+CORRECT (parallel OK):
++-- Agent 1 -> findings/T001-findings.md
++-- Agent 2 -> findings/T002-findings.md
++-- Agent 3 -> findings/T003-findings.md
+
+WRONG (race condition):
++-- Agent 1 -> summary.md  NO
++-- Agent 2 -> summary.md  NO
+```
+
+---
+
+## Task Management (TodoWrite)
+
+Use Claude Code's built-in TodoWrite for tracking:
+
+```
+Investigation: [case-id] - Iteration N
++-- [x] Run node scripts/generate-gaps.js
++-- [x] Review blocking gaps (3 found)
++-- [in_progress] Execute R001 - corroboration gap
++-- [ ] Execute R002 - missing evidence
++-- [ ] Execute T015 - timeline question
++-- [ ] Run verification check
++-- [ ] Check termination gates
++-- [ ] Synthesis (if gates pass)
+```
+
+Update TodoWrite at each phase transition.
+
+---
+
+## Gap-Driven Workflow
+
+### Every Iteration:
+
+1. **VERIFY:** `node scripts/generate-gaps.js cases/[case-id]`
+2. **READ:** `control/gaps.json` - blocking gaps drive all work
+3. **PLAN:** Create R### tasks for blocking gaps
+4. **EXECUTE:** Dispatch agents for pending tasks
+5. **VERIFY AGAIN:** Back to step 1
+
+### Gap Types
+
+| Type | Severity | Action |
+|------|----------|--------|
+| `MISSING_EVIDENCE` | BLOCKER | Capture source |
+| `INSUFFICIENT_CORROBORATION` | BLOCKER | Find more sources |
+| `CONTENT_MISMATCH` | BLOCKER | Fix claim or find evidence |
+| `LEGAL_WORDING_RISK` | HIGH | Revise language |
+| `PERSPECTIVE_MISSING` | MEDIUM | Create task |
+| `ADVERSARIAL_INCOMPLETE` | MEDIUM | Run adversarial pass |
+
+---
+
+## 9 Termination Gates
+
+**ALL must pass to terminate.**
+
+| Gate | What's Checked |
+|------|----------------|
+| 1. Coverage | Required files exist |
+| 2. Tasks | All HIGH priority completed |
+| 3. Adversarial | A### tasks exist and completed |
+| 4. Sources | Evidence for all [SXXX] |
+| 5. Content | Claims found in evidence |
+| 6. Corroboration | Claims meet thresholds |
+| 7. Contradictions | All explored |
+| 8. Rigor | 20 frameworks addressed |
+| 9. Legal | No blocking legal gaps |
 
 ```bash
-# MUST run before marking COMPLETE
+# Run before synthesis
 node scripts/verify-all-gates.js cases/[case-id]
-
 # Exit 0 = can terminate
 # Exit 1 = must continue
 ```
 
-### Required Skills (Must Invoke)
+---
 
-Before marking investigation COMPLETE, orchestrator MUST invoke:
+## Required Skills
 
-1. `/verify` — Verification checkpoint
-2. `/integrity` — Journalistic integrity check
-3. `/legal-review` — Legal risk assessment
-4. `/article` — Article generation (if requested)
+Before marking COMPLETE, invoke these skills:
 
-**Do NOT combine or substitute skills.** Each has unique output requirements.
+| Skill | Required Output |
+|-------|-----------------|
+| `/verify` | Verification checkpoint |
+| `/integrity` | Journalistic integrity |
+| `/legal-review` | Legal review file |
+| `/article` | Articles (if requested) |
 
-See `framework/rules.md` for complete gate definitions, coverage thresholds, and termination signals.
+**Do NOT combine or substitute skills.**
 
 ---
 
-## Quick Reference
+## Ledger System
 
-| Topic | Canonical Source |
-|-------|------------------|
-| Source attribution (`[S001]`) | `framework/rules.md` |
-| File ownership | `framework/rules.md` |
-| Termination gates (9) | `framework/rules.md` |
-| 5-layer capture protocol | `framework/rules.md` |
-| Three-layer rigor system | `framework/architecture.md` |
-| Schema definitions | `framework/architecture.md` |
-| Dynamic source discovery | `framework/architecture.md` |
-| Gate results schema | `framework/architecture.md` |
-| Investigation procedure | `.claude/commands/investigate.md` |
-| Baseline data sources | `framework/data-sources.md` |
+All actions logged via `ledger-append.js`:
+
+```bash
+node scripts/ledger-append.js <case> iteration_start --iteration N
+node scripts/ledger-append.js <case> task_create --task R001 --gap G0001
+node scripts/ledger-append.js <case> source_capture --source S001 --url "..."
+node scripts/ledger-append.js <case> claim_update --claim C0042 --sources S001,S002
+node scripts/ledger-append.js <case> task_complete --task R001 --output findings/R001.md
+```
 
 ---
 
@@ -139,3 +284,44 @@ See `framework/rules.md` for complete gate definitions, coverage thresholds, and
 | Deep research (max) | mcp-openai | `deep_research` |
 | Real-time search | mcp-xai | `research`, `x_search` |
 | Cross-model critique | mcp-gemini | `generate_text` |
+
+---
+
+## Document Sync
+
+When modifying system behavior, update:
+
+| File | Update When |
+|------|-------------|
+| `framework/rules.md` | Rules change |
+| `framework/architecture.md` | Schemas, workflow |
+| `CLAUDE.md` | Behavioral guidance |
+| `README.md` | User-facing docs |
+
+---
+
+## Quick Reference
+
+| Topic | Canonical Source |
+|-------|------------------|
+| The Loop | `framework/rules.md` |
+| Gap schema | `framework/architecture.md` |
+| Claim schema | `framework/architecture.md` |
+| Task schema | `framework/architecture.md` |
+| Termination gates (9) | `framework/rules.md` |
+| Agent prompts | `.claude/commands/prompts/` |
+| Investigation procedure | `.claude/commands/investigate.md` |
+
+---
+
+## Anti-Gaming Rules
+
+- Do NOT skip verification
+- Do NOT claim saturation to avoid iterations
+- Do NOT cherry-pick claims to check
+- Do NOT ignore alternative theories
+- Do NOT give benefit of the doubt on gaps
+- Do NOT accept ANY metric below 100%
+- Do NOT "document gaps" instead of fixing them
+- Do NOT cite without captured evidence
+- Do NOT self-report gate passage
