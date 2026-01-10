@@ -19,8 +19,15 @@
  * Requires: GEMINI_API_KEY environment variable
  */
 
+'use strict';
+
 const fs = require('fs');
 const path = require('path');
+
+// Load .env when present (keeps CLI usage consistent across scripts)
+try {
+  require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+} catch (_) {}
 
 // ANSI colors
 const RED = '\x1b[31m';
@@ -31,7 +38,6 @@ const BOLD = '\x1b[1m';
 const NC = '\x1b[0m';
 
 // Configuration
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const MODEL = 'gemini-2.5-flash';
 
@@ -45,21 +51,13 @@ const CLAIM_FILES = [
   'statements.md'
 ];
 
-// Parse command line arguments
-const args = process.argv.slice(2);
-const caseDir = args.find(a => !a.startsWith('--'));
-const summaryOnly = args.includes('--summary');
-const jsonOutput = args.includes('--json');
-
-if (!caseDir) {
-  console.error('Usage: node verify-claims.js <case_dir> [--summary] [--json]');
-  process.exit(1);
-}
-
-if (!GEMINI_API_KEY) {
-  console.error('Error: GEMINI_API_KEY environment variable required');
-  console.error('Set it in your shell or .env file');
-  process.exit(1);
+function parseCliArgs(argv) {
+  const args = argv.slice(2);
+  return {
+    caseDir: args.find(a => !a.startsWith('--')),
+    summaryOnly: args.includes('--summary'),
+    jsonOutput: args.includes('--json')
+  };
 }
 
 /**
@@ -77,7 +75,7 @@ function extractClaims(filePath, fileName) {
 
   // Pattern to match source citations
   // Matches: text [S001] or [S001] text or [S001][S002] (multiple sources)
-  const sourcePattern = /\[S(\d{3})\]/g;
+  const sourcePattern = /\[S(\d{3,4})\]/g;
 
   for (let lineNum = 0; lineNum < lines.length; lineNum++) {
     const line = lines[lineNum];
@@ -89,7 +87,7 @@ function extractClaims(filePath, fileName) {
 
       // Get the claim text (line without the source citations)
       let claimText = line
-        .replace(/\[S\d{3}\]/g, '')  // Remove source citations
+        .replace(/\[S\d{3,4}\]/g, '')  // Remove source citations
         .replace(/^\s*[-*•]\s*/, '') // Remove list markers
         .replace(/^\s*\d+\.\s*/, '') // Remove numbered list markers
         .replace(/^#+\s*/, '')       // Remove heading markers
@@ -114,6 +112,50 @@ function extractClaims(filePath, fileName) {
           });
         }
       }
+    }
+  }
+
+  return claims;
+}
+
+function extractClaimsFromRegistry(caseDir) {
+  const claimsDir = path.join(caseDir, 'claims');
+  if (!fs.existsSync(claimsDir)) return [];
+
+  const files = fs.readdirSync(claimsDir).filter(f => /^C\d{4,}\.json$/i.test(f));
+  const claims = [];
+
+  for (const fileName of files) {
+    const filePath = path.join(claimsDir, fileName);
+    try {
+      const record = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      const claimId = typeof record.id === 'string' ? record.id : path.basename(fileName, '.json');
+      const claimText = typeof record.claim === 'string' ? record.claim.trim() : '';
+      const sources = Array.isArray(record.supporting_sources) ? record.supporting_sources.map(String) : [];
+
+      if (!claimText || sources.length === 0) continue;
+
+      const evidenceNotes = record.evidence_notes && typeof record.evidence_notes === 'object'
+        ? record.evidence_notes
+        : null;
+
+      for (const sourceIdRaw of Array.from(new Set(sources))) {
+        const sourceId = String(sourceIdRaw).toUpperCase();
+        if (!/^S\d{3,4}$/.test(sourceId)) continue;
+
+        claims.push({
+          sourceId,
+          claim_id: claimId,
+          claim: claimText,
+          context: evidenceNotes && typeof evidenceNotes[sourceId] === 'string'
+            ? evidenceNotes[sourceId]
+            : null,
+          file: `claims/${fileName}`,
+          line: null
+        });
+      }
+    } catch (_) {
+      // Skip malformed claim records
     }
   }
 
@@ -192,7 +234,7 @@ function loadEvidence(caseDir, sourceId) {
 /**
  * Use Gemini to verify a claim exists in evidence
  */
-async function verifyClaimWithAI(claim, evidence, url) {
+async function verifyClaimWithAI(claim, evidence, url, apiKey) {
   const prompt = `You are a fact-checking assistant. Your job is to verify whether a specific claim is supported by the provided source evidence.
 
 CLAIM TO VERIFY:
@@ -222,7 +264,7 @@ Verdicts:
 Be strict. If the evidence doesn't explicitly support the claim, mark it NOT_FOUND.`;
 
   try {
-    const response = await fetch(`${API_BASE}/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`, {
+    const response = await fetch(`${API_BASE}/models/${MODEL}:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -269,8 +311,50 @@ function delay(ms) {
 /**
  * Main verification process
  */
-async function main() {
+async function run(caseDir, options = {}) {
   const startTime = Date.now();
+  const summaryOnly = options.summaryOnly === true;
+  const apiKey = options.apiKey || process.env.GEMINI_API_KEY;
+  const delayMs = typeof options.delay_ms === 'number' ? options.delay_ms : 2100;
+
+  // Suppress console output; callers decide how to render.
+  const jsonOutput = true;
+
+  if (!caseDir || typeof caseDir !== 'string') {
+    return {
+      case_dir: caseDir || null,
+      timestamp: new Date().toISOString(),
+      duration_ms: Date.now() - startTime,
+      passed: false,
+      reason: 'Missing case directory argument',
+      stats: { total: 0, verified: 0, not_found: 0, partial: 0, contradicted: 0, no_evidence: 0, errors: 0 },
+      verification_rate: 0,
+      gaps: [{
+        type: 'STATE_INCONSISTENT',
+        object: { field: 'case_dir' },
+        message: 'Missing case directory argument',
+        suggested_actions: ['provide_case_dir']
+      }]
+    };
+  }
+
+  if (!apiKey) {
+    return {
+      case_dir: caseDir,
+      timestamp: new Date().toISOString(),
+      duration_ms: Date.now() - startTime,
+      passed: false,
+      reason: 'GEMINI_API_KEY not set - cannot run AI verification',
+      stats: { total: 0, verified: 0, not_found: 0, partial: 0, contradicted: 0, no_evidence: 0, errors: 0 },
+      verification_rate: 0,
+      gaps: [{
+        type: 'STATE_INCONSISTENT',
+        object: { env: 'GEMINI_API_KEY' },
+        message: 'GEMINI_API_KEY not set - cannot run AI verification',
+        suggested_actions: ['set_gemini_api_key']
+      }]
+    };
+  }
 
   if (!jsonOutput) {
     console.log('='.repeat(70));
@@ -283,23 +367,46 @@ async function main() {
 
   // Step 1: Extract all claims
   const allClaims = [];
-  const filesToScan = summaryOnly ? ['summary.md'] : CLAIM_FILES;
+  if (summaryOnly) {
+    const filePath = path.join(caseDir, 'summary.md');
+    allClaims.push(...extractClaims(filePath, 'summary.md'));
+  } else {
+    const registryClaims = extractClaimsFromRegistry(caseDir);
+    if (registryClaims.length > 0) {
+      allClaims.push(...registryClaims);
+    } else {
+      for (const fileName of CLAIM_FILES) {
+        const filePath = path.join(caseDir, fileName);
+        const claims = extractClaims(filePath, fileName);
+        allClaims.push(...claims);
+      }
 
-  for (const fileName of filesToScan) {
-    const filePath = path.join(caseDir, fileName);
-    const claims = extractClaims(filePath, fileName);
-    allClaims.push(...claims);
-
-    if (!jsonOutput && claims.length > 0) {
-      console.log(`Found ${claims.length} claims in ${fileName}`);
+      const findingsDir = path.join(caseDir, 'findings');
+      if (fs.existsSync(findingsDir)) {
+        const findingsFiles = fs.readdirSync(findingsDir).filter(f => f.endsWith('.md'));
+        for (const fileName of findingsFiles) {
+          const filePath = path.join(findingsDir, fileName);
+          allClaims.push(...extractClaims(filePath, `findings/${fileName}`));
+        }
+      }
     }
   }
 
   if (allClaims.length === 0) {
-    if (!jsonOutput) {
-      console.log(`${YELLOW}No claims with source citations found${NC}`);
-    }
-    process.exit(0);
+    return {
+      case_dir: caseDir,
+      timestamp: new Date().toISOString(),
+      duration_ms: Date.now() - startTime,
+      passed: true,
+      reason: 'No claims found to verify',
+      stats: { total: 0, verified: 0, not_found: 0, partial: 0, contradicted: 0, no_evidence: 0, errors: 0 },
+      verification_rate: 100,
+      problems: [],
+      partial: [],
+      no_evidence: [],
+      errors: [],
+      gaps: []
+    };
   }
 
   // Group claims by source ID
@@ -357,7 +464,7 @@ async function main() {
     }
 
     for (const claim of claims) {
-      const verification = await verifyClaimWithAI(claim, evidence.content, evidence.url);
+      const verification = await verifyClaimWithAI(claim, evidence.content, evidence.url, apiKey);
 
       const result = {
         ...claim,
@@ -406,7 +513,7 @@ async function main() {
       }
 
       // Rate limiting - 30 requests per minute for Gemini
-      await delay(2100);
+      await delay(delayMs);
     }
   }
 
@@ -425,18 +532,70 @@ async function main() {
   const problemCount = stats.not_found + stats.contradicted;
 
   if (jsonOutput) {
-    // JSON output
-    console.log(JSON.stringify({
+    const problems = [...results.not_found, ...results.contradicted];
+    const gaps = [];
+
+    for (const item of results.not_found) {
+      gaps.push({
+        type: 'CONTENT_MISMATCH',
+        object: {
+          source_id: item.sourceId,
+          ...(item.claim_id ? { claim_id: item.claim_id } : {}),
+          file: item.file,
+          line: item.line
+        },
+        message: `${item.claim_id ? `Claim ${item.claim_id}` : 'Claim'} attributed to ${item.sourceId} not found in evidence (AI verification)`,
+        suggested_actions: ['recapture_source', 'revise_claim', 'remove_or_recite']
+      });
+    }
+
+    for (const item of results.contradicted) {
+      gaps.push({
+        type: 'CONTRADICTED_CLAIM',
+        object: {
+          source_id: item.sourceId,
+          ...(item.claim_id ? { claim_id: item.claim_id } : {}),
+          file: item.file,
+          line: item.line
+        },
+        message: `${item.claim_id ? `Claim ${item.claim_id}` : 'Claim'} attributed to ${item.sourceId} contradicted by evidence (AI verification)`,
+        suggested_actions: ['revise_claim', 'add_context', 'remove_or_recite']
+      });
+    }
+
+    for (const item of results.no_evidence) {
+      gaps.push({
+        type: 'MISSING_EVIDENCE',
+        object: { source_id: item.sourceId },
+        message: `${item.sourceId} has no captured evidence - AI cannot verify claims`,
+        suggested_actions: ['capture_source', 'recapture_source']
+      });
+    }
+
+    for (const item of results.errors) {
+      gaps.push({
+        type: 'STATE_INCONSISTENT',
+        object: { source_id: item.sourceId },
+        message: `AI verification error for ${item.sourceId}: ${item.explanation || 'unknown error'}`,
+        suggested_actions: ['retry_verification', 'check_api_key']
+      });
+    }
+
+    const passed = problemCount === 0 && stats.no_evidence === 0 && stats.errors === 0;
+    return {
       case_dir: caseDir,
       timestamp: new Date().toISOString(),
       duration_seconds: Math.round((Date.now() - startTime) / 1000),
+      duration_ms: Date.now() - startTime,
+      passed,
       stats,
       verification_rate: Math.round(verificationRate * 10) / 10,
-      problems: [...results.not_found, ...results.contradicted],
+      problems,
       partial: results.partial,
       no_evidence: results.no_evidence,
-      errors: results.errors
-    }, null, 2));
+      errors: results.errors,
+      gaps
+    };
   } else {
     // Human-readable output
     console.log('');
@@ -539,7 +698,55 @@ async function main() {
   process.exit(problemCount > 0 ? 1 : 0);
 }
 
-main().catch(error => {
-  console.error(`Fatal error: ${error.message}`);
-  process.exit(1);
-});
+function printHuman(output) {
+  console.log('='.repeat(70));
+  console.log(`${BOLD}Claim-to-Evidence Verification${NC}`);
+  console.log('='.repeat(70));
+  console.log(`Case: ${output.case_dir}`);
+  console.log('');
+
+  if (output.reason && !output.passed) {
+    console.log(`${RED}FAIL${NC}: ${output.reason}`);
+    return;
+  }
+
+  console.log(`Total claims checked:    ${output.stats.total}`);
+  console.log(`${GREEN}Verified:                ${output.stats.verified}${NC}`);
+  console.log(`${YELLOW}Partial:                 ${output.stats.partial}${NC}`);
+  console.log(`${RED}Not found:               ${output.stats.not_found}${NC}`);
+  console.log(`${RED}Contradicted:            ${output.stats.contradicted}${NC}`);
+  console.log(`${YELLOW}No evidence available:   ${output.stats.no_evidence}${NC}`);
+  console.log(`Errors:                  ${output.stats.errors}`);
+  console.log('');
+  console.log(output.passed ? `${GREEN}PASS${NC}` : `${RED}FAIL${NC}`);
+}
+
+async function cli() {
+  const parsed = parseCliArgs(process.argv);
+  const caseDir = parsed.caseDir;
+  const jsonOutput = parsed.jsonOutput || parsed.summaryOnly;
+
+  if (!caseDir) {
+    console.error('Usage: node verify-claims.js <case_dir> [--summary] [--json]');
+    process.exit(1);
+  }
+
+  const output = await run(caseDir, { summaryOnly: parsed.summaryOnly });
+
+  if (jsonOutput) {
+    console.log(JSON.stringify(output, null, 2));
+  } else {
+    printHuman(output);
+  }
+
+  process.exit(output.passed ? 0 : 1);
+}
+
+module.exports = { run };
+
+if (require.main === module) {
+  cli().catch(error => {
+    console.error(`Fatal error: ${error.message}`);
+    process.exit(1);
+  });
+}

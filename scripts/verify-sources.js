@@ -2,26 +2,34 @@
 /**
  * verify-sources.js - Verify source evidence integrity
  *
- * Usage: node verify-sources.js <case_dir>
+ * Usage:
+ *   node verify-sources.js <case_dir>
+ *   node verify-sources.js <case_dir> --json
  *
  * Checks:
- *   - All sources in sources.md have evidence folders
+ *   - All cited sources have evidence folders
  *   - All evidence files match their recorded hashes
  *   - Reports missing or corrupted evidence
  */
+
+'use strict';
 
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-// Parse command line arguments
-const args = process.argv.slice(2);
-if (args.length < 1) {
-  console.error('Usage: node verify-sources.js <case_dir>');
-  process.exit(1);
+function parseCliArgs(argv) {
+  const args = argv.slice(2);
+  return {
+    caseDir: args.find(a => !a.startsWith('--')),
+    jsonOutput: args.includes('--json')
+  };
 }
 
-const caseDir = args[0];
+// This file supports CLI execution and in-process usage via `run(caseDir)`.
+// CLI globals are set inside `main()` only when executed as a script.
+let caseDir = null;
+let jsonOutput = false;
 
 // ANSI colors
 const RED = '\x1b[31m';
@@ -35,16 +43,13 @@ function hashFile(filePath) {
 }
 
 function extractSourceIds(sourcesPath) {
-  if (!fs.existsSync(sourcesPath)) {
-    console.error(`${RED}sources.md not found: ${sourcesPath}${NC}`);
-    return [];
-  }
+  if (!fs.existsSync(sourcesPath)) return [];
 
   const content = fs.readFileSync(sourcesPath, 'utf-8');
   const sourceIds = [];
 
   // Match patterns like [S001], [S002], etc.
-  const matches = content.matchAll(/\[S(\d+)\]/g);
+  const matches = content.matchAll(/\[S(\d{3,4})\]/g);
   for (const match of matches) {
     const id = `S${match[1].padStart(3, '0')}`;
     if (!sourceIds.includes(id)) {
@@ -53,6 +58,42 @@ function extractSourceIds(sourcesPath) {
   }
 
   return sourceIds.sort();
+}
+
+function extractCitedSourceIds(caseDir) {
+  const citations = new Set();
+  const pattern = /\[S(\d{3,4})\]/g;
+
+  const filesToScan = [
+    'summary.md',
+    'sources.md',
+    'fact-check.md',
+    'positions.md',
+    'people.md',
+    'timeline.md',
+    'theories.md',
+    'statements.md',
+    'organizations.md'
+  ];
+
+  const findingsDir = path.join(caseDir, 'findings');
+  if (fs.existsSync(findingsDir)) {
+    const findings = fs.readdirSync(findingsDir).filter(f => f.endsWith('.md'));
+    filesToScan.push(...findings.map(f => `findings/${f}`));
+  }
+
+  for (const relPath of filesToScan) {
+    const filePath = path.join(caseDir, relPath);
+    if (!fs.existsSync(filePath)) continue;
+
+    const content = fs.readFileSync(filePath, 'utf-8');
+    let match;
+    while ((match = pattern.exec(content)) !== null) {
+      citations.add(`S${String(match[1]).padStart(3, '0')}`);
+    }
+  }
+
+  return Array.from(citations).sort();
 }
 
 function verifyEvidence(caseDir, sourceId) {
@@ -141,20 +182,140 @@ function verifyEvidence(caseDir, sourceId) {
   return results;
 }
 
+function run(caseDir) {
+  const startTime = Date.now();
+
+  if (!caseDir || typeof caseDir !== 'string') {
+    return {
+      case_dir: caseDir || null,
+      timestamp: new Date().toISOString(),
+      duration_ms: Date.now() - startTime,
+      passed: false,
+      stats: { total: 0, valid: 0, partial: 0, document: 0, missing: 0 },
+      capture_rate: 0,
+      issues: [],
+      sources: [],
+      gaps: [{
+        type: 'STATE_INCONSISTENT',
+        object: { field: 'case_dir' },
+        message: 'Missing case directory argument',
+        suggested_actions: ['provide_case_dir']
+      }]
+    };
+  }
+
+  // Prefer citations (CAPTURE BEFORE CITE). Fall back to sources.md if present.
+  let sourceIds = extractCitedSourceIds(caseDir);
+  if (sourceIds.length === 0) {
+    const sourcesPath = path.join(caseDir, 'sources.md');
+    if (fs.existsSync(sourcesPath)) {
+      sourceIds = extractSourceIds(sourcesPath);
+    }
+  }
+
+  const stats = {
+    total: sourceIds.length,
+    valid: 0,
+    partial: 0,
+    document: 0,
+    missing: 0
+  };
+
+  const sources = [];
+  const gaps = [];
+
+  for (const sourceId of sourceIds) {
+    const result = verifyEvidence(caseDir, sourceId);
+    const fileCount = Object.keys(result.files || {}).length;
+
+    sources.push({
+      source_id: sourceId,
+      status: result.status,
+      file_count: fileCount,
+      errors: result.errors || []
+    });
+
+    switch (result.status) {
+      case 'valid':
+        stats.valid++;
+        break;
+      case 'document':
+        stats.document++;
+        break;
+      case 'missing':
+        stats.missing++;
+        gaps.push({
+          type: 'MISSING_EVIDENCE',
+          object: { source_id: sourceId },
+          message: `${sourceId} is cited but evidence is missing`,
+          suggested_actions: ['capture_source', 'remove_citation']
+        });
+        break;
+      case 'partial':
+      default:
+        stats.partial++;
+        gaps.push({
+          type: 'MISSING_EVIDENCE',
+          object: { source_id: sourceId },
+          message: `${sourceId} evidence exists but is incomplete: ${(result.errors || []).join('; ') || 'unknown error'}`,
+          suggested_actions: ['recapture_source', 'fix_metadata']
+        });
+        break;
+    }
+  }
+
+  const captureRate = stats.total > 0
+    ? ((stats.valid + stats.document + stats.partial) / stats.total * 100)
+    : 100;
+
+  const passed = gaps.length === 0;
+  return {
+    case_dir: caseDir,
+    timestamp: new Date().toISOString(),
+    duration_ms: Date.now() - startTime,
+    passed,
+    stats,
+    capture_rate: Math.round(captureRate * 10) / 10,
+    issues: sources
+      .filter(s => s.status !== 'valid' && s.status !== 'document')
+      .map(s => ({ source_id: s.source_id, status: s.status, errors: s.errors })),
+    sources,
+    gaps
+  };
+}
+
 function main() {
-  console.log('='.repeat(60));
-  console.log('Source Evidence Verification Report');
-  console.log('='.repeat(60));
-  console.log(`Case: ${caseDir}`);
-  console.log(`Time: ${new Date().toISOString()}`);
-  console.log('');
+  const parsed = parseCliArgs(process.argv);
+  caseDir = parsed.caseDir;
+  jsonOutput = parsed.jsonOutput;
 
-  // Extract source IDs from sources.md
-  const sourcesPath = path.join(caseDir, 'sources.md');
-  const sourceIds = extractSourceIds(sourcesPath);
+  if (!caseDir) {
+    console.error('Usage: node verify-sources.js <case_dir> [--json]');
+    process.exit(1);
+  }
 
-  console.log(`Found ${sourceIds.length} source IDs in sources.md`);
-  console.log('');
+  if (!jsonOutput) {
+    console.log('='.repeat(60));
+    console.log('Source Evidence Verification Report');
+    console.log('='.repeat(60));
+    console.log(`Case: ${caseDir}`);
+    console.log(`Time: ${new Date().toISOString()}`);
+    console.log('');
+  }
+
+  // Prefer citations (CAPTURE BEFORE CITE). Fall back to sources.md if present.
+  let sourceIds = extractCitedSourceIds(caseDir);
+  if (sourceIds.length === 0) {
+    const sourcesPath = path.join(caseDir, 'sources.md');
+    if (fs.existsSync(sourcesPath)) {
+      sourceIds = extractSourceIds(sourcesPath);
+    }
+  }
+
+  if (!jsonOutput) {
+    console.log(`Found ${sourceIds.length} source IDs to verify`);
+    console.log('');
+  }
 
   // Verify each source
   const stats = {
@@ -167,6 +328,7 @@ function main() {
   };
 
   const issues = [];
+  const gaps = [];
 
   for (const sourceId of sourceIds) {
     const result = verifyEvidence(caseDir, sourceId);
@@ -183,6 +345,12 @@ function main() {
         statusColor = YELLOW;
         stats.partial++;
         issues.push(result);
+        gaps.push({
+          type: 'MISSING_EVIDENCE',
+          object: { source_id: sourceId },
+          message: `${sourceId} evidence exists but is incomplete: ${result.errors.join('; ')}`,
+          suggested_actions: ['recapture_source', 'fix_metadata']
+        });
         break;
       case 'document':
         statusIcon = '📄';
@@ -194,18 +362,31 @@ function main() {
         statusColor = RED;
         stats.missing++;
         issues.push(result);
+        gaps.push({
+          type: 'MISSING_EVIDENCE',
+          object: { source_id: sourceId },
+          message: `${sourceId} is cited but evidence is missing`,
+          suggested_actions: ['capture_source', 'remove_citation']
+        });
         break;
       default:
         statusIcon = '?';
         statusColor = YELLOW;
     }
 
-    const fileCount = Object.keys(result.files).length;
-    console.log(`${statusColor}${statusIcon}${NC} ${sourceId}: ${result.status} (${fileCount} files)`);
+    if (!jsonOutput) {
+      const fileCount = Object.keys(result.files).length;
+      console.log(`${statusColor}${statusIcon}${NC} ${sourceId}: ${result.status} (${fileCount} files)`);
+    }
   }
 
+  const captureRate = stats.total > 0
+    ? ((stats.valid + stats.document + stats.partial) / stats.total * 100)
+    : 100;
+
   // Summary
-  console.log('');
+  if (!jsonOutput) {
+    console.log('');
   console.log('-'.repeat(60));
   console.log('Summary');
   console.log('-'.repeat(60));
@@ -214,10 +395,8 @@ function main() {
   console.log(`${GREEN}Valid (document):  ${stats.document}${NC}`);
   console.log(`${YELLOW}Partial:           ${stats.partial}${NC}`);
   console.log(`${RED}Missing:           ${stats.missing}${NC}`);
-
-  const captureRate = ((stats.valid + stats.document + stats.partial) / stats.total * 100).toFixed(1);
   console.log('');
-  console.log(`Capture rate: ${captureRate}%`);
+  console.log(`Capture rate: ${captureRate.toFixed(1)}%`);
 
   // List issues
   if (issues.length > 0) {
@@ -233,20 +412,28 @@ function main() {
     }
   }
 
-  // Output JSON for programmatic use
-  console.log('');
-  console.log('-'.repeat(60));
-  console.log('JSON Summary');
-  console.log('-'.repeat(60));
-  console.log(JSON.stringify({
+  }
+
+  const passed = gaps.length === 0;
+  const output = {
     case_dir: caseDir,
     timestamp: new Date().toISOString(),
+    passed,
     stats,
-    capture_rate: parseFloat(captureRate),
-    issues: issues.map(i => ({ source_id: i.sourceId, errors: i.errors }))
-  }, null, 2));
+    capture_rate: Math.round(captureRate * 10) / 10,
+    issues: issues.map(i => ({ source_id: i.sourceId, status: i.status, errors: i.errors })),
+    gaps
+  };
 
-  process.exit(stats.missing > 0 ? 1 : 0);
+  if (jsonOutput) {
+    console.log(JSON.stringify(output, null, 2));
+  }
+
+  process.exit(passed ? 0 : 1);
 }
 
-main();
+module.exports = { run };
+
+if (require.main === module) {
+  main();
+}

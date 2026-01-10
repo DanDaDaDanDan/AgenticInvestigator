@@ -6,7 +6,7 @@ Deep-web databases and open archives for investigative journalism. These are **p
 
 > **Why these matter**: Search engines only index the "surface web." The vast majority of public records, court documents, corporate filings, and government data live in databases that require direct queries. Knowing where to look is half the investigation.
 
-> **How this file is used**: During SOURCE DISCOVERY, relevant sections are selected based on entity types. Deep research then finds ADDITIONAL sources specific to the investigation (e.g., FDA databases for pharma, FINRA for finance). Both baseline and discovered sources are saved to `_sources.json` for use by investigation agents.
+> **How this file is used**: During SOURCE DISCOVERY, relevant sections are selected based on entity types. Deep research then finds ADDITIONAL sources specific to the investigation (e.g., FDA databases for pharma, FINRA for finance). Both baseline and discovered sources are saved to `sources.json` for use by investigation agents.
 
 ---
 

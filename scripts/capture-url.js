@@ -2,7 +2,7 @@
 /**
  * capture-url.js - Capture web page evidence for source verification
  *
- * Usage: node capture-url.js <source_id> <url> <evidence_dir>
+ * Usage: node scripts/capture-url.js <source_id> <url> <evidence_dir>
  *
  * Creates:
  *   - capture.png (full-page screenshot)
@@ -11,31 +11,13 @@
  *   - metadata.json (capture metadata with hashes)
  */
 
-const { chromium } = require('playwright');
+'use strict';
+
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const https = require('https');
 const http = require('http');
-
-// Parse command line arguments
-const args = process.argv.slice(2);
-if (args.length < 3) {
-  console.error('Usage: node capture-url.js <source_id> <url> <evidence_dir>');
-  console.error('Example: node capture-url.js S001 https://example.com ./evidence/web/S001');
-  process.exit(1);
-}
-
-const [sourceId, url, evidenceDir] = args;
-
-// Validate URL
-let parsedUrl;
-try {
-  parsedUrl = new URL(url);
-} catch (e) {
-  console.error(`Invalid URL: ${url}`);
-  process.exit(1);
-}
 
 // Calculate SHA-256 hash of a file
 function hashFile(filePath) {
@@ -75,21 +57,54 @@ async function fetchHtml(url) {
   });
 }
 
-async function main() {
+async function run(sourceId, url, evidenceDir, options = {}) {
   const startTime = new Date();
   const errors = [];
 
   // Create evidence directory
   fs.mkdirSync(evidenceDir, { recursive: true });
 
-  console.log(`Capturing ${sourceId}: ${url}`);
-  console.log(`Evidence directory: ${evidenceDir}`);
+  const log = options.quiet === true ? () => {} : (options.log || console.log);
+  const warn = options.quiet === true ? () => {} : (options.warn || console.warn);
+  const errLog = options.quiet === true ? () => {} : (options.error || console.error);
+
+  // Validate URL
+  try {
+    new URL(url);
+  } catch (_) {
+    return {
+      success: false,
+      source_id: sourceId,
+      url,
+      evidence_dir: evidenceDir,
+      files: [],
+      errors: [`Invalid URL: ${url}`]
+    };
+  }
+
+  log(`Capturing ${sourceId}: ${url}`);
+  log(`Evidence directory: ${evidenceDir}`);
 
   let browser;
   let pageTitle = '';
   let httpStatus = null;
+  let playwrightVersion = null;
 
   try {
+    let chromium = null;
+    try {
+      ({ chromium } = require('playwright'));
+      try {
+        playwrightVersion = require('playwright/package.json').version;
+      } catch (_) {}
+    } catch (e) {
+      errors.push(`Playwright not installed: ${e.message}`);
+    }
+
+    if (!chromium) {
+      throw new Error('Playwright unavailable');
+    }
+
     // Launch browser
     browser = await chromium.launch({
       headless: true,
@@ -104,7 +119,7 @@ async function main() {
     const page = await context.newPage();
 
     // Navigate to URL
-    console.log('Loading page...');
+    log('Loading page...');
     const response = await page.goto(url, {
       waitUntil: 'networkidle',
       timeout: 60000
@@ -113,23 +128,23 @@ async function main() {
     httpStatus = response ? response.status() : null;
     pageTitle = await page.title();
 
-    console.log(`Page loaded: "${pageTitle}" (HTTP ${httpStatus})`);
+    log(`Page loaded: "${pageTitle}" (HTTP ${httpStatus})`);
 
     // Wait a bit for any lazy-loaded content
     await page.waitForTimeout(2000);
 
     // Capture screenshot (full page)
-    console.log('Capturing screenshot...');
+    log('Capturing screenshot...');
     const screenshotPath = path.join(evidenceDir, 'capture.png');
     await page.screenshot({
       path: screenshotPath,
       fullPage: true,
       type: 'png'
     });
-    console.log(`  Screenshot: ${screenshotPath}`);
+    log(`  Screenshot: ${screenshotPath}`);
 
     // Capture PDF
-    console.log('Capturing PDF...');
+    log('Capturing PDF...');
     const pdfPath = path.join(evidenceDir, 'capture.pdf');
     await page.pdf({
       path: pdfPath,
@@ -137,53 +152,55 @@ async function main() {
       printBackground: true,
       margin: { top: '1cm', bottom: '1cm', left: '1cm', right: '1cm' }
     });
-    console.log(`  PDF: ${pdfPath}`);
+    log(`  PDF: ${pdfPath}`);
 
     // Capture HTML
-    console.log('Capturing HTML...');
+    log('Capturing HTML...');
     const htmlPath = path.join(evidenceDir, 'capture.html');
     const htmlContent = await page.content();
     fs.writeFileSync(htmlPath, htmlContent);
-    console.log(`  HTML: ${htmlPath}`);
+    log(`  HTML: ${htmlPath}`);
 
     await browser.close();
 
   } catch (err) {
-    errors.push(`Playwright capture failed: ${err.message}`);
-    console.error(`Playwright error: ${err.message}`);
+    if (err.message !== 'Playwright unavailable') {
+      errors.push(`Playwright capture failed: ${err.message}`);
+      errLog(`Playwright error: ${err.message}`);
+    }
 
     if (browser) {
       await browser.close().catch(() => {});
     }
 
     // Fallback: try to at least get HTML via HTTP
-    console.log('Attempting fallback HTML fetch...');
+    log('Attempting fallback HTML fetch...');
     try {
       const { html, status } = await fetchHtml(url);
       httpStatus = status;
       const htmlPath = path.join(evidenceDir, 'capture.html');
       fs.writeFileSync(htmlPath, html);
-      console.log(`  Fallback HTML saved: ${htmlPath}`);
+      log(`  Fallback HTML saved: ${htmlPath}`);
     } catch (fetchErr) {
       errors.push(`Fallback fetch failed: ${fetchErr.message}`);
     }
   }
 
   // Submit to Wayback Machine (async, don't block on it)
-  console.log('Submitting to Wayback Machine...');
+  log('Submitting to Wayback Machine...');
   const waybackResult = await submitToWayback(url);
   if (waybackResult.submitted) {
-    console.log(`  Wayback: submitted (status ${waybackResult.status})`);
+    log(`  Wayback: submitted (status ${waybackResult.status})`);
     if (waybackResult.archiveUrl) {
-      console.log(`  Archive URL: ${waybackResult.archiveUrl}`);
+      log(`  Archive URL: ${waybackResult.archiveUrl}`);
     }
   } else {
-    console.log(`  Wayback: failed (${waybackResult.error})`);
+    warn(`  Wayback: failed (${waybackResult.error})`);
     errors.push(`Wayback submission failed: ${waybackResult.error}`);
   }
 
   // Calculate hashes for all captured files
-  console.log('Calculating hashes...');
+  log('Calculating hashes...');
   const files = {};
   const filesToHash = ['capture.png', 'capture.pdf', 'capture.html'];
 
@@ -197,7 +214,7 @@ async function main() {
         hash: `sha256:${hash}`,
         size: stats.size
       };
-      console.log(`  ${filename}: sha256:${hash.substring(0, 16)}...`);
+      log(`  ${filename}: sha256:${hash.substring(0, 16)}...`);
     }
   }
 
@@ -208,8 +225,8 @@ async function main() {
     title: pageTitle,
     captured_at: startTime.toISOString(),
     capture_duration_ms: Date.now() - startTime.getTime(),
-    method: 'playwright',
-    playwright_version: require('playwright/package.json').version,
+    method: playwrightVersion ? 'playwright' : 'http_fallback',
+    playwright_version: playwrightVersion || undefined,
     viewport: { width: 1920, height: 1080 },
     http_status: httpStatus,
     files: files,
@@ -220,32 +237,60 @@ async function main() {
   // Write metadata
   const metadataPath = path.join(evidenceDir, 'metadata.json');
   fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
-  console.log(`Metadata: ${metadataPath}`);
+  log(`Metadata: ${metadataPath}`);
 
-  // Summary
-  console.log('\n--- Capture Summary ---');
-  console.log(`Source ID: ${sourceId}`);
-  console.log(`URL: ${url}`);
-  console.log(`Title: ${pageTitle}`);
-  console.log(`HTTP Status: ${httpStatus}`);
-  console.log(`Files captured: ${Object.keys(files).length}`);
-  console.log(`Errors: ${errors.length}`);
-  console.log(`Duration: ${Date.now() - startTime.getTime()}ms`);
-
-  // Output JSON for programmatic use
-  console.log('\n--- JSON Output ---');
-  console.log(JSON.stringify({
+  return {
     success: errors.length === 0 || Object.keys(files).length > 0,
     source_id: sourceId,
+    url,
+    title: pageTitle,
+    http_status: httpStatus,
     evidence_dir: evidenceDir,
     files: Object.keys(files),
-    errors: errors
-  }));
-
-  process.exit(errors.length > 0 && Object.keys(files).length === 0 ? 1 : 0);
+    errors,
+    metadata_path: metadataPath,
+    wayback: waybackResult
+  };
 }
 
-main().catch(err => {
-  console.error('Fatal error:', err);
-  process.exit(1);
-});
+function parseCliArgs(argv) {
+  const args = argv.slice(2);
+  return {
+    sourceId: args[0],
+    url: args[1],
+    evidenceDir: args[2]
+  };
+}
+
+async function cli() {
+  const { sourceId, url, evidenceDir } = parseCliArgs(process.argv);
+  if (!sourceId || !url || !evidenceDir) {
+    console.error('Usage: node scripts/capture-url.js <source_id> <url> <evidence_dir>');
+    console.error('Example: node scripts/capture-url.js S001 https://example.com cases/my-case/evidence/web/S001');
+    process.exit(1);
+  }
+
+  const result = await run(sourceId, url, evidenceDir);
+
+  console.log('\n--- Capture Summary ---');
+  console.log(`Source ID: ${result.source_id}`);
+  console.log(`URL: ${result.url}`);
+  console.log(`Title: ${result.title || ''}`);
+  console.log(`HTTP Status: ${result.http_status}`);
+  console.log(`Files captured: ${result.files.length}`);
+  console.log(`Errors: ${result.errors.length}`);
+
+  console.log('\n--- JSON Output ---');
+  console.log(JSON.stringify(result, null, 2));
+
+  process.exit(result.success ? 0 : 1);
+}
+
+module.exports = { run };
+
+if (require.main === module) {
+  cli().catch(err => {
+    console.error('Fatal error:', err);
+    process.exit(1);
+  });
+}

@@ -1,6 +1,6 @@
 # Legal Risk Assessment (Orchestrator Mode)
 
-You are the **orchestrator**. You dispatch legal analysis agents — you do NOT run analysis directly.
+You are the **orchestrator**. You dispatch legal analysis agents - you do NOT run analysis directly.
 
 ---
 
@@ -10,6 +10,11 @@ You are the **orchestrator**. You dispatch legal analysis agents — you do NOT 
 /legal-review              # Review active case
 /legal-review [case-id]    # Review specific case
 ```
+
+Case resolution order:
+1. Explicit `[case-id]`
+2. `cases/.active` (set via `node scripts/active-case.js set <case-id>`)
+3. Error with hint
 
 ---
 
@@ -39,47 +44,160 @@ The model knows defamation law. Key reminders:
 
 ---
 
-## Orchestrator Flow
+## Folder Structure (Iteration Support)
 
 ```
-1. READ: _state.json
-2. DISPATCH: Legal analysis agents (parallel)
-3. WAIT: Agents write to legal-review.md
-4. REPORT: Overall risk level
+cases/[case-id]/
++-- legal/
+    +-- iteration-1/
+    |   +-- subject-classifications.md
+    |   +-- claim-risk.md
+    |   +-- evidence-gaps.md
+    |   +-- attribution-audit.md
+    +-- iteration-2/
+    |   +-- ...
+    +-- legal-review.md     # Latest consolidated review
 ```
+
+Each iteration creates a new folder. The consolidated `legal-review.md` is updated after each iteration.
+
+---
+
+## Orchestrator Flow
+
+**Log legal review start:**
+```bash
+node scripts/ledger-append.js cases/[case-id] phase_start --phase LEGAL --iteration N
+```
+
+**1. Create iteration folder:**
+```bash
+mkdir -p cases/[case-id]/legal/iteration-N
+```
+
+**2. UPDATE TodoWrite with legal review tasks:**
+```
+Legal Review: Iteration N
++-- [ ] Subject classification (public/private figure)
++-- [ ] Claim risk assessment (claim-by-claim)
++-- [ ] Evidence gap analysis (what's missing)
++-- [ ] Attribution audit (proper hedging)
++-- [ ] Consolidate legal-review.md
+```
+
+**3. DISPATCH parallel agents (ONE message):**
+- Agent 1 -> `legal/iteration-N/subject-classifications.md`
+- Agent 2 -> `legal/iteration-N/claim-risk.md`
+- Agent 3 -> `legal/iteration-N/evidence-gaps.md`
+- Agent 4 -> `legal/iteration-N/attribution-audit.md`
+
+**4. WAIT for completion, then consolidate:**
+- Read all iteration files
+- Write consolidated `legal/legal-review.md`
+- Update Publication Readiness status
+
+**5. Log completion:**
+```bash
+node scripts/ledger-append.js cases/[case-id] phase_complete --phase LEGAL --iteration N
+```
+
+Legal issues emit gaps (LEGAL_WORDING_RISK, PRIVACY_RISK) that drive task generation.
 
 ---
 
 ## Dispatch Agents (parallel, ONE message)
 
-```
-Task 1: Subject classification (public/private figure analysis)
-Task 2: Claim risk assessment (claim-by-claim defamation risk)
-Task 3: Evidence gap analysis (what's missing for each claim)
-Task 4: Attribution audit (are claims properly attributed to sources)
-```
-
-### Agent Prompt Template
+### Agent 1: Subject Classification
 
 ```
 Task tool:
   subagent_type: "general-purpose"
-  description: "[Analysis type] for legal review"
+  description: "Subject classification for legal"
   prompt: |
-    TASK: [Analysis type]
+    TASK: Subject Classification (Public/Private Figure Analysis)
     CASE: cases/[case-id]/
+    OUTPUT: legal/iteration-N/subject-classifications.md
 
-    Read summary.md, fact-check.md, sources.md.
+    Read summary.md, people.md, sources.md.
 
-    Apply defamation law knowledge:
-    - Classify subjects (public/private)
-    - Assess claim types (criminal, professional, financial)
-    - Rate evidence strength (Tier 1-4)
-    - Check attribution (third-party vs direct assertion)
+    For each person mentioned:
+    - Classify as Public Official, Limited Public Figure, or Private Figure
+    - Document rationale for classification
+    - Note applicable defamation standard (Actual Malice vs Negligence)
 
-    Write to legal-review.md.
+    Write detailed classification to OUTPUT file.
 
-    RETURN: Risk distribution (HIGH/MEDIUM/LOW counts)
+    RETURN: Classification counts by category
+```
+
+### Agent 2: Claim Risk Assessment
+
+```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Claim risk assessment"
+  prompt: |
+    TASK: Claim-by-Claim Defamation Risk Analysis
+    CASE: cases/[case-id]/
+    OUTPUT: legal/iteration-N/claim-risk.md
+
+    Read claims/*.json, summary.md, fact-check.md.
+
+    For each claim:
+    - Assess risk level (HIGH/MEDIUM/LOW)
+    - Identify if per se defamatory (criminal, professional, etc.)
+    - Note current evidence tier (1-4)
+    - Flag mitigation status
+
+    Write detailed risk table to OUTPUT file.
+
+    RETURN: Risk distribution (HIGH: X, MEDIUM: Y, LOW: Z)
+```
+
+### Agent 3: Evidence Gap Analysis
+
+```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Evidence gap analysis"
+  prompt: |
+    TASK: Evidence Gap Identification
+    CASE: cases/[case-id]/
+    OUTPUT: legal/iteration-N/evidence-gaps.md
+
+    Read claims/*.json, sources.json, legal/previous iterations if exist.
+
+    Identify evidence gaps:
+    - Critical: Must address before publication
+    - Important: Should address
+    - Document specific actions needed
+
+    Write detailed gap analysis to OUTPUT file.
+
+    RETURN: Gap counts by severity
+```
+
+### Agent 4: Attribution Audit
+
+```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Attribution audit"
+  prompt: |
+    TASK: Attribution and Hedging Audit
+    CASE: cases/[case-id]/
+    OUTPUT: legal/iteration-N/attribution-audit.md
+
+    Read summary.md, findings/*.md.
+
+    Scan for claims requiring hedging:
+    - Criminal allegations without "alleged"
+    - Direct assertions without attribution
+    - Opinion stated as fact
+
+    Write detailed audit with suggested revisions to OUTPUT file.
+
+    RETURN: Issues count, suggested fixes
 ```
 
 ---

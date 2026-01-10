@@ -1,0 +1,8 @@
+{
+  "id": "C0001",
+  "claim": "Alice Example said \"Hello World\".",
+  "supporting_sources": ["S001"],
+  "corroboration": {
+    "min_sources": 1
+  }
+}
