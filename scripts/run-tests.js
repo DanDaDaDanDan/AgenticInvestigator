@@ -18,7 +18,7 @@ const path = require('path');
 
 function copyFixture(fixtureName) {
   const repoRoot = path.join(__dirname, '..');
-  const src = path.join(repoRoot, 'fixtures', fixtureName);
+  const src = path.join(repoRoot, 'test', 'fixtures', fixtureName);
   const dst = fs.mkdtempSync(path.join(os.tmpdir(), 'agenticinvestigator-'));
   fs.cpSync(src, dst, { recursive: true });
   return dst;
@@ -102,4 +102,3 @@ if (require.main === module) {
     process.exit(1);
   });
 }
-

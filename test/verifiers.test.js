@@ -5,7 +5,7 @@ const path = require('node:path');
 const os = require('node:os');
 
 function copyFixture(fixtureName) {
-  const src = path.join(__dirname, '..', 'fixtures', fixtureName);
+  const src = path.join(__dirname, 'fixtures', fixtureName);
   const dst = fs.mkdtempSync(path.join(os.tmpdir(), 'agenticinvestigator-'));
   fs.cpSync(src, dst, { recursive: true });
   return dst;
@@ -49,4 +49,3 @@ test('generate-gaps: stable gap ids and GATE_FAILED present', async (t) => {
 
   assert.ok(first.blocking.some(g => g.type === 'GATE_FAILED'));
 });
-
