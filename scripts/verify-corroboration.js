@@ -20,6 +20,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { getSourceCategory } = require('./lib/config-loader');
 
 // ANSI colors
 const RED = '\x1b[31m';
@@ -47,26 +48,7 @@ function getDomain(url) {
   }
 }
 
-/**
- * Normalize a captured source into a category used by corroboration rules.
- * If sources.json doesn't include `category`, derive it from `source_type`.
- */
-function getSourceCategory(source) {
-  if (!source || typeof source !== 'object') return null;
-  if (typeof source.category === 'string' && source.category.trim()) {
-    return source.category.trim().toLowerCase();
-  }
-
-  const sourceType = typeof source.source_type === 'string' ? source.source_type.toLowerCase() : '';
-  if (!sourceType) return null;
-
-  if (sourceType.includes('primary')) return 'primary';
-  if (sourceType.includes('official') || sourceType.includes('government') || sourceType.includes('court') || sourceType.includes('database')) return 'government';
-  if (sourceType.includes('news') || sourceType.includes('press')) return 'news';
-  if (sourceType.includes('social') || sourceType.includes('twitter') || sourceType.includes('x_')) return 'social';
-
-  return null;
-}
+// getSourceCategory is now imported from config-loader
 
 /**
  * Check if sources are independent based on rule

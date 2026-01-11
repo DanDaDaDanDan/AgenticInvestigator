@@ -163,7 +163,32 @@ function extractClaimsFromRegistry(caseDir) {
 }
 
 /**
- * Load evidence content for a source
+ * Read file with size limit to prevent OOM on large files.
+ * Reads only the first maxBytes instead of loading entire file.
+ */
+function readLimited(filePath, maxBytes) {
+  const stats = fs.statSync(filePath);
+  if (stats.size <= maxBytes) {
+    return fs.readFileSync(filePath, 'utf-8');
+  }
+  // Read only first maxBytes to prevent OOM
+  const buffer = Buffer.alloc(maxBytes);
+  const fd = fs.openSync(filePath, 'r');
+  try {
+    fs.readSync(fd, buffer, 0, maxBytes, 0);
+  } finally {
+    fs.closeSync(fd);
+  }
+  return buffer.toString('utf-8') + '\n\n[Content truncated at ' + maxBytes + ' bytes]';
+}
+
+// Maximum content size for verification (50KB is plenty for claim checking)
+const MAX_EVIDENCE_BYTES = 50000;
+
+/**
+ * Load evidence content for a source.
+ * PREFERS Firecrawl markdown (clean, small) over HTML (large, needs processing).
+ * Uses size-limited reads to prevent OOM on large evidence files.
  */
 function loadEvidence(caseDir, sourceId) {
   const webDir = path.join(caseDir, 'evidence', 'web', sourceId);
@@ -173,43 +198,49 @@ function loadEvidence(caseDir, sourceId) {
   let source = null;
   let url = null;
 
-  // Try HTML first (best for text extraction)
-  const htmlPath = path.join(webDir, 'capture.html');
-  if (fs.existsSync(htmlPath)) {
-    content = fs.readFileSync(htmlPath, 'utf-8');
-    // Strip HTML tags for cleaner text
-    content = content
-      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-    source = 'html';
-
-    // Try to get URL from metadata
+  // Helper to load URL from metadata
+  function loadUrl() {
     const metaPath = path.join(webDir, 'metadata.json');
     if (fs.existsSync(metaPath)) {
       try {
         const meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
-        url = meta.url;
+        return meta.url;
       } catch (e) {}
     }
+    return null;
   }
 
-  // Try markdown from Firecrawl
-  if (!content) {
-    const mdPath = path.join(webDir, 'capture.md');
-    if (fs.existsSync(mdPath)) {
-      content = fs.readFileSync(mdPath, 'utf-8');
-      source = 'markdown';
+  // PREFER markdown from Firecrawl (already clean text, no processing needed)
+  const mdPath = path.join(webDir, 'capture.md');
+  if (fs.existsSync(mdPath)) {
+    content = readLimited(mdPath, MAX_EVIDENCE_BYTES);
+    source = 'markdown';
+    url = loadUrl();
+  }
 
-      const metaPath = path.join(webDir, 'metadata.json');
-      if (fs.existsSync(metaPath)) {
-        try {
-          const meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
-          url = meta.url;
-        } catch (e) {}
+  // Fall back to HTML only if no markdown (with size-limited read)
+  if (!content) {
+    const htmlPath = path.join(webDir, 'capture.html');
+    if (fs.existsSync(htmlPath)) {
+      // Read limited amount BEFORE processing to prevent OOM
+      // Use 2x limit since HTML has tag overhead that gets stripped
+      const rawHtml = readLimited(htmlPath, MAX_EVIDENCE_BYTES * 2);
+
+      // Strip HTML tags (safe now - operating on limited content)
+      content = rawHtml
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      // Final size limit after stripping tags
+      if (content.length > MAX_EVIDENCE_BYTES) {
+        content = content.substring(0, MAX_EVIDENCE_BYTES) + '\n\n[Content truncated]';
       }
+
+      source = 'html';
+      url = loadUrl();
     }
   }
 
@@ -218,14 +249,9 @@ function loadEvidence(caseDir, sourceId) {
     const files = fs.readdirSync(docsDir).filter(f => f.startsWith(sourceId + '_'));
     const textFile = files.find(f => f.endsWith('.txt'));
     if (textFile) {
-      content = fs.readFileSync(path.join(docsDir, textFile), 'utf-8');
+      content = readLimited(path.join(docsDir, textFile), MAX_EVIDENCE_BYTES);
       source = 'document-text';
     }
-  }
-
-  // Truncate very long content
-  if (content && content.length > 50000) {
-    content = content.substring(0, 50000) + '\n\n[Content truncated at 50000 chars]';
   }
 
   return { content, source, url };
@@ -235,7 +261,7 @@ function loadEvidence(caseDir, sourceId) {
  * Use Gemini to verify a claim exists in evidence
  */
 async function verifyClaimWithAI(claim, evidence, url, apiKey) {
-  const prompt = `You are a fact-checking assistant. Your job is to verify whether a specific claim is supported by the provided source evidence.
+  const prompt = `You are a fact-checking assistant. A claim is attributed to THIS specific source. Verify if THIS SOURCE actually says what the claim states.
 
 CLAIM TO VERIFY:
 "${claim.claim}"
@@ -245,23 +271,45 @@ SOURCE EVIDENCE (from ${url || 'captured document'}):
 ${evidence.substring(0, 30000)}
 ---
 
-Analyze whether this claim is supported by the evidence above.
+KEY PRINCIPLE: The claim is attributed to THIS source. The source must actually contain the information claimed.
 
-Respond in this exact JSON format:
+WHAT COUNTS AS SUPPORT:
+- Paraphrasing: Same meaning, different words
+  ✓ Source: "lost $1.2 million" → Claim: "lost $1.2M" (format difference)
+  ✓ Source: "five million dollar loss" → Claim: "$5M loss" (same meaning)
+  ✓ Source: "CEO John Smith resigned" → Claim: "Smith stepped down" (paraphrase)
+
+- Summarizing what the source says:
+  ✓ Source: "lost $5M, laid off 200, closed 3 offices" → Claim: "major cutbacks" (summarizes stated facts)
+
+WHAT DOES NOT COUNT AS SUPPORT:
+- Inferences beyond what source states:
+  ✗ Source: "CEO resigned" → Claim: "leadership crisis" (source doesn't say "crisis")
+  ✗ Source: "lost money" → Claim: "lost $5M" (source doesn't specify amount)
+
+- Adding context not in source:
+  ✗ Source says X, claim adds "widely known" context Y (Y must be in source to cite source for Y)
+
+- Different specifics:
+  ✗ Source: "January 15" → Claim: "January 20" (different date)
+  ✗ Source: "$5M" → Claim: "$50M" (different amount)
+
+Respond in JSON:
 {
-  "verdict": "VERIFIED" | "NOT_FOUND" | "PARTIAL" | "CONTRADICTED",
+  "verdict": "VERIFIED" | "SYNTHESIS" | "PARTIAL" | "NOT_FOUND" | "CONTRADICTED",
   "confidence": 0.0-1.0,
-  "explanation": "Brief explanation of your verdict",
-  "relevant_quote": "Exact quote from evidence that supports or contradicts the claim, if found"
+  "explanation": "Brief explanation",
+  "relevant_quote": "Exact quote from source, if found"
 }
 
 Verdicts:
-- VERIFIED: The claim is clearly supported by the evidence
-- NOT_FOUND: The claim is not present in the evidence (possible hallucination)
-- PARTIAL: Some aspects of the claim are supported, others are not
-- CONTRADICTED: The evidence contradicts the claim
+- VERIFIED: Source directly states or closely paraphrases the claim
+- SYNTHESIS: Source contains all the facts that the claim summarizes (claim doesn't add new info)
+- PARTIAL: Source supports some specifics but not others (e.g., right event, wrong date)
+- NOT_FOUND: Source does not contain the claimed information
+- CONTRADICTED: Source states the opposite
 
-Be strict. If the evidence doesn't explicitly support the claim, mark it NOT_FOUND.`;
+Be rigorous. If the source doesn't actually say it, the verdict is NOT_FOUND.`;
 
   try {
     const response = await fetch(`${API_BASE}/models/${MODEL}:generateContent?key=${apiKey}`, {
@@ -430,6 +478,7 @@ async function run(caseDir, options = {}) {
   // Step 2: Verify each claim
   const results = {
     verified: [],
+    synthesis: [],  // Valid journalistic inference/synthesis
     not_found: [],
     partial: [],
     contradicted: [],
@@ -477,6 +526,9 @@ async function run(caseDir, options = {}) {
         case 'VERIFIED':
           results.verified.push(result);
           break;
+        case 'SYNTHESIS':
+          results.synthesis.push(result);
+          break;
         case 'NOT_FOUND':
           results.not_found.push(result);
           break;
@@ -498,6 +550,7 @@ async function run(caseDir, options = {}) {
       if (!jsonOutput) {
         const icon = {
           VERIFIED: `${GREEN}OK${NC}`,
+          SYNTHESIS: `${GREEN}SYN${NC}`,
           NOT_FOUND: `${RED}MISS${NC}`,
           PARTIAL: `${YELLOW}WARN${NC}`,
           CONTRADICTED: `${RED}!!${NC}`,
@@ -518,24 +571,95 @@ async function run(caseDir, options = {}) {
   }
 
   // Step 3: Generate report
-  const stats = {
-    total: allClaims.length,
-    verified: results.verified.length,
-    not_found: results.not_found.length,
-    partial: results.partial.length,
-    contradicted: results.contradicted.length,
-    no_evidence: results.no_evidence.length,
-    errors: results.errors.length
+  // First, aggregate by claim_id to determine if each unique claim is supported
+  const claimAggregates = {};
+  const allResults = [
+    ...results.verified.map(r => ({ ...r, status: 'verified' })),
+    ...results.synthesis.map(r => ({ ...r, status: 'synthesis' })),
+    ...results.not_found.map(r => ({ ...r, status: 'not_found' })),
+    ...results.partial.map(r => ({ ...r, status: 'partial' })),
+    ...results.contradicted.map(r => ({ ...r, status: 'contradicted' })),
+    ...results.no_evidence.map(r => ({ ...r, status: 'no_evidence' })),
+    ...results.errors.map(r => ({ ...r, status: 'error' }))
+  ];
+
+  for (const result of allResults) {
+    const id = result.claim_id || result.claim;
+    if (!claimAggregates[id]) {
+      claimAggregates[id] = { claim_id: id, sources: [], bestStatus: null };
+    }
+    claimAggregates[id].sources.push({ sourceId: result.sourceId, status: result.status, result });
+  }
+
+  // Determine best status for each claim
+  // Priority: verified/synthesis (both PASS) > partial > not_found > contradicted
+  const aggregatedResults = {
+    verified: [],
+    synthesis: [],
+    not_found: [],
+    partial: [],
+    contradicted: [],
+    no_evidence: [],
+    errors: []
   };
 
-  const verificationRate = ((stats.verified + stats.partial) / (stats.total - stats.no_evidence - stats.errors) * 100) || 0;
+  for (const [claimId, agg] of Object.entries(claimAggregates)) {
+    const statuses = agg.sources.map(s => s.status);
+    const hasVerified = statuses.includes('verified');
+    const hasSynthesis = statuses.includes('synthesis');
+    const hasPartial = statuses.includes('partial');
+    const hasContradicted = statuses.includes('contradicted');
+    const hasNotFound = statuses.includes('not_found');
+    const hasNoEvidence = statuses.includes('no_evidence');
+    const hasError = statuses.includes('error');
+
+    // A claim is OK if any source verifies, synthesizes, or partially verifies it
+    if (hasVerified) {
+      aggregatedResults.verified.push(agg.sources.find(s => s.status === 'verified').result);
+    } else if (hasSynthesis) {
+      // SYNTHESIS counts as passing - valid journalistic inference
+      aggregatedResults.synthesis.push(agg.sources.find(s => s.status === 'synthesis').result);
+    } else if (hasPartial) {
+      aggregatedResults.partial.push(agg.sources.find(s => s.status === 'partial').result);
+    } else if (hasContradicted) {
+      // Only flag as contradicted if no source supports the claim
+      aggregatedResults.contradicted.push(agg.sources.find(s => s.status === 'contradicted').result);
+    } else if (hasNotFound && !hasNoEvidence && !hasError) {
+      // All sources checked, none found it
+      aggregatedResults.not_found.push(agg.sources.find(s => s.status === 'not_found').result);
+    } else if (hasNoEvidence) {
+      aggregatedResults.no_evidence.push(agg.sources.find(s => s.status === 'no_evidence').result);
+    } else if (hasError) {
+      aggregatedResults.errors.push(agg.sources.find(s => s.status === 'error').result);
+    }
+  }
+
+  // Use aggregated results for stats (unique claims, not claim-source pairs)
+  const stats = {
+    total: Object.keys(claimAggregates).length,
+    verified: aggregatedResults.verified.length,
+    synthesis: aggregatedResults.synthesis.length,
+    not_found: aggregatedResults.not_found.length,
+    partial: aggregatedResults.partial.length,
+    contradicted: aggregatedResults.contradicted.length,
+    no_evidence: aggregatedResults.no_evidence.length,
+    errors: aggregatedResults.errors.length,
+    // Keep raw pair counts for reference
+    raw_pairs: allClaims.length
+  };
+
+  // verified + synthesis + partial all count as supported
+  const supportedCount = stats.verified + stats.synthesis + stats.partial;
+  const checkableCount = stats.total - stats.no_evidence - stats.errors;
+  const verificationRate = (supportedCount / checkableCount * 100) || 0;
   const problemCount = stats.not_found + stats.contradicted;
 
   if (jsonOutput) {
-    const problems = [...results.not_found, ...results.contradicted];
+    // Use aggregated results for problems/gaps (only claims with no supporting source)
+    const problems = [...aggregatedResults.not_found, ...aggregatedResults.contradicted];
     const gaps = [];
 
-    for (const item of results.not_found) {
+    for (const item of aggregatedResults.not_found) {
       gaps.push({
         type: 'CONTENT_MISMATCH',
         object: {
@@ -544,12 +668,12 @@ async function run(caseDir, options = {}) {
           file: item.file,
           line: item.line
         },
-        message: `${item.claim_id ? `Claim ${item.claim_id}` : 'Claim'} attributed to ${item.sourceId} not found in evidence (AI verification)`,
+        message: `${item.claim_id ? `Claim ${item.claim_id}` : 'Claim'} not found in any of its attributed sources (AI verification)`,
         suggested_actions: ['recapture_source', 'revise_claim', 'remove_or_recite']
       });
     }
 
-    for (const item of results.contradicted) {
+    for (const item of aggregatedResults.contradicted) {
       gaps.push({
         type: 'CONTRADICTED_CLAIM',
         object: {
@@ -558,12 +682,12 @@ async function run(caseDir, options = {}) {
           file: item.file,
           line: item.line
         },
-        message: `${item.claim_id ? `Claim ${item.claim_id}` : 'Claim'} attributed to ${item.sourceId} contradicted by evidence (AI verification)`,
+        message: `${item.claim_id ? `Claim ${item.claim_id}` : 'Claim'} contradicted by evidence (AI verification)`,
         suggested_actions: ['revise_claim', 'add_context', 'remove_or_recite']
       });
     }
 
-    for (const item of results.no_evidence) {
+    for (const item of aggregatedResults.no_evidence) {
       gaps.push({
         type: 'MISSING_EVIDENCE',
         object: { source_id: item.sourceId },
@@ -572,7 +696,7 @@ async function run(caseDir, options = {}) {
       });
     }
 
-    for (const item of results.errors) {
+    for (const item of aggregatedResults.errors) {
       gaps.push({
         type: 'STATE_INCONSISTENT',
         object: { source_id: item.sourceId },
@@ -591,9 +715,10 @@ async function run(caseDir, options = {}) {
       stats,
       verification_rate: Math.round(verificationRate * 10) / 10,
       problems,
-      partial: results.partial,
-      no_evidence: results.no_evidence,
-      errors: results.errors,
+      synthesis: aggregatedResults.synthesis,
+      partial: aggregatedResults.partial,
+      no_evidence: aggregatedResults.no_evidence,
+      errors: aggregatedResults.errors,
       gaps
     };
   } else {
@@ -604,12 +729,14 @@ async function run(caseDir, options = {}) {
     console.log('='.repeat(70));
     console.log(`Total claims checked:    ${stats.total}`);
     console.log(`${GREEN}Verified:                ${stats.verified}${NC}`);
+    console.log(`${GREEN}Synthesis (valid inference): ${stats.synthesis}${NC}`);
     console.log(`${YELLOW}Partial:                 ${stats.partial}${NC}`);
-    console.log(`${RED}Not found (potential hallucination): ${stats.not_found}${NC}`);
+    console.log(`${RED}Not found (no basis):    ${stats.not_found}${NC}`);
     console.log(`${RED}Contradicted:            ${stats.contradicted}${NC}`);
     console.log(`${YELLOW}No evidence available:   ${stats.no_evidence}${NC}`);
     console.log(`Errors:                  ${stats.errors}`);
     console.log('');
+    console.log(`Supported (verified+synthesis+partial): ${supportedCount}/${checkableCount}`);
     console.log(`Verification rate: ${verificationRate.toFixed(1)}%`);
     console.log(`Duration: ${Math.round((Date.now() - startTime) / 1000)}s`);
 
@@ -619,10 +746,10 @@ async function run(caseDir, options = {}) {
       console.log(`${BOLD}${RED}PROBLEMS REQUIRING ATTENTION${NC}`);
       console.log('='.repeat(70));
 
-      if (results.not_found.length > 0) {
+      if (aggregatedResults.not_found.length > 0) {
         console.log('');
-        console.log(`${RED}${BOLD}Claims NOT FOUND in evidence (possible hallucinations):${NC}`);
-        for (const item of results.not_found) {
+        console.log(`${RED}${BOLD}Claims NOT FOUND in any source (possible hallucinations):${NC}`);
+        for (const item of aggregatedResults.not_found) {
           console.log('');
           console.log(`  ${RED}Source:${NC} [${item.sourceId}] in ${item.file}:${item.line}`);
           console.log(`  ${RED}Claim:${NC} "${item.claim}"`);
@@ -630,10 +757,10 @@ async function run(caseDir, options = {}) {
         }
       }
 
-      if (results.contradicted.length > 0) {
+      if (aggregatedResults.contradicted.length > 0) {
         console.log('');
         console.log(`${RED}${BOLD}Claims CONTRADICTED by evidence:${NC}`);
-        for (const item of results.contradicted) {
+        for (const item of aggregatedResults.contradicted) {
           console.log('');
           console.log(`  ${RED}Source:${NC} [${item.sourceId}] in ${item.file}:${item.line}`);
           console.log(`  ${RED}Claim:${NC} "${item.claim}"`);
@@ -645,11 +772,11 @@ async function run(caseDir, options = {}) {
       }
     }
 
-    if (results.partial.length > 0) {
+    if (aggregatedResults.partial.length > 0) {
       console.log('');
       console.log('-'.repeat(70));
       console.log(`${YELLOW}${BOLD}PARTIAL matches (review recommended):${NC}`);
-      for (const item of results.partial) {
+      for (const item of aggregatedResults.partial) {
         console.log('');
         console.log(`  ${YELLOW}Source:${NC} [${item.sourceId}] in ${item.file}:${item.line}`);
         console.log(`  ${YELLOW}Claim:${NC} "${item.claim}"`);
@@ -657,12 +784,12 @@ async function run(caseDir, options = {}) {
       }
     }
 
-    if (results.no_evidence.length > 0) {
+    if (aggregatedResults.no_evidence.length > 0) {
       console.log('');
       console.log('-'.repeat(70));
       console.log(`${YELLOW}${BOLD}Missing evidence (capture needed):${NC}`);
       const missingBySource = {};
-      for (const item of results.no_evidence) {
+      for (const item of aggregatedResults.no_evidence) {
         if (!missingBySource[item.sourceId]) {
           missingBySource[item.sourceId] = 0;
         }
@@ -712,6 +839,7 @@ function printHuman(output) {
 
   console.log(`Total claims checked:    ${output.stats.total}`);
   console.log(`${GREEN}Verified:                ${output.stats.verified}${NC}`);
+  console.log(`${GREEN}Synthesis:               ${output.stats.synthesis || 0}${NC}`);
   console.log(`${YELLOW}Partial:                 ${output.stats.partial}${NC}`);
   console.log(`${RED}Not found:               ${output.stats.not_found}${NC}`);
   console.log(`${RED}Contradicted:            ${output.stats.contradicted}${NC}`);

@@ -19,6 +19,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const config = require('./lib/config-loader');
 
 // ANSI colors
 const RED = '\x1b[31m';
@@ -44,28 +45,8 @@ const SEVERITY = {
   LOW: 'LOW'
 };
 
-// Gap types and their severities
-const GAP_TYPES = {
-  MISSING_EVIDENCE: SEVERITY.BLOCKER,
-  INSUFFICIENT_CORROBORATION: SEVERITY.BLOCKER,
-  CONTENT_MISMATCH: SEVERITY.BLOCKER,
-  CONTRADICTED_CLAIM: SEVERITY.BLOCKER,
-  LEGAL_DEFAMATION_RISK: SEVERITY.BLOCKER,
-  LEGAL_REVIEW_MISSING: SEVERITY.BLOCKER,
-  LEGAL_WORDING_RISK: SEVERITY.HIGH,
-  PRIVACY_RISK: SEVERITY.HIGH,
-  UNCITED_ASSERTION: SEVERITY.BLOCKER,
-  TASK_INCOMPLETE: SEVERITY.BLOCKER,
-  PERSPECTIVE_MISSING: SEVERITY.MEDIUM,
-  ADVERSARIAL_INCOMPLETE: SEVERITY.BLOCKER,
-  CURIOSITY_DEFICIT: SEVERITY.LOW,
-  STATE_INCONSISTENT: SEVERITY.HIGH,
-  SCHEMA_INVALID: SEVERITY.BLOCKER,
-  DUPLICATE_SOURCE_URL: SEVERITY.BLOCKER,
-  CIRCULAR_REPORTING_RISK: SEVERITY.BLOCKER,
-  INTEGRITY_VIOLATION: SEVERITY.HIGH,
-  GATE_FAILED: SEVERITY.BLOCKER
-};
+// Gap types and their severities - loaded from config
+const GAP_TYPES = config.patterns.gap_severity;
 
 let gapCounter = 1;
 
@@ -153,11 +134,8 @@ function checkMissingEvidence(caseDir) {
   const gaps = [];
   const pattern = /\[S(\d{3,4})\]/g;
 
-  // Files to scan
-  const filesToScan = [
-    'summary.md', 'sources.md', 'fact-check.md', 'positions.md',
-    'people.md', 'timeline.md', 'theories.md'
-  ];
+  // Files to scan - loaded from config
+  const filesToScan = [...config.files_to_scan];
 
   const findingsDir = path.join(caseDir, 'findings');
   if (fs.existsSync(findingsDir)) {
@@ -363,14 +341,15 @@ function checkTasks(caseDir) {
     });
   }
 
-  // Check curiosity requirement (2+ per cycle)
-  if (curiosityTasks < 2) {
+  // Check curiosity requirement (loaded from config)
+  const requiredCuriosityTasks = config.curiosity_tasks_per_cycle;
+  if (curiosityTasks < requiredCuriosityTasks) {
     gaps.push({
       gap_id: nextGapId(),
       type: 'CURIOSITY_DEFICIT',
-      object: { current: curiosityTasks, required: 2 },
+      object: { current: curiosityTasks, required: requiredCuriosityTasks },
       severity: SEVERITY.LOW,
-      message: `Only ${curiosityTasks} curiosity tasks; require >=2 per cycle`,
+      message: `Only ${curiosityTasks} curiosity tasks; require >=${requiredCuriosityTasks} per cycle`,
       suggested_actions: ['generate_curiosity_tasks']
     });
   }
@@ -383,10 +362,7 @@ function checkTasks(caseDir) {
  */
 function checkPerspectives(caseDir) {
   const gaps = [];
-  const required = [
-    'Money', 'Timeline', 'Silence', 'Documents', 'Contradictions',
-    'Relationships', 'Hypotheses', 'Assumptions', 'Counterfactual', 'Blind Spots'
-  ];
+  const required = config.perspectives.required;
 
   const tasksDir = path.join(caseDir, 'tasks');
   if (!fs.existsSync(tasksDir)) {
@@ -433,81 +409,34 @@ function checkPerspectives(caseDir) {
 }
 
 /**
- * Check legal risks (basic mechanical checks)
+ * Check legal risks (STRUCTURAL checks only)
+ *
+ * ARCHITECTURE NOTE:
+ * This performs STRUCTURAL checks via verify-legal.js:
+ * - Does legal-review.md exist?
+ * - Does it indicate NOT READY?
+ *
+ * SEMANTIC checks (legal wording risk, PII detection) are handled by
+ * LLM verification via Gemini 3 Pro MCP calls.
+ * See .claude/commands/verify.md and .claude/commands/legal-review.md
  */
 function checkLegal(caseDir) {
-  const gaps = [];
-
-  // Check summary.md for legal issues
-  const summaryPath = path.join(caseDir, 'summary.md');
-  if (!fs.existsSync(summaryPath)) {
-    return gaps;
+  // Use verify-legal.js for structural checks
+  try {
+    const legalResult = require('./verify-legal').run(caseDir);
+    // Convert gaps from verify-legal to our format with gap_ids
+    return (legalResult.gaps || []).map(g => ({
+      gap_id: nextGapId(),
+      type: g.type,
+      object: g.object,
+      severity: SEVERITY[config.getGapSeverity(g.type)] || SEVERITY.HIGH,
+      message: g.message,
+      suggested_actions: g.suggested_actions
+    }));
+  } catch (err) {
+    // If verify-legal fails, return empty - structural checks only
+    return [];
   }
-
-  const content = fs.readFileSync(summaryPath, 'utf-8');
-  const lines = content.split('\n');
-
-  // Patterns that suggest legal risk
-  const riskPatterns = [
-    { pattern: /\bcommitted fraud\b/i, issue: 'States fraud as fact' },
-    { pattern: /\bstole\b/i, issue: 'States theft as fact' },
-    { pattern: /\bcriminal\b/i, issue: 'Criminal accusation' },
-    { pattern: /\bguilty\b/i, issue: 'States guilt as fact' },
-    { pattern: /\bcorrupt\b/i, issue: 'Corruption accusation' }
-  ];
-
-  // Attribution patterns that mitigate risk
-  const attributionPatterns = [
-    /according to/i,
-    /alleged/i,
-    /reportedly/i,
-    /claims that/i,
-    /accused of/i
-  ];
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    for (const { pattern, issue } of riskPatterns) {
-      if (pattern.test(line)) {
-        // Check if line has attribution
-        const hasAttribution = attributionPatterns.some(p => p.test(line));
-
-        if (!hasAttribution) {
-          gaps.push({
-            gap_id: nextGapId(),
-            type: 'LEGAL_WORDING_RISK',
-            object: { file: 'summary.md', line: i + 1 },
-            severity: SEVERITY.HIGH,
-            message: `${issue} without attribution on line ${i + 1}`,
-            suggested_actions: ['add_attribution', 'revise_language']
-          });
-        }
-      }
-    }
-  }
-
-  // Check for PII patterns
-  const piiPatterns = [
-    { pattern: /\b\d{3}-\d{2}-\d{4}\b/, issue: 'SSN detected' },
-    { pattern: /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/, issue: 'Phone number detected' },
-    { pattern: /\b\d+\s+\w+\s+(street|st|avenue|ave|road|rd|drive|dr)\b/i, issue: 'Address detected' }
-  ];
-
-  for (const { pattern, issue } of piiPatterns) {
-    if (pattern.test(content)) {
-      gaps.push({
-        gap_id: nextGapId(),
-        type: 'PRIVACY_RISK',
-        object: { file: 'summary.md' },
-        severity: SEVERITY.HIGH,
-        message: issue,
-        suggested_actions: ['remove_pii', 'anonymize']
-      });
-    }
-  }
-
-  return gaps;
 }
 
 async function run(caseDir, options = {}) {

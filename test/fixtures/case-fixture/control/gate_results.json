@@ -1,0 +1,138 @@
+{
+  "timestamp": "2026-01-11T18:54:23.051Z",
+  "case_dir": "test/fixtures/case-fixture",
+  "duration_ms": 2,
+  "thresholds": "100% (no exceptions)",
+  "gates": {
+    "coverage": {
+      "passed": false,
+      "reason": "Missing required file: summary.md; Missing required file: sources.md; Missing required file: fact-check.md; Missing required file: positions.md; summary.md not found",
+      "details": {
+        "citation_density": {
+          "timestamp": "2026-01-11T18:54:23.049Z",
+          "case_dir": "test/fixtures/case-fixture",
+          "duration_ms": 0,
+          "passed": false,
+          "citation_density": 0,
+          "threshold": 100,
+          "stats": {
+            "total_lines": 0,
+            "factual_lines": 0,
+            "cited_lines": 0,
+            "uncited_lines": 0,
+            "total_citations": 0,
+            "unique_sources": 0
+          },
+          "failures": [
+            "summary.md not found"
+          ],
+          "gaps": [
+            {
+              "type": "UNCITED_ASSERTION",
+              "object": {
+                "file": "summary.md"
+              },
+              "message": "summary.md not found",
+              "suggested_actions": [
+                "create_summary",
+                "add_citations"
+              ]
+            }
+          ],
+          "sections": [],
+          "uncited_samples": []
+        }
+      }
+    },
+    "tasks": {
+      "passed": false,
+      "reason": "No task files found in tasks/ directory",
+      "details": {}
+    },
+    "adversarial": {
+      "passed": false,
+      "reason": "No adversarial tasks (A###.json) found",
+      "details": {
+        "adversarial_tasks": 0,
+        "adversarial_completed": 0
+      }
+    },
+    "sources": {
+      "passed": true,
+      "reason": null,
+      "details": {
+        "note": "No citations and no evidence directory"
+      }
+    },
+    "content": {
+      "passed": false,
+      "reason": "No claims found to verify - investigation may be incomplete",
+      "details": {
+        "total": 0,
+        "verified": 0,
+        "partial": 0,
+        "not_found": 0,
+        "no_evidence": 0,
+        "verification_rate": 100,
+        "samples": {
+          "not_found": [],
+          "no_evidence": []
+        }
+      }
+    },
+    "claims": {
+      "passed": false,
+      "reason": "No claims found to verify - investigation may be incomplete",
+      "details": {
+        "total": 0,
+        "verified": 0,
+        "not_found": 0,
+        "partial": 0,
+        "contradicted": 0,
+        "no_evidence": 0,
+        "errors": 0,
+        "verification_rate": 100
+      }
+    },
+    "contradictions": {
+      "passed": true,
+      "reason": null,
+      "details": {
+        "identified": 0,
+        "explored": 0,
+        "note": "No contradictions identified"
+      }
+    },
+    "rigor": {
+      "passed": false,
+      "reason": "No rigor checkpoint file found",
+      "details": {}
+    },
+    "legal": {
+      "passed": false,
+      "reason": "No legal review file found",
+      "details": {}
+    }
+  },
+  "audit_trail": {
+    "passed": false,
+    "reason": "ledger.json not found",
+    "details": {},
+    "warnings": []
+  },
+  "summary": {
+    "passed": 2,
+    "failed": 7,
+    "total": 9
+  },
+  "overall": false,
+  "blocking_gates": [
+    "coverage",
+    "tasks",
+    "adversarial",
+    "content",
+    "claims",
+    "rigor",
+    "legal"
+  ]
+}

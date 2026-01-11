@@ -18,6 +18,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const config = require('./lib/config-loader');
 
 function parseCliArgs(argv) {
   const args = argv.slice(2);
@@ -108,17 +109,7 @@ function extractCitedSourceIds(caseDir) {
   const citations = new Set();
   const pattern = /\[S(\d{3,4})\]/g;
 
-  const filesToScan = [
-    'summary.md',
-    'sources.md',
-    'fact-check.md',
-    'positions.md',
-    'people.md',
-    'timeline.md',
-    'theories.md',
-    'statements.md',
-    'organizations.md'
-  ];
+  const filesToScan = [...config.files_to_scan];
 
   const findingsDir = path.join(caseDir, 'findings');
   if (fs.existsSync(findingsDir)) {
