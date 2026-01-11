@@ -5,8 +5,8 @@
  * Intended for generate-gaps.js consumption.
  *
  * Usage:
- *   node verify-legal.js <case_dir>
- *   node verify-legal.js <case_dir> --json
+ *   node scripts/verify-legal.js <case_dir>
+ *   node scripts/verify-legal.js <case_dir> --json
  */
 
 'use strict';
@@ -140,7 +140,7 @@ function printHuman(output) {
 function cli() {
   const { caseDir, jsonOutput } = parseCliArgs(process.argv);
   if (!caseDir) {
-    console.error('Usage: node verify-legal.js <case_dir> [--json]');
+    console.error('Usage: node scripts/verify-legal.js <case_dir> [--json]');
     process.exit(1);
   }
 

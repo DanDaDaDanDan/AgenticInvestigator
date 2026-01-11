@@ -100,7 +100,7 @@ async function batchProcess(inputFile, outputFile) {
     const result = await findWaybackUrl(url);
 
     if (result.found) {
-      console.log(`  ✓ Found: ${result.date} (${result.totalArchives} archives)`);
+      console.log(`  OK Found: ${result.date} (${result.totalArchives} archives)`);
       results.push({
         sourceId,
         originalUrl: url,
@@ -108,7 +108,7 @@ async function batchProcess(inputFile, outputFile) {
         ...result
       });
     } else {
-      console.log(`  ✗ Not found: ${result.error}`);
+      console.log(`  MISS Not found: ${result.error}`);
       results.push({
         sourceId,
         originalUrl: url,

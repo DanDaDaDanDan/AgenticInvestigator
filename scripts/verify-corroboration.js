@@ -8,8 +8,8 @@
  * - primary source requirements
  *
  * Usage:
- *   node verify-corroboration.js <case_dir>
- *   node verify-corroboration.js <case_dir> --json
+ *   node scripts/verify-corroboration.js <case_dir>
+ *   node scripts/verify-corroboration.js <case_dir> --json
  *
  * Exit codes:
  *   0 - All claims meet corroboration requirements
@@ -272,7 +272,7 @@ async function main() {
       for (const detail of results.details.filter(d => d.status === 'insufficient')) {
         console.log(`  [${detail.id}] ${detail.sources}/${detail.min_required} sources`);
         for (const issue of detail.issues || []) {
-          console.log(`    → ${issue}`);
+          console.log(`    - ${issue}`);
         }
       }
     }
@@ -460,7 +460,7 @@ function printHuman(output) {
 function cli() {
   const parsed = parseCliArgs(process.argv);
   if (!parsed.caseDir) {
-    console.error('Usage: node verify-corroboration.js <case_dir> [--json]');
+    console.error('Usage: node scripts/verify-corroboration.js <case_dir> [--json]');
     process.exit(1);
   }
 

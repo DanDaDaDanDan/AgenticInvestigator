@@ -6,9 +6,9 @@
  * State files describe intent; filesystem is truth.
  *
  * Usage:
- *   node verify-state-consistency.js <case_dir>
- *   node verify-state-consistency.js <case_dir> --json    # JSON output
- *   node verify-state-consistency.js <case_dir> --fix     # Suggest fixes
+ *   node scripts/verify-state-consistency.js <case_dir>
+ *   node scripts/verify-state-consistency.js <case_dir> --json    # JSON output
+ *   node scripts/verify-state-consistency.js <case_dir> --fix     # Suggest fixes
  *
  * Checks:
  *   1. sources.md entries vs evidence/web/ folders
@@ -549,7 +549,7 @@ function printHuman(output, options = {}) {
 function main() {
   const parsed = parseCliArgs(process.argv);
   if (!parsed.caseDir) {
-    console.error('Usage: node verify-state-consistency.js <case_dir> [--json] [--fix]');
+    console.error('Usage: node scripts/verify-state-consistency.js <case_dir> [--json] [--fix]');
     process.exit(1);
   }
 
@@ -561,103 +561,6 @@ function main() {
   }
 
   process.exit(result.passed ? 0 : 1);
-  return;
-
-  /* Legacy CLI (disabled):
-  const startTime = Date.now();
-
-  if (!jsonOutput) {
-    console.log('='.repeat(70));
-    console.log(`${BOLD}State-Filesystem Consistency Check${NC}`);
-    console.log('='.repeat(70));
-    console.log(`Case: ${caseDir}`);
-    console.log(`Time: ${new Date().toISOString()}`);
-    console.log('');
-  }
-
-  // Run all checks
-  const checks = [
-    checkSources(caseDir),
-    checkCoverage(caseDir),
-    checkTasks(caseDir),
-    checkStateSchema(caseDir)
-  ];
-
-  const allPassed = checks.every(c => c.passed);
-  const totalDiscrepancies = checks.reduce((sum, c) => sum + c.discrepancies.length, 0);
-
-  const output = {
-    timestamp: new Date().toISOString(),
-    case_dir: caseDir,
-    duration_ms: Date.now() - startTime,
-    passed: allPassed,
-    overall: allPassed,
-    total_discrepancies: totalDiscrepancies,
-    checks
-  };
-
-  if (suggestFix) {
-    output.suggested_fixes = generateFixes(checks);
-  }
-
-  // Convert discrepancies to gaps for generate-gaps.js consumption
-  const gaps = [];
-  for (const check of checks) {
-    for (const disc of check.discrepancies || []) {
-      gaps.push({
-        type: 'STATE_INCONSISTENT',
-        object: { check: check.name, discrepancy_type: disc.type },
-        message: `[${check.name}] ${disc.message}`,
-        suggested_actions: ['fix_state_schema', 'sync_state_files']
-      });
-    }
-  }
-  output.gaps = gaps;
-
-  if (jsonOutput) {
-    console.log(JSON.stringify(output, null, 2));
-  } else {
-    for (const check of checks) {
-      const icon = check.passed ? `${GREEN}✓${NC}` : `${RED}✗${NC}`;
-      const status = check.passed ? `${GREEN}CONSISTENT${NC}` : `${RED}MISMATCH${NC}`;
-      console.log(`${icon} ${check.name.padEnd(15)} ${status}`);
-
-      if (check.discrepancies.length > 0) {
-        for (const disc of check.discrepancies) {
-          console.log(`  ${YELLOW}→ ${disc.message}${NC}`);
-        }
-      }
-
-      // Show state vs filesystem comparison
-      if (Object.keys(check.state).length > 0 || Object.keys(check.filesystem).length > 0) {
-        console.log(`  ${BLUE}State:${NC} ${JSON.stringify(check.state)}`);
-        console.log(`  ${BLUE}Filesystem:${NC} ${JSON.stringify(check.filesystem)}`);
-      }
-      console.log('');
-    }
-
-    console.log('-'.repeat(70));
-
-    if (allPassed) {
-      console.log(`${GREEN}${BOLD}STATE AND FILESYSTEM ARE CONSISTENT${NC}`);
-    } else {
-      console.log(`${RED}${BOLD}DISCREPANCIES FOUND: ${totalDiscrepancies}${NC}`);
-
-      if (suggestFix) {
-        console.log('');
-        console.log('Suggested fixes:');
-        const fixes = generateFixes(checks);
-        for (const fix of fixes) {
-          console.log(`  ${YELLOW}Issue:${NC} ${fix.issue}`);
-          console.log(`  ${GREEN}Fix:${NC} ${fix.fix}`);
-          console.log('');
-        }
-      }
-    }
-  }
-
-  process.exit(allPassed ? 0 : 1);
-  */
 }
 
 module.exports = { run };

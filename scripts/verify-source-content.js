@@ -7,10 +7,10 @@
  *   cited claims actually appear in the evidence content.
  *
  * Usage:
- *   node verify-source-content.js <case_dir>
- *   node verify-source-content.js <case_dir> --json     # JSON output
- *   node verify-source-content.js <case_dir> --summary  # JSON output (stats + gaps only)
- *   node verify-source-content.js <case_dir> --verbose  # Show all matches
+ *   node scripts/verify-source-content.js <case_dir>
+ *   node scripts/verify-source-content.js <case_dir> --json     # JSON output
+ *   node scripts/verify-source-content.js <case_dir> --summary  # JSON output (stats + gaps only)
+ *   node scripts/verify-source-content.js <case_dir> --verbose  # Show all matches
  *
  * Process:
  *   1. Find all [SXXX] citations in case files
@@ -541,7 +541,7 @@ async function run(caseDir, options = {}) {
         results.verified.push(result);
         if (!jsonOutput) {
           const shortClaim = claim.claim.length > 55 ? claim.claim.substring(0, 55) + '...' : claim.claim;
-          console.log(`  ${GREEN}✓${NC} ${shortClaim}`);
+          console.log(`  ${GREEN}OK${NC} ${shortClaim}`);
           if (verbose && matches.length > 0) {
             console.log(`    ${BLUE}Found: ${matches.map(m => m.phrase).join(', ')}${NC}`);
           }
@@ -550,13 +550,13 @@ async function run(caseDir, options = {}) {
         results.partial.push(result);
         if (!jsonOutput) {
           const shortClaim = claim.claim.length > 55 ? claim.claim.substring(0, 55) + '...' : claim.claim;
-          console.log(`  ${YELLOW}~${NC} ${shortClaim} (${matches.length}/${claim.keyPhrases.length} matches)`);
+          console.log(`  ${YELLOW}WARN${NC} ${shortClaim} (${matches.length}/${claim.keyPhrases.length} matches)`);
         }
       } else {
         results.not_found.push(result);
         if (!jsonOutput) {
           const shortClaim = claim.claim.length > 55 ? claim.claim.substring(0, 55) + '...' : claim.claim;
-          console.log(`  ${RED}✗${NC} ${shortClaim} (${matches.length}/${claim.keyPhrases.length} matches)`);
+          console.log(`  ${RED}MISS${NC} ${shortClaim} (${matches.length}/${claim.keyPhrases.length} matches)`);
         }
       }
     }
@@ -662,7 +662,7 @@ async function cli() {
   const jsonOutput = parsed.jsonOutput || parsed.summaryOnly;
 
   if (!caseDir) {
-    console.error('Usage: node verify-source-content.js <case_dir> [--json] [--summary] [--verbose]');
+    console.error('Usage: node scripts/verify-source-content.js <case_dir> [--json] [--summary] [--verbose]');
     process.exit(1);
   }
 

@@ -3,8 +3,9 @@
  * verify-sources.js - Verify source evidence integrity
  *
  * Usage:
- *   node verify-sources.js <case_dir>
- *   node verify-sources.js <case_dir> --json
+ *   node scripts/verify-sources.js <case_dir>
+ *   node scripts/verify-sources.js <case_dir> --json
+ *   node scripts/verify-sources.js <case_dir> --fix
  *
  * Checks:
  *   - All cited sources have evidence folders
@@ -22,7 +23,8 @@ function parseCliArgs(argv) {
   const args = argv.slice(2);
   return {
     caseDir: args.find(a => !a.startsWith('--')),
-    jsonOutput: args.includes('--json')
+    jsonOutput: args.includes('--json'),
+    fix: args.includes('--fix')
   };
 }
 
@@ -40,6 +42,48 @@ const NC = '\x1b[0m';
 function hashFile(filePath) {
   const content = fs.readFileSync(filePath);
   return 'sha256:' + crypto.createHash('sha256').update(content).digest('hex');
+}
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function manifestKeyForFilename(filename) {
+  const lower = String(filename || '').toLowerCase();
+  if (!lower) return 'file';
+  if (lower.startsWith('capture.')) return lower.slice('capture.'.length).replace(/[^a-z0-9]+/g, '_');
+  if (lower === 'content.md') return 'content_md';
+  if (lower === 'extracted_text.txt') return 'extracted_text';
+  return lower.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+}
+
+function computeFilesManifest(webDir) {
+  const files = {};
+  if (!fs.existsSync(webDir)) return files;
+
+  const entries = fs.readdirSync(webDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    if (entry.name === 'metadata.json') continue;
+
+    const filePath = path.join(webDir, entry.name);
+    const stats = fs.statSync(filePath);
+
+    const baseKey = manifestKeyForFilename(entry.name) || 'file';
+    let key = baseKey;
+    let counter = 2;
+    while (Object.prototype.hasOwnProperty.call(files, key)) {
+      key = `${baseKey}_${counter++}`;
+    }
+
+    files[key] = {
+      path: entry.name,
+      hash: hashFile(filePath),
+      size: stats.size
+    };
+  }
+
+  return files;
 }
 
 function extractSourceIds(sourcesPath) {
@@ -96,7 +140,7 @@ function extractCitedSourceIds(caseDir) {
   return Array.from(citations).sort();
 }
 
-function verifyEvidence(caseDir, sourceId) {
+function verifyEvidence(caseDir, sourceId, options = {}) {
   const results = {
     sourceId,
     status: 'unknown',
@@ -119,28 +163,98 @@ function verifyEvidence(caseDir, sourceId) {
         const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf-8'));
         results.metadata = metadata;
 
-        // Verify each file's hash
-        if (metadata.files) {
-          for (const [fileType, fileInfo] of Object.entries(metadata.files)) {
-            const filePath = path.join(webDir, fileInfo.path);
-            if (fs.existsSync(filePath)) {
-              const actualHash = hashFile(filePath);
-              const expectedHash = fileInfo.hash;
+        if (!isPlainObject(metadata)) {
+          results.errors.push('metadata.json must be a JSON object');
+          results.status = 'partial';
+          return results;
+        }
 
-              if (actualHash === expectedHash) {
-                results.files[fileType] = { status: 'valid', path: filePath };
-              } else {
-                results.files[fileType] = {
-                  status: 'corrupted',
-                  path: filePath,
-                  expected: expectedHash,
-                  actual: actualHash
-                };
-                results.errors.push(`Hash mismatch for ${fileType}`);
-              }
+        const metaSourceId = typeof metadata.source_id === 'string'
+          ? metadata.source_id
+          : (typeof metadata.sourceId === 'string' ? metadata.sourceId : null);
+
+        if (!metaSourceId) {
+          results.errors.push('metadata.json missing source_id');
+        } else if (metaSourceId !== sourceId) {
+          results.errors.push(`metadata.json source_id (${metaSourceId}) does not match folder (${sourceId})`);
+        }
+
+        let filesManifest = metadata.files;
+        let hasFilesManifest = isPlainObject(filesManifest) && Object.keys(filesManifest).length > 0;
+
+        const contentHash = typeof metadata.content_hash === 'string' ? metadata.content_hash.trim() : null;
+
+        // Evidence Folder Contract:
+        // - metadata.json must contain hashes under `files` OR an explicit `content_hash` for content.md.
+        if (!hasFilesManifest && contentHash) {
+          const contentPath = path.join(webDir, 'content.md');
+          if (!fs.existsSync(contentPath)) {
+            results.errors.push('metadata.json has content_hash but content.md is missing');
+          } else if (!contentHash.startsWith('sha256:')) {
+            results.errors.push('metadata.content_hash must start with sha256:');
+          } else {
+            const actual = hashFile(contentPath);
+            if (actual !== contentHash) {
+              results.errors.push('content.md hash does not match metadata.content_hash');
+              results.files.content_md = { status: 'corrupted', path: contentPath, expected: contentHash, actual };
             } else {
+              results.files.content_md = { status: 'valid', path: contentPath };
+            }
+          }
+        }
+
+        if (!hasFilesManifest && !contentHash) {
+          if (options.fix === true) {
+            const computed = computeFilesManifest(webDir);
+            if (Object.keys(computed).length > 0) {
+              metadata.files = computed;
+              fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+              filesManifest = computed;
+              hasFilesManifest = true;
+            } else {
+              results.errors.push('metadata.json missing files manifest and no payload files found to hash');
+            }
+          } else {
+            results.errors.push('metadata.json missing `files` hash manifest (run with --fix to backfill from payload)');
+          }
+        }
+
+        // Verify each file's hash
+        if (hasFilesManifest) {
+          for (const [fileType, fileInfo] of Object.entries(filesManifest)) {
+            if (!isPlainObject(fileInfo)) {
+              results.errors.push(`Invalid metadata.files entry for ${fileType}`);
+              continue;
+            }
+
+            const relPath = fileInfo.path;
+            const expectedHash = fileInfo.hash;
+            if (typeof relPath !== 'string' || !relPath) {
+              results.errors.push(`metadata.files.${fileType}.path missing`);
+              continue;
+            }
+            if (typeof expectedHash !== 'string' || !expectedHash) {
+              results.errors.push(`metadata.files.${fileType}.hash missing`);
+              continue;
+            }
+            if (!expectedHash.startsWith('sha256:')) {
+              results.errors.push(`metadata.files.${fileType}.hash must start with sha256:`);
+              continue;
+            }
+
+            const filePath = path.join(webDir, relPath);
+            if (!fs.existsSync(filePath)) {
               results.files[fileType] = { status: 'missing', path: filePath };
-              results.errors.push(`Missing file: ${fileInfo.path}`);
+              results.errors.push(`Missing file: ${relPath}`);
+              continue;
+            }
+
+            const actualHash = hashFile(filePath);
+            if (actualHash === expectedHash) {
+              results.files[fileType] = { status: 'valid', path: filePath };
+            } else {
+              results.files[fileType] = { status: 'corrupted', path: filePath, expected: expectedHash, actual: actualHash };
+              results.errors.push(`Hash mismatch for ${fileType}`);
             }
           }
         }
@@ -182,7 +296,7 @@ function verifyEvidence(caseDir, sourceId) {
   return results;
 }
 
-function run(caseDir) {
+function run(caseDir, options = {}) {
   const startTime = Date.now();
 
   if (!caseDir || typeof caseDir !== 'string') {
@@ -225,7 +339,7 @@ function run(caseDir) {
   const gaps = [];
 
   for (const sourceId of sourceIds) {
-    const result = verifyEvidence(caseDir, sourceId);
+    const result = verifyEvidence(caseDir, sourceId, options);
     const fileCount = Object.keys(result.files || {}).length;
 
     sources.push({
@@ -265,7 +379,7 @@ function run(caseDir) {
   }
 
   const captureRate = stats.total > 0
-    ? ((stats.valid + stats.document + stats.partial) / stats.total * 100)
+    ? ((stats.valid + stats.document) / stats.total * 100)
     : 100;
 
   const passed = gaps.length === 0;
@@ -288,9 +402,10 @@ function main() {
   const parsed = parseCliArgs(process.argv);
   caseDir = parsed.caseDir;
   jsonOutput = parsed.jsonOutput;
+  const fix = parsed.fix;
 
   if (!caseDir) {
-    console.error('Usage: node verify-sources.js <case_dir> [--json]');
+    console.error('Usage: node scripts/verify-sources.js <case_dir> [--json] [--fix]');
     process.exit(1);
   }
 
@@ -331,17 +446,17 @@ function main() {
   const gaps = [];
 
   for (const sourceId of sourceIds) {
-    const result = verifyEvidence(caseDir, sourceId);
+    const result = verifyEvidence(caseDir, sourceId, { fix });
 
     let statusIcon, statusColor;
     switch (result.status) {
       case 'valid':
-        statusIcon = '✓';
+        statusIcon = 'OK';
         statusColor = GREEN;
         stats.valid++;
         break;
       case 'partial':
-        statusIcon = '~';
+        statusIcon = 'WARN';
         statusColor = YELLOW;
         stats.partial++;
         issues.push(result);
@@ -353,12 +468,12 @@ function main() {
         });
         break;
       case 'document':
-        statusIcon = '📄';
+        statusIcon = 'DOC';
         statusColor = GREEN;
         stats.document++;
         break;
       case 'missing':
-        statusIcon = '✗';
+        statusIcon = 'MISS';
         statusColor = RED;
         stats.missing++;
         issues.push(result);
@@ -370,7 +485,7 @@ function main() {
         });
         break;
       default:
-        statusIcon = '?';
+        statusIcon = 'ERR';
         statusColor = YELLOW;
     }
 
@@ -381,7 +496,7 @@ function main() {
   }
 
   const captureRate = stats.total > 0
-    ? ((stats.valid + stats.document + stats.partial) / stats.total * 100)
+    ? ((stats.valid + stats.document) / stats.total * 100)
     : 100;
 
   // Summary
@@ -407,7 +522,7 @@ function main() {
     for (const issue of issues) {
       console.log(`\n${issue.sourceId}:`);
       for (const error of issue.errors) {
-        console.log(`  ${RED}• ${error}${NC}`);
+        console.log(`  ${RED}- ${error}${NC}`);
       }
     }
   }
