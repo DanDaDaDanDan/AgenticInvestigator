@@ -306,6 +306,50 @@ node scripts/ledger-append.js cases/[case-id] claim_update \
 
 ---
 
+## Autonomous Continuation Rule
+
+**The orchestrator continues autonomously until ALL gates pass.**
+
+If `node scripts/verify-all-gates.js` returns exit code 1 (any gate fails):
+
+1. **DO NOT** ask user what to do
+2. **DO NOT** present options ("Would you like me to...")
+3. **DO NOT** report progress and wait for instructions
+4. **DO** read `control/gaps.json` for blocking issues
+5. **DO** dispatch agents to fix those issues
+6. **DO** loop back to VERIFY
+
+**"8/9 gates passing" is NOT a decision point. It means: FIX THE 1 FAILING GATE.**
+
+### When Human Intervention IS Required
+
+Only pause and ask the user when:
+
+| Situation | Example | Action |
+|-----------|---------|--------|
+| External dependency unavailable | API down, rate limited, credentials expired | Ask user to resolve |
+| Irreconcilable contradiction | Two primary sources directly conflict | Ask user which interpretation to favor |
+| Scope expansion needed | New major thread requires investigation | Ask user to approve expanded scope |
+| Legal/ethical concern | Evidence suggests illegal activity | Ask user for guidance |
+
+### Examples of NOT Asking
+
+```
+BAD (pausing when shouldn't):
+"8/9 gates passing. Would you like me to:
+1. Run /article
+2. Fix the failing gate
+3. Something else?"
+
+GOOD (continuing autonomously):
+[Reads gaps.json, sees claims gate failing with 21 NOT_FOUND]
+[Dispatches agents to revise claims to match evidence]
+[Re-runs verification]
+[Continues until 9/9]
+```
+
+---
+
 ## Context Allowlist (Orchestrator)
 
 **CAN read:**

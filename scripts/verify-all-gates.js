@@ -33,6 +33,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const config = require('./lib/config-loader');
 
 // Load .env when present (keeps CLI usage consistent across scripts)
 try {
@@ -58,24 +59,11 @@ function parseCliArgs(argv) {
   };
 }
 
-// 100% THRESHOLDS - NO EXCEPTIONS
-// These are computed on-demand from filesystem, not from coverage.json
-const THRESHOLDS = {
-  people_investigated: 1.0,      // 100%
-  entities_investigated: 1.0,    // 100%
-  claims_verified: 1.0,          // 100%
-  sources_captured: 1.0,         // 100%
-  positions_documented: 1.0,     // 100%
-  contradictions_explored: 1.0   // 100%
-};
+// 100% THRESHOLDS - loaded from config
+const THRESHOLDS = config.thresholds;
 
-// Required files for a complete investigation
-const REQUIRED_FILES = [
-  'summary.md',
-  'sources.md',
-  'fact-check.md',
-  'positions.md'
-];
+// Required files - loaded from config
+const REQUIRED_FILES = config.required_files;
 
 /**
  * Extract all [SXXX] citations from files
@@ -84,16 +72,8 @@ function extractCitations(caseDir) {
   const citations = new Set();
   const pattern = /\[S(\d{3,4})\]/g;
 
-  // Files to scan for citations
-  const filesToScan = [
-    'summary.md',
-    'sources.md',
-    'fact-check.md',
-    'positions.md',
-    'people.md',
-    'timeline.md',
-    'theories.md'
-  ];
+  // Files to scan for citations - loaded from config
+  const filesToScan = [...config.files_to_scan];
 
   // Also scan findings
   const findingsDir = path.join(caseDir, 'findings');
@@ -230,8 +210,16 @@ function computeCoverage(caseDir) {
 }
 
 /**
- * Check citation density in summary.md
- * Every factual statement must have a source citation [SXXX]
+ * Check citation presence in summary.md (STRUCTURAL check)
+ *
+ * ARCHITECTURE NOTE:
+ * This performs STRUCTURAL checks only:
+ * - Does summary.md exist?
+ * - Does it have any [SXXX] citations?
+ *
+ * SEMANTIC check (is every factual claim cited?) is handled by
+ * LLM verification via Gemini 3 Pro MCP calls.
+ * See .claude/commands/verify.md for semantic verification criteria.
  */
 function checkCitationDensity(caseDir) {
   const result = { passed: false, reason: null, details: {} };
@@ -245,75 +233,27 @@ function checkCitationDensity(caseDir) {
   const content = fs.readFileSync(summaryPath, 'utf-8');
   const lines = content.split('\n');
 
-  // Count total [SXXX] citations
-  const citationMatches = content.match(/\[S\d{3,4}\]/g) || [];
-  const totalCitations = citationMatches.length;
-  const uniqueSources = new Set(citationMatches.map(m => m.match(/\[S(\d{3,4})\]/)[1]));
+  // Structural: Count total [SXXX] citations using config-loader
+  const { count: totalCitations, unique: uniqueSources } = config.countCitations(content);
 
   result.details.total_citations = totalCitations;
   result.details.unique_sources = uniqueSources.size;
+  result.details.total_lines = lines.length;
 
   // CRITICAL: If summary.md exists but has ZERO citations, fail immediately
   if (totalCitations === 0) {
-    result.reason = 'summary.md has ZERO source citations - every fact must be cited [SXXX]';
-    result.details.factual_lines_sample = lines
+    result.reason = 'summary.md has ZERO source citations - sources must be cited [SXXX]';
+    result.details.sample_lines = lines
       .filter(l => l.trim().length > 50 && !l.startsWith('#') && !l.startsWith('|') && !l.startsWith('-'))
       .slice(0, 5)
       .map(l => l.trim().substring(0, 80));
     return result;
   }
 
-  // Count factual lines (lines with specific content patterns)
-  const factualPatterns = [
-    /\d{4}/, /\d+%/, /\$[\d,]+/, /was\s+\w+ed\b/i, /were\s+\w+ed\b/i,
-    /\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d/i,
-    /\b(found|discovered|identified|confirmed|revealed|reported)\b/i
-  ];
-
-  const nonFactualPatterns = [
-    /^#+\s/, /^\s*\|.*\|\s*$/, /^[-=]+$/, /^\s*$/, /^---+$/, /^\*[^*]+\*$/
-  ];
-
-  let factualLines = 0;
-  let citedLines = 0;
-  const uncitedSamples = [];
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-
-    // Skip non-factual lines
-    if (trimmed.length < 40) continue;
-    if (nonFactualPatterns.some(p => p.test(trimmed))) continue;
-
-    // Check if factual
-    const isFactual = factualPatterns.some(p => p.test(trimmed));
-    if (!isFactual) continue;
-
-    factualLines++;
-
-    if (/\[S\d{3,4}\]/.test(trimmed)) {
-      citedLines++;
-    } else {
-      if (uncitedSamples.length < 5) {
-        uncitedSamples.push(trimmed.substring(0, 80));
-      }
-    }
-  }
-
-  result.details.factual_lines = factualLines;
-  result.details.cited_lines = citedLines;
-  result.details.citation_density = factualLines > 0 ? Math.round((citedLines / factualLines) * 100) : 0;
-
-  // Threshold: 100% of factual lines must have citations (kept for legacy callers)
-  const QUICK_THRESHOLD = 1.0;
-
-  if (factualLines > 0 && citedLines / factualLines < QUICK_THRESHOLD) {
-    result.reason = `Citation density ${result.details.citation_density}% below ${QUICK_THRESHOLD * 100}% threshold - ${factualLines - citedLines} factual statements without [SXXX] citations`;
-    result.details.uncited_samples = uncitedSamples;
-    return result;
-  }
-
+  // Structural check passed - summary has citations
+  // Semantic check (is every factual claim cited?) is done by LLM verification
   result.passed = true;
+  result.details.note = 'Semantic coverage check (factual claims) handled by LLM verification';
   return result;
 }
 
@@ -1112,128 +1052,6 @@ async function main() {
   }
 
   process.exit(result.overall ? 0 : 1);
-
-  const startTime = Date.now();
-
-  if (!jsonOutput) {
-    console.log('='.repeat(70));
-    console.log(`${BOLD}Termination Gate Verification (100% Thresholds)${NC}`);
-    console.log('='.repeat(70));
-    console.log(`Case: ${caseDir}`);
-    console.log(`Time: ${new Date().toISOString()}`);
-    console.log('');
-  }
-
-  // Run all gates
-  const gates = {
-    coverage: verifyCoverage(caseDir),
-    tasks: verifyTasks(caseDir),
-    adversarial: verifyAdversarial(caseDir),
-    sources: verifySources(caseDir),
-    content: verifyContent(caseDir),
-    claims: verifyClaims(caseDir),
-    contradictions: verifyContradictions(caseDir),
-    rigor: verifyRigor(caseDir),
-    legal: verifyLegal(caseDir)
-  };
-
-  // Run ledger check (informational)
-  const ledger = verifyLedger(caseDir);
-
-  // Calculate overall result
-  const failedGates = Object.entries(gates)
-    .filter(([_, r]) => !r.passed)
-    .map(([name, _]) => name);
-
-  const passedCount = Object.values(gates).filter(r => r.passed).length;
-  const totalGates = Object.keys(gates).length;
-  const allPassed = failedGates.length === 0;
-
-  // Generate output
-  const output = {
-    timestamp: new Date().toISOString(),
-    case_dir: caseDir,
-    duration_ms: Date.now() - startTime,
-    thresholds: '100% (no exceptions)',
-    gates,
-    audit_trail: ledger,
-    summary: {
-      passed: passedCount,
-      failed: failedGates.length,
-      total: totalGates
-    },
-    overall: allPassed,
-    blocking_gates: failedGates
-  };
-
-  // Write gate results to control directory
-  const controlDir = path.join(caseDir, 'control');
-  if (!fs.existsSync(controlDir)) {
-    fs.mkdirSync(controlDir, { recursive: true });
-  }
-  const resultsPath = path.join(controlDir, 'gate_results.json');
-  fs.writeFileSync(resultsPath, JSON.stringify(output, null, 2));
-
-  if (jsonOutput) {
-    console.log(JSON.stringify(output, null, 2));
-  } else {
-    // Display results
-    for (const [gate, result] of Object.entries(gates)) {
-      const icon = result.passed ? `${GREEN}[PASS]${NC}` : `${RED}[FAIL]${NC}`;
-      const status = result.passed ? `${GREEN}PASS${NC}` : `${RED}FAIL${NC}`;
-      console.log(`${icon} Gate ${gate.padEnd(15)} ${status}`);
-      if (!result.passed && result.reason) {
-        console.log(`  ${YELLOW}- ${result.reason}${NC}`);
-      }
-    }
-
-    console.log('');
-    console.log('-'.repeat(70));
-
-    // Display ledger status (informational)
-    const ledgerIcon = ledger.passed ? `${GREEN}[OK]${NC}` : `${YELLOW}[WARN]${NC}`;
-    const ledgerStatus = ledger.passed ? `${GREEN}OK${NC}` : `${YELLOW}WARN${NC}`;
-    console.log(`${ledgerIcon} Ledger             ${ledgerStatus} (informational)`);
-    if (ledger.reason) {
-      console.log(`  ${BLUE}- ${ledger.reason}${NC}`);
-    }
-    if (ledger.warnings && ledger.warnings.length > 0) {
-      for (const warn of ledger.warnings.slice(0, 3)) {
-        console.log(`  ${YELLOW}- ${warn}${NC}`);
-      }
-    }
-
-    console.log('');
-    console.log('-'.repeat(70));
-    console.log(`Gates passed: ${passedCount}/${totalGates}`);
-    console.log(`Results saved to: ${resultsPath}`);
-    console.log('');
-
-    const bannerLine = '='.repeat(71);
-
-    if (allPassed) {
-      console.log(`${GREEN}${BOLD}${bannerLine}${NC}`);
-      console.log(`${GREEN}${BOLD}                    ALL GATES PASS - READY TO TERMINATE                ${NC}`);
-      console.log(`${GREEN}${BOLD}${bannerLine}${NC}`);
-    } else {
-      console.log(`${RED}${BOLD}${bannerLine}${NC}`);
-      console.log(`${RED}${BOLD}                    GATES FAILED - CANNOT TERMINATE                     ${NC}`);
-      console.log(`${RED}${BOLD}${bannerLine}${NC}`);
-      console.log('');
-      console.log('Blocking gates:', failedGates.join(', '));
-
-      if (generateFix) {
-        console.log('');
-        console.log('Remediation tasks:');
-        const tasks = generateRemediationTasks(gates);
-        for (const task of tasks) {
-          console.log(`  ${YELLOW}[${task.id}]${NC} ${task.description}`);
-        }
-      }
-    }
-  }
-
-  process.exit(allPassed ? 0 : 1);
 }
 
 module.exports = { run };

@@ -152,13 +152,25 @@ Nothing else. No self-reported completion. No "feels done."
 8. **Document uncertainty** - "We don't know" is valid
 9. **Detect circular reporting** - Multiple outlets citing same source = 1 source
 
-### Citation Density Enforcement
+### Two-Phase Verification Architecture
 
-The system will reject any `summary.md` that has:
-- Zero `[SXXX]` citations (automatic FAIL)
-- Citation density below the configured threshold (default: 100% of factual lines) (gate FAIL)
+Verification happens in two phases:
 
-Run `node scripts/verify-citation-density.js <case>` to check before completing synthesis.
+**Phase 1: Structural (Scripts)**
+- Zero `[SXXX]` citations in summary.md (automatic FAIL)
+- Missing required files (automatic FAIL)
+- Missing evidence for cited sources (automatic FAIL)
+
+**Phase 2: Semantic (Gemini 3 Pro MCP)**
+- Every factual claim has citation (LLM judgment)
+- No unmitigated legal risks (LLM judgment)
+- No unprotected PII (LLM with context understanding)
+- Balanced and fair coverage (LLM judgment)
+
+Structural checks run via `node scripts/verify-all-gates.js`.
+Semantic checks run via `mcp__mcp-gemini__generate_text` with `model: "gemini-3-pro"`.
+
+See `.claude/commands/verify.md` for full verification flow.
 
 ---
 
@@ -278,12 +290,15 @@ node scripts/ledger-append.js <case> task_complete --task R001 --output findings
 
 ## MCP Quick Reference
 
-| Need | Server | Tool |
-|------|--------|------|
-| Deep research (fast) | mcp-gemini | `deep_research` |
-| Deep research (max) | mcp-openai | `deep_research` |
-| Real-time search | mcp-xai | `research`, `x_search` |
-| Cross-model critique | mcp-gemini | `generate_text` |
+| Need | Server | Tool | Model |
+|------|--------|------|-------|
+| **Semantic verification** | mcp-gemini | `generate_text` | `gemini-3-pro` |
+| Deep research (fast) | mcp-gemini | `deep_research` | - |
+| Deep research (max) | mcp-openai | `deep_research` | - |
+| Real-time search | mcp-xai | `research`, `x_search` | - |
+| Cross-model critique | mcp-gemini | `generate_text` | `gemini-3-pro` |
+
+**Semantic verification** (legal risk, PII, citation coverage, balance) MUST use Gemini 3 Pro.
 
 ---
 

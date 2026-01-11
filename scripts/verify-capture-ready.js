@@ -14,6 +14,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const config = require('./lib/config-loader');
 
 const args = process.argv.slice(2);
 
@@ -24,14 +25,8 @@ if (args.length < 1) {
 
 const caseDir = args[0];
 
-// Parse threshold argument
-let threshold = 1.0;
-try {
-  const config = require('./config');
-  if (typeof config?.thresholds?.capture_ready === 'number') {
-    threshold = config.thresholds.capture_ready;
-  }
-} catch (_) {}
+// Parse threshold argument - use centralized config
+let threshold = config.thresholds.capture_ready || 1.0;
 
 const thresholdIdx = args.indexOf('--threshold');
 if (thresholdIdx !== -1 && args[thresholdIdx + 1]) {
@@ -43,16 +38,7 @@ function findCitedSources(caseDir) {
   const citations = new Set();
   const mdPattern = /\[S(\d{3,4})\]/g;
 
-  const filesToScan = [
-    'summary.md',
-    'fact-check.md',
-    'people.md',
-    'organizations.md',
-    'timeline.md',
-    'theories.md',
-    'positions.md',
-    'statements.md'
-  ];
+  const filesToScan = [...config.files_to_scan];
 
   // Also scan findings/ directory
   const findingsDir = path.join(caseDir, 'findings');

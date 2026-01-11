@@ -187,6 +187,37 @@ Verifiers will check:
 2. Claims can be found in evidence content
 3. State files match filesystem reality
 
+### Claim Verification: Semantic, Not Verbatim
+
+**Claims are verified for SEMANTIC support, not verbatim matching.**
+
+A claim `"X happened [S042]"` means: "Source S042 says X happened." The verification checks if S042 actually contains X.
+
+| Verdict | Meaning | Gate Status |
+|---------|---------|-------------|
+| `VERIFIED` | Source directly states or closely paraphrases the claim | PASS |
+| `SYNTHESIS` | Source contains all facts the claim summarizes (no new info added) | PASS |
+| `PARTIAL` | Source supports some specifics but not others | PASS (review) |
+| `NOT_FOUND` | Source does not contain the claimed information | FAIL |
+| `CONTRADICTED` | Source states the opposite | FAIL |
+
+**What counts as support:**
+- Paraphrasing: "lost $1.2 million" → "lost $1.2M" ✓ (same meaning)
+- Format differences: "five million" → "$5M" ✓
+- Summarizing stated facts: "lost $5M, laid off 200" → "major cutbacks" ✓
+
+**What does NOT count as support:**
+- Inferences beyond source: "CEO resigned" → "leadership crisis" ✗ (source doesn't say "crisis")
+- Adding specifics: "lost money" → "lost $5M" ✗ (source doesn't specify amount)
+- Adding context: claim adds info not in source ✗
+- Different specifics: "January 15" → "January 20" ✗ (different date)
+
+**When claims fail with NOT_FOUND:**
+1. Wrong source attribution? Find the correct source that contains it
+2. Evidence truncated? Re-capture with full content
+3. Inference beyond source? Revise claim to match what source actually says
+4. Truly unsupported? Remove the claim or find supporting evidence
+
 ---
 
 ## Claim Registry: Corroboration as First-Class

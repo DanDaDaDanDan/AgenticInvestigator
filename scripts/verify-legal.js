@@ -1,8 +1,15 @@
 #!/usr/bin/env node
 /**
- * verify-legal.js - Mechanical legal risk checks
+ * verify-legal.js - Structural legal verification checks
  *
- * Intended for generate-gaps.js consumption.
+ * ARCHITECTURE NOTE:
+ * This script handles STRUCTURAL checks only:
+ * - Does legal-review.md exist?
+ * - Does it indicate NOT READY?
+ *
+ * SEMANTIC checks (legal risk language, PII detection) are handled by
+ * LLM verification via Gemini 3 Pro MCP calls. See .claude/commands/verify.md
+ * and .claude/commands/legal-review.md for semantic verification criteria.
  *
  * Usage:
  *   node scripts/verify-legal.js <case_dir>
@@ -32,12 +39,13 @@ function run(caseDir) {
   const gaps = [];
   const stats = {
     legal_review_present: false,
-    wording_risks: 0,
-    privacy_risks: 0
+    legal_review_ready: false
   };
 
+  // Structural check 1: Does legal-review.md exist?
   const legalReviewPath = path.join(caseDir, 'legal-review.md');
   const legalReview = readIfExists(legalReviewPath);
+
   if (!legalReview) {
     gaps.push({
       type: 'LEGAL_REVIEW_MISSING',
@@ -47,6 +55,8 @@ function run(caseDir) {
     });
   } else {
     stats.legal_review_present = true;
+
+    // Structural check 2: Does it indicate NOT READY?
     const upper = legalReview.toUpperCase();
     if (upper.includes('NOT READY')) {
       gaps.push({
@@ -55,65 +65,14 @@ function run(caseDir) {
         message: 'legal-review.md indicates NOT READY',
         suggested_actions: ['address_legal_review', 'revise_language', 'add_attribution']
       });
+    } else {
+      stats.legal_review_ready = true;
     }
   }
 
-  const summaryPath = path.join(caseDir, 'summary.md');
-  const summary = readIfExists(summaryPath);
-  if (summary) {
-    const lines = summary.split('\n');
-
-    const riskPatterns = [
-      { pattern: /\bcommitted fraud\b/i, issue: 'States fraud as fact' },
-      { pattern: /\bstole\b/i, issue: 'States theft as fact' },
-      { pattern: /\bcriminal\b/i, issue: 'Criminal accusation' },
-      { pattern: /\bguilty\b/i, issue: 'States guilt as fact' },
-      { pattern: /\bcorrupt\b/i, issue: 'Corruption accusation' }
-    ];
-
-    const attributionPatterns = [
-      /according to/i,
-      /alleged/i,
-      /reportedly/i,
-      /claims that/i,
-      /accused of/i,
-      /said/i
-    ];
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      for (const { pattern, issue } of riskPatterns) {
-        if (!pattern.test(line)) continue;
-        const hasAttribution = attributionPatterns.some(p => p.test(line));
-        if (!hasAttribution) {
-          stats.wording_risks++;
-          gaps.push({
-            type: 'LEGAL_WORDING_RISK',
-            object: { file: 'summary.md', line: i + 1 },
-            message: `${issue} without attribution on line ${i + 1}`,
-            suggested_actions: ['add_attribution', 'revise_language']
-          });
-        }
-      }
-    }
-
-    const piiPatterns = [
-      { pattern: /\b\d{3}-\d{2}-\d{4}\b/, issue: 'SSN-like pattern detected' },
-      { pattern: /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/, issue: 'Phone number-like pattern detected' },
-      { pattern: /\b\d+\s+\w+\s+(street|st|avenue|ave|road|rd|drive|dr)\b/i, issue: 'Address-like pattern detected' }
-    ];
-
-    for (const { pattern, issue } of piiPatterns) {
-      if (!pattern.test(summary)) continue;
-      stats.privacy_risks++;
-      gaps.push({
-        type: 'PRIVACY_RISK',
-        object: { file: 'summary.md' },
-        message: issue,
-        suggested_actions: ['remove_pii', 'anonymize']
-      });
-    }
-  }
+  // NOTE: Semantic checks (legal wording risk, PII detection) are NOT done here.
+  // Those checks are performed by LLM verification via Gemini 3 Pro MCP calls.
+  // See .claude/commands/verify.md for the verification flow.
 
   const passed = gaps.length === 0;
   const output = {
@@ -122,7 +81,8 @@ function run(caseDir) {
     duration_ms: Date.now() - startTime,
     passed,
     stats,
-    gaps
+    gaps,
+    note: 'Semantic checks (legal wording, PII) handled by LLM verification'
   };
 
   return output;
@@ -130,11 +90,17 @@ function run(caseDir) {
 
 function printHuman(output) {
   console.log('='.repeat(60));
-  console.log('Legal Verification');
+  console.log('Legal Verification (Structural)');
   console.log('='.repeat(60));
   console.log(`Case: ${output.case_dir}`);
   console.log('');
-  console.log(output.passed ? 'PASS: no legal gaps detected' : `FAIL: ${output.gaps.length} gap(s) detected`);
+  console.log(`Legal review present: ${output.stats.legal_review_present ? 'YES' : 'NO'}`);
+  console.log(`Legal review ready: ${output.stats.legal_review_ready ? 'YES' : 'NO'}`);
+  console.log('');
+  console.log('NOTE: Semantic checks (legal wording, PII) are handled by');
+  console.log('LLM verification via Gemini 3 Pro. Run /verify for full check.');
+  console.log('');
+  console.log(output.passed ? 'PASS: structural checks passed' : `FAIL: ${output.gaps.length} gap(s) detected`);
 }
 
 function cli() {

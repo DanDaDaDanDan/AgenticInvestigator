@@ -16,6 +16,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { detectSourceOrigin } = require('./lib/config-loader');
 
 function parseCliArgs(argv) {
   const args = argv.slice(2);
@@ -63,33 +64,7 @@ function readEvidenceSnippet(caseDir, sourceId, maxBytes = 300_000) {
   return '';
 }
 
-function detectOrigin({ sourceRecord, domain, text }) {
-  // Explicit override from sources.json
-  if (sourceRecord && typeof sourceRecord === 'object') {
-    const explicit = typeof sourceRecord.origin === 'string' ? sourceRecord.origin.trim() : '';
-    if (explicit) return { origin: explicit, confidence: 'explicit' };
-  }
-
-  // High-confidence domain signals
-  if (domain === 'apnews.com') return { origin: 'wire:ap', confidence: 'high' };
-  if (domain === 'reuters.com') return { origin: 'wire:reuters', confidence: 'high' };
-  if (domain && domain.endsWith('.gov')) return { origin: 'official:gov', confidence: 'high' };
-
-  const hay = (text || '').toLowerCase();
-  if (!hay) return { origin: null, confidence: 'unknown' };
-
-  // Medium-confidence textual markers (syndication)
-  if (hay.includes('associated press') || hay.includes('ap news')) return { origin: 'wire:ap', confidence: 'medium' };
-  if (hay.includes('reuters')) return { origin: 'wire:reuters', confidence: 'medium' };
-  if (hay.includes('press release')) return { origin: 'press_release', confidence: 'medium' };
-
-  // Court / filing phrasing is noisy; keep low confidence.
-  if (hay.includes('court filing') || hay.includes('complaint') || hay.includes('indictment') || hay.includes('docket')) {
-    return { origin: 'official:court', confidence: 'low' };
-  }
-
-  return { origin: null, confidence: 'unknown' };
-}
+// detectOrigin is now handled by config-loader.detectSourceOrigin
 
 function loadSources(caseDir) {
   const sourcesPath = path.join(caseDir, 'sources.json');
@@ -128,7 +103,7 @@ function run(caseDir) {
     const record = sources[sourceId];
     const domain = record?.url ? getDomain(record.url) : null;
     const text = readEvidenceSnippet(caseDir, sourceId);
-    const detected = detectOrigin({ sourceRecord: record, domain, text });
+    const detected = detectSourceOrigin({ sourceRecord: record, domain, text });
     originCache.set(sourceId, detected);
     return detected;
   }
