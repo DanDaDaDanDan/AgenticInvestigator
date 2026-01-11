@@ -2,9 +2,25 @@
 
 This is a repo review focused on **Claude Code as the orchestrator** (custom commands in `.claude/commands/`) and the **Node-based capture/verification toolchain** (`scripts/`). It calls out concrete flaws/bugs and proposes improvements to outcome quality, rigor, and operational reliability.
 
-Last reviewed: 2026-01-10
+Last reviewed: 2026-01-11
 
 ---
+
+## Implementation status (2026-01-11)
+
+Note: This document was originally written as a pre-fix review; the issue descriptions below reflect the original state. The corresponding recommendations have now been implemented in the repository.
+
+Highlights:
+- `scripts/generate-gaps.js` is now orchestrator-faithful: all verifiers emit a canonical `{ gaps: [...] }` contract, and gate failures are surfaced as `GATE_FAILED` gaps.
+- Core schema drift is enforced mechanically via `scripts/validate-schema.js` (and surfaced as `SCHEMA_INVALID`).
+- Evidence Folder Contract is enforced: `scripts/verify-source-content.js` reads `content.md` and `scripts/verify-sources.js` now requires `metadata.json.files` hashes (or explicit `content_hash`), with `--fix` to backfill legacy folders.
+- Thresholds are centralized in `scripts/config.js` (default 100%/1.0).
+- Missing verifiers were added (`verify-legal.js`, `verify-integrity.js`, `verify-tasks.js`) and a minimal spawn-free test harness exists (`node scripts/run-tests.js`).
+- Encoding/command sharp edges were removed: scripts avoid non-ASCII protocol glyphs and CLI usage strings are copy-paste correct from repo root.
+
+Notes / caveats:
+- `cases/old-raleigh-murder/` is a legacy example; `verify-sources.js` will flag missing evidence hashes unless you run `node scripts/verify-sources.js cases/old-raleigh-murder --fix`.
+- A local file named `nul` may exist in some Windows worktrees; it is ignored via `.gitignore` and is not tracked by git.
 
 ## 1) Highest-impact issues (break stated guarantees)
 

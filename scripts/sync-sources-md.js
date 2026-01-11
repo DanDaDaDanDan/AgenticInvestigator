@@ -118,7 +118,7 @@ function generateMarkdown(sources) {
   const lines = [
     '# Sources',
     '',
-    '**Auto-generated from evidence/web/ — do not edit manually.**',
+    '**Auto-generated from evidence/web/ (do not edit manually).**',
     '',
     `Last synced: ${new Date().toISOString()}`,
     '',

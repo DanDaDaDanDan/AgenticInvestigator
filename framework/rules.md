@@ -147,8 +147,12 @@ Note: `scripts/capture` is a bash wrapper (WSL/Git Bash). On Windows, prefer `no
 **Layer 3: Mechanical Verification**
 
 ```bash
-# Check evidence folder exists with required files
-ls evidence/web/SXXX/  # Must contain metadata.json + (html|pdf|png)
+# Evidence Folder Contract (CAPTURE BEFORE CITE)
+ls evidence/web/SXXX/  # Must contain metadata.json + at least one payload file
+# metadata.json must include hashes for payload files under `.files` (sha256:...)
+
+# Backfill hashes into legacy evidence folders (optional):
+node scripts/verify-sources.js <case_dir> --fix
 ```
 
 **Layer 4: Content Verification**

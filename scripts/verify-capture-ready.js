@@ -6,8 +6,8 @@
  * Exits 0 if threshold met, exits 1 if not.
  *
  * Usage:
- *   node verify-capture-ready.js <case_dir>
- *   node verify-capture-ready.js <case_dir> --threshold 0.9
+ *   node scripts/verify-capture-ready.js <case_dir>
+ *   node scripts/verify-capture-ready.js <case_dir> --threshold 0.9
  *
  * Default threshold: from scripts/config.js (capture_ready)
  */

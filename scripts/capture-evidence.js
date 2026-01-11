@@ -8,7 +8,7 @@
  * 3. ArchiveBox - Optional WARC backup for forensic archive
  *
  * Usage:
- *   node capture-evidence.js <url-list> <case-dir> [--archivebox]
+ *   node scripts/capture-evidence.js <url-list> <case-dir> [--archivebox]
  *
  * Environment:
  *   FIRECRAWL_API_KEY - Required for Firecrawl (or in .env)
@@ -31,7 +31,7 @@ const useArchiveBox = args.includes('--archivebox');
 const positionalArgs = args.filter(a => !a.startsWith('--'));
 
 if (positionalArgs.length < 2) {
-  console.error('Usage: node capture-evidence.js <url-list> <case-dir> [--archivebox]');
+  console.error('Usage: node scripts/capture-evidence.js <url-list> <case-dir> [--archivebox]');
   console.error('');
   console.error('Options:');
   console.error('  --archivebox   Also create WARC backups via ArchiveBox');
@@ -156,9 +156,9 @@ async function generatePdfs(caseDir) {
         fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
       }
 
-      console.log(`  [${folder}] ✓ PDF generated`);
+      console.log(`  [${folder}] OK PDF generated`);
     } catch (err) {
-      console.error(`  [${folder}] ✗ PDF failed: ${err.message}`);
+      console.error(`  [${folder}] FAIL PDF failed: ${err.message}`);
     }
   }
 

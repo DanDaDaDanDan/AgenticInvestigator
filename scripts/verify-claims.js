@@ -6,9 +6,9 @@
  * actually appears in the captured evidence for that source.
  *
  * Usage:
- *   node verify-claims.js <case_dir>              # Verify all claims
- *   node verify-claims.js <case_dir> --summary    # Only check summary.md
- *   node verify-claims.js <case_dir> --json       # Output JSON report
+ *   node scripts/verify-claims.js <case_dir>              # Verify all claims
+ *   node scripts/verify-claims.js <case_dir> --summary    # Only check summary.md
+ *   node scripts/verify-claims.js <case_dir> --json       # Output JSON report
  *
  * Process:
  *   1. Extract claims with source IDs from case files
@@ -88,7 +88,7 @@ function extractClaims(filePath, fileName) {
       // Get the claim text (line without the source citations)
       let claimText = line
         .replace(/\[S\d{3,4}\]/g, '')  // Remove source citations
-        .replace(/^\s*[-*•]\s*/, '') // Remove list markers
+        .replace(/^\s*[-*\u2022]\s*/, '') // Remove list markers
         .replace(/^\s*\d+\.\s*/, '') // Remove numbered list markers
         .replace(/^#+\s*/, '')       // Remove heading markers
         .replace(/\*\*/g, '')        // Remove bold markers
@@ -497,12 +497,12 @@ async function run(caseDir, options = {}) {
 
       if (!jsonOutput) {
         const icon = {
-          VERIFIED: `${GREEN}✓${NC}`,
-          NOT_FOUND: `${RED}✗${NC}`,
-          PARTIAL: `${YELLOW}~${NC}`,
+          VERIFIED: `${GREEN}OK${NC}`,
+          NOT_FOUND: `${RED}MISS${NC}`,
+          PARTIAL: `${YELLOW}WARN${NC}`,
           CONTRADICTED: `${RED}!!${NC}`,
-          ERROR: `${RED}?${NC}`
-        }[verification.verdict] || '?';
+          ERROR: `${RED}ERR${NC}`
+        }[verification.verdict] || 'ERR';
 
         // Truncate claim for display
         const shortClaim = claim.claim.length > 60
@@ -727,7 +727,7 @@ async function cli() {
   const jsonOutput = parsed.jsonOutput || parsed.summaryOnly;
 
   if (!caseDir) {
-    console.error('Usage: node verify-claims.js <case_dir> [--summary] [--json]');
+    console.error('Usage: node scripts/verify-claims.js <case_dir> [--summary] [--json]');
     process.exit(1);
   }
 

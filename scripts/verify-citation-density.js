@@ -7,9 +7,9 @@
  * without attribution.
  *
  * Usage:
- *   node verify-citation-density.js <case_dir>
- *   node verify-citation-density.js <case_dir> --json     # JSON output
- *   node verify-citation-density.js <case_dir> --verbose  # Show uncited lines
+ *   node scripts/verify-citation-density.js <case_dir>
+ *   node scripts/verify-citation-density.js <case_dir> --json     # JSON output
+ *   node scripts/verify-citation-density.js <case_dir> --verbose  # Show uncited lines
  *
  * Checks:
  *   1. Summary.md exists and has content
@@ -407,7 +407,7 @@ function cli() {
   const { caseDir, jsonOutput, verbose } = parseCliArgs(process.argv);
 
   if (!caseDir) {
-    console.error('Usage: node verify-citation-density.js <case_dir> [--json] [--verbose]');
+    console.error('Usage: node scripts/verify-citation-density.js <case_dir> [--json] [--verbose]');
     process.exit(1);
   }
 

@@ -190,12 +190,12 @@ async function captureUrl(sourceId, url, evidenceDir, attempt = 1) {
       JSON.stringify(metadata, null, 2)
     );
 
-    console.log(`  ✓ Captured (${Object.keys(files).length} files, ${Date.now() - startTime}ms)`);
+    console.log(`  OK Captured (${Object.keys(files).length} files, ${Date.now() - startTime}ms)`);
 
     return { success: true, sourceId, files: Object.keys(files) };
 
   } catch (err) {
-    console.error(`  ✗ Error: ${err.message}`);
+    console.error(`  FAIL Error: ${err.message}`);
     errors.push(err.message);
 
     // Retry on transient errors

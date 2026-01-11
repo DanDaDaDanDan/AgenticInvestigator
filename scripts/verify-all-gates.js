@@ -9,13 +9,13 @@
  * All thresholds are 100% - no partial credit.
  *
  * Usage:
- *   node verify-all-gates.js <case_dir>
- *   node verify-all-gates.js <case_dir> --json    # JSON output only
- *   node verify-all-gates.js <case_dir> --fix     # Generate remediation tasks
+ *   node scripts/verify-all-gates.js <case_dir>
+ *   node scripts/verify-all-gates.js <case_dir> --json    # JSON output only
+ *   node scripts/verify-all-gates.js <case_dir> --fix     # Generate remediation tasks
  *
  * Gates:
  *   1. Coverage - Files exist and meet 100% thresholds
- *   2. Tasks - All tasks completed with findings files
+ *   2. Tasks - All HIGH priority tasks completed with findings files
  *   3. Adversarial - Adversarial tasks exist and are completed
  *   4. Sources - Every [SXXX] citation has evidence folder
  *   5. Content - Claims verified in captured evidence
@@ -735,8 +735,8 @@ function verifyRigor(caseDir) {
     }
 
     // Check for framework coverage markers
-    const checkMarks = (rigorContent.match(/✓|PASS|addressed|covered/gi) || []).length;
-    const gapMarks = (rigorContent.match(/✗|FAIL|gap|missing/gi) || []).length;
+    const checkMarks = (rigorContent.match(/\bPASS\b|\bADDRESSED\b|\bCOVERED\b|\[x\]/gi) || []).length;
+    const gapMarks = (rigorContent.match(/\bFAIL\b|\bGAP\b|\bMISSING\b/gi) || []).length;
     const totalFrameworks = 20;
 
     result.details.file = rigorFile;
@@ -773,7 +773,7 @@ function verifyRigor(caseDir) {
 
     // Require minimum check coverage (at least 15 of 20 frameworks addressed)
     if (checkMarks < 15) {
-      result.reason = `Only ${checkMarks} framework checks found (need ≥15 of 20)`;
+      result.reason = `Only ${checkMarks} framework checks found (need >=15 of 20)`;
       return result;
     }
 
@@ -1100,7 +1100,7 @@ async function main() {
   const caseDir = parsed.caseDir;
 
   if (!caseDir) {
-    console.error('Usage: node verify-all-gates.js <case_dir> [--json] [--fix]');
+    console.error('Usage: node scripts/verify-all-gates.js <case_dir> [--json] [--fix]');
     process.exit(1);
   }
 
@@ -1179,11 +1179,11 @@ async function main() {
   } else {
     // Display results
     for (const [gate, result] of Object.entries(gates)) {
-      const icon = result.passed ? `${GREEN}✓${NC}` : `${RED}✗${NC}`;
+      const icon = result.passed ? `${GREEN}[PASS]${NC}` : `${RED}[FAIL]${NC}`;
       const status = result.passed ? `${GREEN}PASS${NC}` : `${RED}FAIL${NC}`;
       console.log(`${icon} Gate ${gate.padEnd(15)} ${status}`);
       if (!result.passed && result.reason) {
-        console.log(`  ${YELLOW}→ ${result.reason}${NC}`);
+        console.log(`  ${YELLOW}- ${result.reason}${NC}`);
       }
     }
 
@@ -1191,15 +1191,15 @@ async function main() {
     console.log('-'.repeat(70));
 
     // Display ledger status (informational)
-    const ledgerIcon = ledger.passed ? `${GREEN}✓${NC}` : `${YELLOW}!${NC}`;
+    const ledgerIcon = ledger.passed ? `${GREEN}[OK]${NC}` : `${YELLOW}[WARN]${NC}`;
     const ledgerStatus = ledger.passed ? `${GREEN}OK${NC}` : `${YELLOW}WARN${NC}`;
     console.log(`${ledgerIcon} Ledger             ${ledgerStatus} (informational)`);
     if (ledger.reason) {
-      console.log(`  ${BLUE}→ ${ledger.reason}${NC}`);
+      console.log(`  ${BLUE}- ${ledger.reason}${NC}`);
     }
     if (ledger.warnings && ledger.warnings.length > 0) {
       for (const warn of ledger.warnings.slice(0, 3)) {
-        console.log(`  ${YELLOW}→ ${warn}${NC}`);
+        console.log(`  ${YELLOW}- ${warn}${NC}`);
       }
     }
 
@@ -1209,14 +1209,16 @@ async function main() {
     console.log(`Results saved to: ${resultsPath}`);
     console.log('');
 
+    const bannerLine = '='.repeat(71);
+
     if (allPassed) {
-      console.log(`${GREEN}${BOLD}═══════════════════════════════════════════════════════════════════════${NC}`);
+      console.log(`${GREEN}${BOLD}${bannerLine}${NC}`);
       console.log(`${GREEN}${BOLD}                    ALL GATES PASS - READY TO TERMINATE                ${NC}`);
-      console.log(`${GREEN}${BOLD}═══════════════════════════════════════════════════════════════════════${NC}`);
+      console.log(`${GREEN}${BOLD}${bannerLine}${NC}`);
     } else {
-      console.log(`${RED}${BOLD}═══════════════════════════════════════════════════════════════════════${NC}`);
+      console.log(`${RED}${BOLD}${bannerLine}${NC}`);
       console.log(`${RED}${BOLD}                    GATES FAILED - CANNOT TERMINATE                     ${NC}`);
-      console.log(`${RED}${BOLD}═══════════════════════════════════════════════════════════════════════${NC}`);
+      console.log(`${RED}${BOLD}${bannerLine}${NC}`);
       console.log('');
       console.log('Blocking gates:', failedGates.join(', '));
 
