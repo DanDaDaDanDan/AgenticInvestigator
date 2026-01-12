@@ -447,24 +447,16 @@ Exit code 1 = blocking gates -> generate tasks -> loop
 ```
 Task tool:
   subagent_type: "general-purpose"
-  description: "20-framework rigor analysis"
+  description: "35-framework rigor analysis"
   prompt: |
     Use template: prompts/rigor-exploration-agent.md
+    Read: prompts/_frameworks.md for framework definitions
     CASE: cases/[case-id]/
-
-    Use mcp-openai.generate_text with:
-      model: {{model}}           # gpt-5.2-pro (normal) or gpt-5.2 (--fast)
-      reasoning_effort: {{effort}} # xhigh (normal) or none (--fast)
 
     OUTPUT: findings/rigor-checkpoint.md
     Generate R### tasks for any gaps identified.
     RETURN: Frameworks completed, gaps found, publication status
 ```
-
-| Mode | `{{model}}` | `{{effort}}` |
-|------|-------------|--------------|
-| Normal | `gpt-5.2-pro` | `xhigh` |
-| `--fast` | `gpt-5.2` | `none` |
 
 **When to run:**
 - After most T### and A### tasks are complete

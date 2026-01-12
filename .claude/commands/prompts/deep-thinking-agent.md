@@ -2,13 +2,11 @@
 
 ## Purpose
 
-Use GPT-5.2 Pro with Extended Thinking (reasoning_effort: xhigh) for tasks requiring:
+Use extended thinking/reasoning capabilities for tasks requiring:
 - Deep exploration of hypotheses
 - Comprehensive analysis of frameworks
 - Complex reasoning about contradictions
 - Generating non-obvious questions
-
-**This agent uses `mcp-openai.generate_text` with `reasoning_effort: xhigh`.**
 
 ---
 
@@ -25,7 +23,7 @@ Use GPT-5.2 Pro with Extended Thinking (reasoning_effort: xhigh) for tasks requi
 
 | Task Type | Use Deep Thinking? | Why |
 |-----------|-------------------|-----|
-| 20-Framework Rigor | **YES** | Need exhaustive exploration |
+| 35-Framework Rigor | **YES** | Need exhaustive exploration |
 | Adversarial Analysis | **YES** | Finding non-obvious counter-arguments |
 | Question Generation | **YES** | Curiosity requires creative depth |
 | Hypothesis Testing | **YES** | Need to consider all angles |
@@ -34,176 +32,60 @@ Use GPT-5.2 Pro with Extended Thinking (reasoning_effort: xhigh) for tasks requi
 
 ---
 
-## MCP Tool Configuration
+## Model Guidance
 
-Tool ids in this section are placeholders; see `prompts/_tooling.md`.
+For exhaustive exploration, use extended thinking capabilities when available:
 
-### Normal Mode (default)
+| Mode | Recommended Approach |
+|------|---------------------|
+| Normal | Use reasoning/thinking models with high effort settings |
+| Fast (`--fast`) | Use standard models, same depth expectations |
 
-```
-mcp__mcp-openai__generate_text:
-  model: "gpt-5.2-pro"
-  reasoning_effort: "xhigh"
-  max_output_tokens: 16384
-  prompt: [See templates below]
-  system_prompt: [See below]
-```
+**The prompts and output requirements remain identical regardless of model.**
 
-### Fast Mode (`--fast`)
+### Thinking Requirements
 
-```
-mcp__mcp-openai__generate_text:
-  model: "gpt-5.2"
-  reasoning_effort: "none"
-  max_output_tokens: 16384
-  prompt: [Same templates]
-  system_prompt: [Same system prompt]
-```
-
-**Only the model and reasoning_effort change. All prompts and expectations remain identical.**
-
-### System Prompt (both modes)
-
-```
-You are a senior investigative analyst performing deep, exhaustive analysis.
-
-THINKING REQUIREMENTS:
+When performing deep analysis:
 - Consider every angle before concluding
 - Actively seek contradictions to your reasoning
 - Explore alternatives you would normally dismiss
 - Document your uncertainty explicitly
 - Challenge your own assumptions
 
-OUTPUT REQUIREMENTS:
+### Output Requirements
+
 - Be exhaustive, not summary
 - Include minority viewpoints
 - Document what you DON'T know
 - Provide specific, actionable follow-ups
-```
 
 ---
 
-## Template: 20-Framework Deep Exploration
+## Template: 35-Framework Deep Exploration
 
 For comprehensive rigor checkpoint analysis:
 
+**Read `_frameworks.md` for the complete 35-framework definitions.**
+
 ```
-TASK: Deep 20-Framework Exploration
+TASK: Deep 35-Framework Exploration
 CASE: {{case_id}}
 
 You have access to the following investigation materials:
 - summary.md: Current findings summary
 - claims/*.json: All registered claims with evidence
 - findings/*.md: Task findings and analysis
-- sources.json: Captured evidence registry
+- _sources.json: Captured evidence registry
 - positions.md: Documented stakeholder positions
 
-INSTRUCTION: For EACH of the 20 frameworks below, perform DEEP analysis.
+INSTRUCTION: For EACH of the 35 frameworks in _frameworks.md, perform DEEP analysis.
 Do not just check a box - actually THINK about what each framework reveals.
 
-FRAMEWORKS:
-
-1. **Follow the Money**
-   - Who benefits financially from each outcome?
-   - What financial relationships haven't we mapped?
-   - What payments, contracts, or interests might explain behavior?
-   - [Spend at least 500 words on this framework]
-
-2. **Follow the Silence**
-   - Who is NOT talking that should be?
-   - What questions are being avoided?
-   - What topics cause deflection?
-   - Who has something to lose by speaking?
-
-3. **Follow the Timeline**
-   - What sequence of events would change the interpretation?
-   - Are there suspicious gaps in the timeline?
-   - What happened JUST BEFORE the key event?
-   - What decisions were made in what order?
-
-4. **Follow the Documents**
-   - What documents MUST exist but we haven't found?
-   - What paper trails would prove/disprove claims?
-   - What contracts, emails, records are missing?
-
-5. **Follow the Contradictions**
-   - Where do sources disagree?
-   - Which contradictions are most significant?
-   - What would resolve each contradiction?
-
-6. **Follow the Relationships**
-   - What connections haven't we mapped?
-   - Who knows whom, and since when?
-   - What conflicts of interest exist?
-
-7. **Stakeholder Mapping**
-   - Who are ALL the stakeholders?
-   - What does each stakeholder want?
-   - Whose interests are we missing?
-
-8. **Network Analysis**
-   - What networks connect key players?
-   - Are there hidden connections?
-   - Who are the information brokers?
-
-9. **Means/Motive/Opportunity**
-   - For each allegation: who had means, motive, opportunity?
-   - Are there OTHER people who had all three?
-
-10. **Competing Hypotheses**
-    - What are ALL the possible explanations?
-    - Which hypotheses haven't we tested?
-    - What evidence would distinguish between hypotheses?
-
-11. **Assumptions Check**
-    - What are we ASSUMING without evidence?
-    - Which assumptions would change everything if wrong?
-    - What are we taking for granted?
-
-12. **Pattern Analysis**
-    - What patterns have we identified?
-    - What patterns might we be missing?
-    - Is this part of a larger pattern?
-
-13. **Counterfactual**
-    - What would prove us WRONG?
-    - What evidence would we expect to see if our conclusions are wrong?
-    - Have we looked for disconfirming evidence?
-
-14. **Pre-Mortem**
-    - If this investigation fails, why would it fail?
-    - What are we most likely to get wrong?
-    - What would we regret not asking?
-
-15. **Cognitive Bias Check**
-    - What biases might be affecting our analysis?
-    - Are we confirmation-biased toward certain conclusions?
-    - Are we anchored on early information?
-
-16. **Uncomfortable Questions**
-    - What questions are we avoiding?
-    - What would we NOT want to find?
-    - What questions would make subjects most defensive?
-
-17. **Second-Order Effects**
-    - What are the downstream implications of our findings?
-    - Who else is affected?
-    - What unintended consequences might result?
-
-18. **Meta Questions**
-    - Why are we investigating this now?
-    - Who wants this investigated (and who doesn't)?
-    - What's the broader context?
-
-19. **5 Whys (Root Cause)**
-    - For key events: Why did this happen? (5 levels deep)
-    - What systemic factors contributed?
-    - What's the root cause, not just proximate cause?
-
-20. **Sense-Making**
-    - Does our overall narrative make sense?
-    - Are there explanatory gaps?
-    - What's the most parsimonious explanation?
+The 35 frameworks are organized in four parts:
+- Part A (1-20): Core Investigation Frameworks
+- Part B (21-25): Domain Expertise Frameworks
+- Part C (26-30): Analytical Rigor Frameworks
+- Part D (31-35): Structural Analysis Frameworks
 
 OUTPUT FORMAT:
 For each framework, provide:
@@ -212,7 +94,7 @@ For each framework, provide:
 - Evidence gaps identified
 - Risk assessment if framework reveals issues
 
-Generate tasks for any gaps identified.
+Generate R### task files for any gaps identified.
 ```
 
 ---
@@ -316,7 +198,7 @@ OUTPUT:
 ### When Orchestrator Should Dispatch Deep Thinking Agent
 
 1. **Rigor Checkpoint** (required)
-   - Every investigation must run 20-framework deep analysis
+   - Every investigation must run 35-framework deep analysis
    - Run before declaring any iteration complete
 
 2. **Adversarial Pass** (required)
@@ -331,28 +213,6 @@ OUTPUT:
    - Before writing final summary
    - To catch blind spots
 
-### Agent Dispatch Pattern
-
-```
-Task tool:
-  subagent_type: "general-purpose"
-  description: "Deep 20-framework analysis"
-  prompt: |
-    Use mcp-openai.generate_text with these parameters:
-    - model: gpt-5.2-pro
-    - reasoning_effort: xhigh
-    - max_output_tokens: 16384
-
-    [Insert appropriate template from above]
-
-    CASE: {{case_dir}}
-
-    Write output to: findings/deep-analysis-{{analysis_type}}.md
-    Generate task files for gaps: tasks/R###.json
-
-    RETURN: Summary of findings, task count generated
-```
-
 ---
 
 ## Output Requirements
@@ -365,4 +225,4 @@ Deep thinking analysis MUST include:
 4. **Specific follow-ups** - Question-shaped tasks
 5. **Evidence requirements** - What would prove/disprove
 
-**Minimum output: 2000 words for 20-framework, 500 words per major claim for adversarial.**
+**Minimum output: 2000 words for 35-framework, 500 words per major claim for adversarial.**

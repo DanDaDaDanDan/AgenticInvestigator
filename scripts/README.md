@@ -200,7 +200,7 @@ node scripts/verify-all-gates.js cases/[case-id] --json
 5. Content - Claims in evidence text
 6. Claims - AI verification
 7. Contradictions - All explored
-8. Rigor - 20 frameworks
+8. Rigor - 35 frameworks
 9. Legal - Review file exists
 
 ---
