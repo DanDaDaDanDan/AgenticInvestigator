@@ -267,6 +267,86 @@ OUTPUT REQUIREMENTS:
 
 ---
 
+## CRITICAL FRAMEWORKS (21-25): Domain Expertise & First Principles
+
+**These frameworks address the most common failure mode: surface-level analysis that misses what domain experts consider obvious.**
+
+### 21. First Principles / Scientific Reality
+**MANDATORY for any investigation involving physical, biological, or technical subjects.**
+
+- What does SCIENCE say about the underlying subject matter?
+- What are the biological, physical, chemical, or technical REALITIES?
+- What do peer-reviewed studies actually show (not what marketing claims)?
+- What is the scientific consensus in relevant fields?
+- Have we consulted primary scientific literature, not just news articles?
+
+**Example (egg labels):** Chickens are descended from jungle fowl and are naturally agoraphobic - they experience stress in open spaces and prefer cover. This basic ethological fact fundamentally challenges "free-range = better welfare" marketing.
+
+**Required sources:** Peer-reviewed journals, academic textbooks, scientific reviews
+
+### 22. Domain Expert Blind Spots
+**What would a subject matter expert consider OBVIOUS that we're missing?**
+
+- Who are the domain experts for this topic? (veterinarians, scientists, engineers, etc.)
+- What do they consider common knowledge in their field?
+- What would they immediately flag as missing from our analysis?
+- What questions would they ask that we haven't?
+- What terminology or concepts are we misunderstanding?
+
+**Action:** Use deep research to query: "What do [domain experts] consider obvious about [topic] that journalists/laypeople typically miss?"
+
+### 23. Marketing vs Scientific Reality
+**Where do marketing claims diverge from scientific evidence?**
+
+- What does marketing/PR say vs what does research show?
+- What terms are being used that have marketing definitions vs scientific definitions?
+- What beneficial-sounding claims lack scientific support?
+- What negative realities are being obscured by positive framing?
+- Who funded the studies being cited by marketing?
+
+**Example:** "Free-range" sounds welfare-positive but science shows chickens may be more stressed outdoors due to agoraphobia, predator exposure, and disease risk.
+
+### 24. Subject Experience / Ground Truth
+**What does the actual subject (person, animal, system) experience?**
+
+- For animals: What do ethological studies show about their preferences and stress responses?
+- For people: What do affected individuals actually report experiencing?
+- For systems: What do operational metrics actually show?
+- Are we taking the subject's perspective or only the claimant's perspective?
+- What would we find if we directly observed/measured the subject?
+
+**This framework prevents accepting claims about subjects without verifying the subject's actual experience.**
+
+### 25. Contrarian Expert Search
+**Actively seek experts who disagree with the conventional narrative.**
+
+- Who are the credentialed experts who dispute the mainstream view?
+- What peer-reviewed research contradicts popular belief?
+- What do industry insiders say privately vs publicly?
+- What whistleblowers or critics have raised concerns?
+- What inconvenient findings have been downplayed or ignored?
+
+**Action:** Explicitly search for: "[topic] criticism", "[topic] problems", "[topic] myth", "why [popular belief] is wrong"
+
+---
+
+## Mandatory Domain-Specific Source Requirements
+
+**Before publication, verify these source types are present:**
+
+| Topic Domain | Required Source Types |
+|--------------|----------------------|
+| Animal welfare | Veterinary journals, ethology studies, animal behavior research |
+| Health/nutrition | Peer-reviewed medical journals, clinical trials, systematic reviews |
+| Environmental | Ecological studies, environmental science journals, emissions data |
+| Financial | SEC filings, audited financials, court documents |
+| Technical/engineering | Technical specifications, engineering studies, failure analyses |
+| Legal/regulatory | Statutes, regulations, court rulings, enforcement actions |
+
+**If required source types are MISSING, that is a BLOCKER for publication.**
+
+---
+
 ## Output Requirements
 
 ### findings/rigor-checkpoint.md
@@ -276,7 +356,7 @@ OUTPUT REQUIREMENTS:
 
 **Iteration:** N
 **Date:** YYYY-MM-DD
-**Analysis Type:** 20-Framework Deep Exploration
+**Analysis Type:** 25-Framework Deep Exploration (includes Domain Expertise frameworks)
 
 ## Executive Summary
 [3-5 paragraphs summarizing the rigor analysis results]
@@ -293,7 +373,30 @@ OUTPUT REQUIREMENTS:
 **Gaps Identified:** [List]
 **Tasks Generated:** R003
 
-[... Continue for all 20 frameworks ...]
+[... Continue for all 25 frameworks ...]
+
+### 21. First Principles / Scientific Reality
+[What does science actually say? Peer-reviewed sources required]
+**Scientific Sources Consulted:** [List journals/studies]
+**Tasks Generated:** R###
+
+### 22. Domain Expert Blind Spots
+[What would experts consider obvious that we missed?]
+**Expert Perspectives Missing:** [List]
+**Tasks Generated:** R###
+
+### 23. Marketing vs Scientific Reality
+[Where do marketing claims diverge from research?]
+**Gaps Identified:** [List]
+**Tasks Generated:** R###
+
+### 24. Subject Experience / Ground Truth
+[What does the actual subject experience?]
+**Tasks Generated:** R###
+
+### 25. Contrarian Expert Search
+[What do credentialed critics say?]
+**Tasks Generated:** R###
 
 ## Investigation Gaps Summary
 
@@ -316,8 +419,24 @@ OUTPUT REQUIREMENTS:
 | 1 | Follow the Money | YES | 3 | R001, R002, R003 |
 | 2 | Follow the Silence | YES | 1 | R004 |
 | ... | ... | ... | ... | ... |
+| 21 | First Principles / Scientific Reality | YES | ? | R### |
+| 22 | Domain Expert Blind Spots | YES | ? | R### |
+| 23 | Marketing vs Scientific Reality | YES | ? | R### |
+| 24 | Subject Experience / Ground Truth | YES | ? | R### |
+| 25 | Contrarian Expert Search | YES | ? | R### |
 
-**Frameworks Completed:** X/20
+**Frameworks Completed:** X/25
+
+## Domain-Specific Source Audit
+
+| Required Source Type | Present? | Sources |
+|---------------------|----------|---------|
+| Peer-reviewed journals | YES/NO | [List] |
+| Veterinary/medical studies | YES/NO | [List] |
+| Academic textbooks | YES/NO | [List] |
+| Scientific reviews | YES/NO | [List] |
+
+**BLOCKER if required domain sources are missing.**
 **Total Gaps Identified:** Y
 **Tasks Generated:** Z
 
@@ -341,7 +460,8 @@ Based on rigorous 20-framework analysis:
 
 Before completing:
 
-- [ ] All 20 frameworks analyzed (not just checked)
+**Process Rigor:**
+- [ ] All 25 frameworks analyzed (not just checked)
 - [ ] Each framework has minimum 200 words of analysis
 - [ ] Gaps are specific, not vague
 - [ ] Tasks are question-shaped, not topic-shaped
@@ -349,6 +469,19 @@ Before completing:
 - [ ] Uncomfortable questions were asked
 - [ ] Alternative explanations were considered
 - [ ] Assumptions were explicitly documented
+
+**Domain Expertise (CRITICAL - prevents surface-level misses):**
+- [ ] First principles scientific analysis completed (Framework 21)
+- [ ] Peer-reviewed academic sources consulted
+- [ ] Domain expert perspective explicitly considered (Framework 22)
+- [ ] Marketing claims tested against scientific evidence (Framework 23)
+- [ ] Subject experience/ground truth verified (Framework 24)
+- [ ] Contrarian expert opinions sought (Framework 25)
+- [ ] Required domain-specific source types present (see table above)
+
+**Final Check:**
+- [ ] Would a domain expert (veterinarian, scientist, engineer) find obvious gaps?
+- [ ] Have we challenged feel-good narratives with scientific reality?
 - [ ] Publication status is based on actual analysis
 
 ---

@@ -27,14 +27,42 @@ Tool ids in this section are placeholders; see `prompts/_tooling.md`.
    - Timeline of events
    - Conflicting accounts or contradictions
 
-3. Save output to: `research-leads/iteration-{{iteration}}-{{engine}}.md`
+3. **CRITICAL: Domain-Specific Scientific Research**
 
-4. Format findings with clear sections:
+   **DO NOT rely only on news articles and regulatory documents.**
+
+   For EVERY investigation topic, explicitly search for:
+
+   | Search Query Pattern | Purpose |
+   |---------------------|---------|
+   | "[topic] peer-reviewed research" | Academic studies |
+   | "[topic] scientific consensus" | Expert agreement |
+   | "[topic] veterinary/medical journal" | Domain expertise |
+   | "[topic] ethology study" (for animals) | Behavior science |
+   | "[topic] myth debunked" | Contrarian evidence |
+   | "[topic] criticism academic" | Expert critiques |
+   | "what do experts say about [topic]" | SME perspective |
+
+   **Example (egg labels investigation):**
+   - "chicken behavior peer-reviewed research"
+   - "poultry ethology stress outdoor access"
+   - "free-range chicken welfare scientific study"
+   - "chicken agoraphobia research"
+   - "laying hen behavioral needs veterinary"
+
+   **This prevents surface-level analysis that misses what domain experts consider obvious.**
+
+4. Save output to: `research-leads/iteration-{{iteration}}-{{engine}}.md`
+
+5. Format findings with clear sections:
    - Key People
    - Key Organizations
    - Key Claims (with source URLs)
    - Timeline
    - Contradictions/Conflicts
+   - **Scientific/Academic Sources** (MANDATORY - peer-reviewed)
+   - **Expert Perspectives** (veterinarians, scientists, researchers)
+   - **Marketing vs Science Gaps** (where claims diverge from research)
    - Sources to Capture (URLs)
 
 ## Output
