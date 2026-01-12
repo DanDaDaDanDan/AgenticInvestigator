@@ -7,12 +7,19 @@ Scripts for capturing, verifying, and managing source evidence.
 ```bash
 cd /path/to/AgenticInvestigator
 npm install
-npx playwright install chromium
 ```
 
-For Firecrawl (optional but recommended for bot-protected sites):
-- Get API key from https://app.firecrawl.dev
+**Required for capture:**
+- Firecrawl API key from https://app.firecrawl.dev
 - Add to `.env` file: `FIRECRAWL_API_KEY=your_key`
+
+**Optional for WARC archiving:**
+- Browsertrix Cloud account from https://browsertrix.com
+- Add to `.env` file:
+  ```
+  BROWSERTRIX_USERNAME=your_email
+  BROWSERTRIX_PASSWORD=your_password
+  ```
 
 ---
 
@@ -32,7 +39,7 @@ node scripts/active-case.js resolve
 
 ### `capture.js` (recommended)
 
-Cross-platform entry point for capturing web page evidence. Creates screenshots/PDFs/HTML when Playwright is available, and falls back to HTML-only capture when it isn't.
+Cross-platform entry point for capturing web page evidence. Uses Firecrawl API for excellent bot-bypass and produces HTML, screenshots, and PDFs.
 
 **Web Page Capture:**
 ```bash
@@ -135,18 +142,38 @@ S002|https://other.com/page|Another Article
 
 ### `capture-evidence.js`
 
-Complete evidence capture workflow combining Firecrawl + PDF generation + optional ArchiveBox backup.
+Complete evidence capture workflow combining Firecrawl + PDF generation + optional Browsertrix WARC archiving.
 
 ```bash
 node scripts/capture-evidence.js urls.txt /path/to/case
-node scripts/capture-evidence.js urls.txt /path/to/case --archivebox
+node scripts/capture-evidence.js urls.txt /path/to/case --browsertrix
 ```
 
 **Steps:**
-1. Firecrawl capture (HTML + screenshot)
+1. Firecrawl capture (HTML + markdown + screenshot)
 2. PDF generation from captured HTML
-3. ArchiveBox WARC backup (optional)
+3. Browsertrix WARC archive (optional, with `--browsertrix`)
 4. Quality audit
+
+**Requires:** `FIRECRAWL_API_KEY` and optionally `BROWSERTRIX_USERNAME`/`BROWSERTRIX_PASSWORD`
+
+---
+
+### `browsertrix-capture.js`
+
+Create forensic-grade WARC archives using Browsertrix Cloud. Produces `.wacz` files (combined WARC archives).
+
+**Single URL:**
+```bash
+node scripts/browsertrix-capture.js S001 https://example.com evidence/web/S001
+```
+
+**With wait for completion:**
+```bash
+node scripts/browsertrix-capture.js S001 https://example.com evidence/web/S001 --wait
+```
+
+**Requires:** `BROWSERTRIX_USERNAME` and `BROWSERTRIX_PASSWORD` environment variables.
 
 ---
 
@@ -375,6 +402,7 @@ Target: 100% capture rate for sources cited in summary.md.
 
 ## Metadata Schema
 
+**Firecrawl capture:**
 ```json
 {
   "source_id": "S001",
@@ -382,19 +410,33 @@ Target: 100% capture rate for sources cited in summary.md.
   "title": "Page Title",
   "captured_at": "2026-01-07T14:23:00Z",
   "capture_duration_ms": 5230,
-  "method": "playwright",
+  "method": "firecrawl",
+  "firecrawl_version": "v1",
   "http_status": 200,
   "files": {
-    "png": { "path": "capture.png", "hash": "sha256:...", "size": 1234567 },
-    "pdf": { "path": "capture.pdf", "hash": "sha256:...", "size": 234567 },
-    "html": { "path": "capture.html", "hash": "sha256:...", "size": 34567 }
-  },
-  "wayback": {
-    "submitted": true,
-    "status": 200,
-    "archiveUrl": "https://web.archive.org/web/..."
+    "markdown": { "path": "capture.md", "hash": "sha256:...", "size": 12345 },
+    "html": { "path": "capture.html", "hash": "sha256:...", "size": 34567 },
+    "screenshot": { "path": "screenshot.png", "hash": "sha256:...", "size": 1234567 }
   },
   "errors": []
+}
+```
+
+**Combined firecrawl+browsertrix capture:**
+```json
+{
+  "source_id": "S001",
+  "url": "https://example.com/article",
+  "captured_at": "2026-01-07T14:23:00Z",
+  "method": "firecrawl+browsertrix",
+  "browsertrix_captured_at": "2026-01-07T14:25:00Z",
+  "browsertrix_crawl_id": "abc123",
+  "browsertrix_state": "complete",
+  "files": {
+    "markdown": { "path": "capture.md", "hash": "sha256:...", "size": 12345 },
+    "html": { "path": "capture.html", "hash": "sha256:...", "size": 34567 },
+    "wacz_crawl-abc123": { "path": "crawl-abc123.wacz", "hash": "sha256:...", "size": 38000000 }
+  }
 }
 ```
 
@@ -403,20 +445,26 @@ Target: 100% capture rate for sources cited in summary.md.
 ## Troubleshooting
 
 ### Capture fails with timeout
-- Some pages take longer to load
-- Try Firecrawl for bot-protected sites
-- Check if site blocks automated browsers
+- Some sites take longer to load
+- Firecrawl has built-in retry logic
+- Check if site requires authentication
 
 ### Bot detection / Access denied
-- Use `firecrawl-capture.js` - it has excellent bot bypass
-- Check Wayback Machine for archived version: `node scripts/find-wayback-url.js URL`
+- Firecrawl has excellent bot bypass (Cloudflare, Akamai, etc.)
+- For persistent issues, check Wayback Machine: `node scripts/find-wayback-url.js URL`
+- Consider Browsertrix for full WARC archiving
 
-### Missing screenshots but HTML captured
-- JavaScript-heavy sites may fail screenshot
-- HTML fallback ensures some evidence captured
-- Consider Firecrawl which handles JS rendering better
+### Missing screenshots
+- Some sites block screenshot capture
+- HTML/markdown capture still provides evidence
+- WACZ archives from Browsertrix include full page state
 
-### Wayback Machine submission fails
-- May be rate limited
-- Will retry on next capture
-- Not critical - local copy is primary evidence
+### Browsertrix crawl fails
+- Check credentials in `.env`
+- Verify Browsertrix Cloud account is active
+- Check crawl status in Browsertrix dashboard
+
+### Firecrawl API errors
+- Check API key is valid
+- Rate limits may apply - script has built-in backoff
+- Check https://status.firecrawl.dev for service issues
