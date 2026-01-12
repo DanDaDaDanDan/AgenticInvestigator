@@ -21,7 +21,7 @@
  *   5. Content - Claims verified in captured evidence
  *   6. Claims - AI verification of claims
  *   7. Contradictions - All contradictions explored
- *   8. Rigor - 25-framework rigor checkpoint passed (includes domain expertise)
+ *   8. Rigor - 35-framework rigor checkpoint passed (includes domain expertise, analytical rigor, structural analysis)
  *   9. Legal - Legal review file exists
  *
  * Exit codes:
@@ -662,11 +662,12 @@ function verifyRigor(caseDir) {
   const result = { passed: false, reason: null, details: {} };
 
   try {
-    // Check for rigor checkpoint file
+    // Check for rigor checkpoint file (includes legacy filenames for backward compatibility)
     const rigorFiles = [
       'findings/rigor-checkpoint.md',
       'rigor-checkpoint.md',
-      'findings/20-framework-validation.md'
+      'findings/35-framework-validation.md',
+      'findings/20-framework-validation.md'  // Legacy
     ];
 
     let rigorContent = null;
