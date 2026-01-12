@@ -8,7 +8,9 @@
 
 ## Task
 
-Run comprehensive 35-Framework rigor exploration using extended thinking.
+Run comprehensive 35-Framework rigor exploration using GPT-5.2 Pro Extended Thinking.
+
+**This agent uses `mcp__mcp-openai__generate_text` with `reasoning_effort: xhigh`.**
 
 **CRITICAL: This agent MUST perform exhaustive exploration, not checkbox completion.**
 
@@ -79,16 +81,16 @@ Run comprehensive 35-Framework rigor exploration using extended thinking.
 
 ---
 
-## Model Guidance
+## Model Configuration
 
-For exhaustive exploration, use extended thinking capabilities:
+Use `mcp__mcp-openai__generate_text` with:
 
-| Mode | Recommended Approach |
-|------|---------------------|
-| Normal | Use reasoning/thinking models with high effort settings |
-| Fast (`--fast`) | Use standard models, same depth expectations |
+| Mode | Model | Reasoning Effort |
+|------|-------|------------------|
+| Normal (default) | `gpt-5.2-pro` | `xhigh` |
+| Fast (`--fast`) | `gpt-5.2` | `none` |
 
-The prompts and output requirements remain identical regardless of model.
+**The prompts and output requirements remain identical regardless of mode.**
 
 ---
 
