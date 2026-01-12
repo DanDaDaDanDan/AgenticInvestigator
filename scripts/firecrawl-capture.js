@@ -115,6 +115,30 @@ function hashBuffer(buffer) {
   return crypto.createHash('sha256').update(buffer).digest('hex');
 }
 
+// Generate capture signature - IMPOSSIBLE for LLM to fake without running script
+// Signature = SHA256(source_id + url + captured_at + sorted file hashes + secret salt)
+const CAPTURE_SIGNATURE_VERSION = 'v2';
+const CAPTURE_SALT = 'firecrawl-capture-2026-integrity';
+
+function generateCaptureSignature(sourceId, url, capturedAt, files) {
+  const fileHashesSorted = Object.values(files)
+    .map(f => f.hash)
+    .filter(Boolean)
+    .sort()
+    .join('|');
+
+  const signatureInput = [
+    CAPTURE_SIGNATURE_VERSION,
+    sourceId,
+    url,
+    capturedAt,
+    fileHashesSorted,
+    CAPTURE_SALT
+  ].join(':');
+
+  return `sig_${CAPTURE_SIGNATURE_VERSION}_${crypto.createHash('sha256').update(signatureInput).digest('hex').slice(0, 32)}`;
+}
+
 // Save base64 data to file
 function saveBase64(base64Data, filePath) {
   // Handle data URL format
@@ -222,18 +246,25 @@ async function captureUrl(sourceId, url, evidenceDir, attempt = 1) {
     // Note: Firecrawl v1 API doesn't include PDF directly
     // We'll generate PDF from HTML using Playwright in a separate step
 
-    // Create metadata
+    // Create metadata with capture signature (anti-hallucination measure)
+    const capturedAt = new Date().toISOString();
+    const captureSignature = generateCaptureSignature(sourceId, url, capturedAt, files);
+
     const metadata = {
       source_id: sourceId,
       url: url,
       title: data.metadata?.title || '',
       description: data.metadata?.description || '',
-      captured_at: new Date().toISOString(),
+      captured_at: capturedAt,
       capture_duration_ms: Date.now() - startTime,
       method: 'firecrawl',
       firecrawl_version: 'v1',
       http_status: data.metadata?.statusCode || 200,
       files: files,
+      // CRITICAL: Capture signature proves this was created by the capture script
+      // LLMs cannot generate valid signatures without actually running capture
+      _capture_signature: captureSignature,
+      _signature_version: CAPTURE_SIGNATURE_VERSION,
       errors: errors.length > 0 ? errors : undefined
     };
 

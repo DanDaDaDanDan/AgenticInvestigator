@@ -735,6 +735,35 @@ function verifyRigor(caseDir) {
       return result;
     }
 
+    // CRITICAL: Verify R### tasks were actually created, not just documented
+    // Extract R### task references from rigor checkpoint
+    const rigorTaskRefs = rigorContent.match(/\bR0[0-9]{2}\b/g) || [];
+    const uniqueRigorTasks = [...new Set(rigorTaskRefs)];
+
+    if (uniqueRigorTasks.length > 0) {
+      const tasksDir = path.join(caseDir, 'tasks');
+      const missingTasks = [];
+
+      for (const taskId of uniqueRigorTasks) {
+        const taskFile = path.join(tasksDir, `${taskId}.json`);
+        if (!fs.existsSync(taskFile)) {
+          missingTasks.push(taskId);
+        }
+      }
+
+      result.details.rigor_tasks_referenced = uniqueRigorTasks.length;
+      result.details.rigor_tasks_missing = missingTasks.length;
+
+      if (missingTasks.length > 0) {
+        // Allow some missing if most are created (80% threshold)
+        const createdRatio = (uniqueRigorTasks.length - missingTasks.length) / uniqueRigorTasks.length;
+        if (createdRatio < 0.8) {
+          result.reason = `Rigor checkpoint references ${uniqueRigorTasks.length} R### tasks but ${missingTasks.length} were never created (${missingTasks.slice(0, 5).join(', ')}${missingTasks.length > 5 ? '...' : ''}). Tasks must be created, not just documented.`;
+          return result;
+        }
+      }
+    }
+
     // Also check state flag as secondary confirmation
     const statePath = path.join(caseDir, 'state.json');
     if (fs.existsSync(statePath)) {
