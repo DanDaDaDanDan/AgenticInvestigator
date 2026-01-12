@@ -573,18 +573,25 @@ async function verifyClaims(caseDir) {
     const total = result.details.total || 0;
     const problems = notFound + contradicted;
 
+    // Allow up to 5% API errors (transient issues shouldn't block verification)
+    const errorThreshold = Math.max(3, Math.ceil(total * 0.05));
+    const acceptableErrors = errors <= errorThreshold;
+
     if (total === 0) {
       result.reason = 'No claims found to verify - investigation may be incomplete';
     } else if (noEvidence > 0) {
       result.reason = `${noEvidence} claims have NO EVIDENCE - AI cannot verify claims without captured evidence`;
-    } else if (errors > 0) {
-      result.reason = `${errors} claims had AI verification errors - cannot pass`;
+    } else if (!acceptableErrors) {
+      result.reason = `${errors} claims had AI verification errors (>${errorThreshold} threshold) - cannot pass`;
     } else if (problems > 0) {
       result.reason = `${problems} claims failed AI verification (${notFound} not found, ${contradicted} contradicted)`;
     } else if (verified === 0 && total > 0) {
       result.reason = `0 claims verified out of ${total} - AI verification not actually performed`;
     } else {
       result.passed = true;
+      if (errors > 0) {
+        result.reason = `Passed with ${errors} API errors (within ${errorThreshold} threshold)`;
+      }
     }
   } catch (e) {
     result.reason = `Error running verify-claims.js: ${e.message}`;

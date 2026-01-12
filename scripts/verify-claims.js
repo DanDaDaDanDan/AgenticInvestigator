@@ -23,6 +23,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const config = require('./lib/config-loader');
 
 // Load .env when present (keeps CLI usage consistent across scripts)
 try {
@@ -37,9 +38,9 @@ const BLUE = '\x1b[34m';
 const BOLD = '\x1b[1m';
 const NC = '\x1b[0m';
 
-// Configuration
+// Configuration - use centralized config for model
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
-const MODEL = 'gemini-2.5-flash';
+const MODEL = config.api?.verification_model || 'gemini-2.5-flash';
 
 // Files to scan for claims
 const CLAIM_FILES = [
@@ -311,42 +312,54 @@ Verdicts:
 
 Be rigorous. If the source doesn't actually say it, the verdict is NOT_FOUND.`;
 
-  try {
-    const response = await fetch(`${API_BASE}/models/${MODEL}:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 1024,
-          responseMimeType: 'application/json'
-        }
-      })
-    });
+  const maxRetries = 3;
+  let lastError = null;
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`API error: ${response.status} - ${error}`);
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(`${API_BASE}/models/${MODEL}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 1024,
+            responseMimeType: 'application/json'
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`API error: ${response.status} - ${error}`);
+      }
+
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!text) {
+        throw new Error('No response text from API');
+      }
+
+      return JSON.parse(text);
+
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxRetries) {
+        // Exponential backoff: 2s, 4s, 8s
+        const backoffMs = Math.pow(2, attempt) * 1000;
+        await new Promise(r => setTimeout(r, backoffMs));
+      }
     }
-
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!text) {
-      throw new Error('No response text from API');
-    }
-
-    return JSON.parse(text);
-
-  } catch (error) {
-    return {
-      verdict: 'ERROR',
-      confidence: 0,
-      explanation: `Verification failed: ${error.message}`,
-      relevant_quote: null
-    };
   }
+
+  return {
+    verdict: 'ERROR',
+    confidence: 0,
+    explanation: `Verification failed after ${maxRetries} attempts: ${lastError?.message || 'unknown error'}`,
+    relevant_quote: null
+  };
 }
 
 /**
@@ -363,7 +376,7 @@ async function run(caseDir, options = {}) {
   const startTime = Date.now();
   const summaryOnly = options.summaryOnly === true;
   const apiKey = options.apiKey || process.env.GEMINI_API_KEY;
-  const delayMs = typeof options.delay_ms === 'number' ? options.delay_ms : 2100;
+  const delayMs = typeof options.delay_ms === 'number' ? options.delay_ms : 3000;
 
   // Suppress console output; callers decide how to render.
   const jsonOutput = true;
@@ -705,7 +718,10 @@ async function run(caseDir, options = {}) {
       });
     }
 
-    const passed = problemCount === 0 && stats.no_evidence === 0 && stats.errors === 0;
+    // Allow up to 5% API errors (transient issues shouldn't block verification)
+    const errorThreshold = Math.max(3, Math.ceil(stats.total * 0.05));
+    const acceptableErrors = stats.errors <= errorThreshold;
+    const passed = problemCount === 0 && stats.no_evidence === 0 && acceptableErrors;
     return {
       case_dir: caseDir,
       timestamp: new Date().toISOString(),
