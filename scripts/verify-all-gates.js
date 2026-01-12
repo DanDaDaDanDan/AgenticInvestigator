@@ -689,7 +689,7 @@ function verifyRigor(caseDir) {
     // Check for framework coverage markers
     const checkMarks = (rigorContent.match(/\bPASS\b|\bADDRESSED\b|\bCOVERED\b|\[x\]/gi) || []).length;
     const gapMarks = (rigorContent.match(/\bFAIL\b|\bGAP\b|\bMISSING\b/gi) || []).length;
-    const totalFrameworks = 25; // Updated from 20 to include Domain Expertise frameworks (21-25)
+    const totalFrameworks = 35; // Updated to include Domain Expertise (21-25), Analytical Rigor (26-30), and Structural Analysis (31-35)
 
     result.details.file = rigorFile;
     result.details.checks_passed = checkMarks;
@@ -708,6 +708,32 @@ function verifyRigor(caseDir) {
     const domainFrameworksFound = domainFrameworkPatterns.filter(p => p.test(rigorContent)).length;
     result.details.domain_frameworks_found = domainFrameworksFound;
 
+    // CRITICAL: Check for Analytical Rigor frameworks (26-30)
+    // These prevent superficial analysis by requiring quantitative/methodological standards
+    const analyticalRigorPatterns = [
+      /quantification|base\s*rate/i,
+      /causation\s*vs\s*correlation|cause\s*and\s*effect/i,
+      /definitional\s*analysis|term.*defin/i,
+      /methodology\s*audit|evidence.*method/i,
+      /incentive\s*mapping|incentive\s*structure/i
+    ];
+
+    const analyticalRigorFound = analyticalRigorPatterns.filter(p => p.test(rigorContent)).length;
+    result.details.analytical_rigor_found = analyticalRigorFound;
+
+    // CRITICAL: Check for Structural Analysis frameworks (31-35)
+    // These examine systemic factors often missed in surface-level analysis
+    const structuralAnalysisPatterns = [
+      /information\s*asymmetry/i,
+      /comparative\s*benchmark/i,
+      /regulatory.*capture|institutional\s*capture/i,
+      /data\s*provenance|chain\s*of\s*custody/i,
+      /mechanism\s*tracing|causal\s*mechanism/i
+    ];
+
+    const structuralAnalysisFound = structuralAnalysisPatterns.filter(p => p.test(rigorContent)).length;
+    result.details.structural_analysis_found = structuralAnalysisFound;
+
     // Check for peer-reviewed/scientific sources mentioned
     const scientificSourcePatterns = [
       /peer[\s-]*review/i,
@@ -723,6 +749,18 @@ function verifyRigor(caseDir) {
     // BLOCKER: If no domain expertise frameworks addressed, fail
     if (domainFrameworksFound === 0) {
       result.reason = 'Rigor checkpoint missing Domain Expertise frameworks (21-25). These prevent surface-level analysis that misses what experts consider obvious.';
+      return result;
+    }
+
+    // BLOCKER: If no analytical rigor frameworks addressed, fail
+    if (analyticalRigorFound === 0) {
+      result.reason = 'Rigor checkpoint missing Analytical Rigor frameworks (26-30). These prevent superficial analysis by requiring quantitative/methodological standards.';
+      return result;
+    }
+
+    // BLOCKER: If no structural analysis frameworks addressed, fail
+    if (structuralAnalysisFound === 0) {
+      result.reason = 'Rigor checkpoint missing Structural Analysis frameworks (31-35). These examine systemic factors often missed in surface-level analysis.';
       return result;
     }
 
@@ -759,9 +797,9 @@ function verifyRigor(caseDir) {
       return result;
     }
 
-    // Require minimum check coverage (at least 20 of 25 frameworks addressed - 80%)
-    if (checkMarks < 20) {
-      result.reason = `Only ${checkMarks} framework checks found (need >=20 of 25)`;
+    // Require minimum check coverage (at least 28 of 35 frameworks addressed - 80%)
+    if (checkMarks < 28) {
+      result.reason = `Only ${checkMarks} framework checks found (need >=28 of 35)`;
       return result;
     }
 

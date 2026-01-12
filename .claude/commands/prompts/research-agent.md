@@ -43,12 +43,12 @@ Tool ids in this section are placeholders; see `prompts/_tooling.md`.
    | "[topic] criticism academic" | Expert critiques |
    | "what do experts say about [topic]" | SME perspective |
 
-   **Example (egg labels investigation):**
-   - "chicken behavior peer-reviewed research"
-   - "poultry ethology stress outdoor access"
-   - "free-range chicken welfare scientific study"
-   - "chicken agoraphobia research"
-   - "laying hen behavioral needs veterinary"
+   **Example (generic):**
+   - "[product] safety peer-reviewed research"
+   - "[industry] standard practices scientific study"
+   - "[claim] independent verification academic"
+   - "[practice] long-term effects research"
+   - "[subject] expert consensus journal"
 
    **This prevents surface-level analysis that misses what domain experts consider obvious.**
 

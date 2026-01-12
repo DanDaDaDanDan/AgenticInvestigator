@@ -429,7 +429,7 @@ node scripts/verify-all-gates.js cases/[case-id]
 | 5. Content | Claims found in evidence |
 | 6. Corroboration | All claims meet min_sources |
 | 7. Contradictions | All explored |
-| 8. Rigor | 20 frameworks validated |
+| 8. Rigor | 35 frameworks validated |
 | 9. Legal | No blocking legal gaps |
 
 **If ANY gate fails -> gaps -> tasks -> execute -> loop.**
@@ -465,8 +465,9 @@ Generate A### tasks for each gap identified.
 
 ---
 
-## 20-Framework Rigor Checkpoint
+## 35-Framework Rigor Checkpoint
 
+**Core Investigation (1-20):**
 1. Follow the Money
 2. Follow the Silence
 3. Follow the Timeline
@@ -487,6 +488,27 @@ Generate A### tasks for each gap identified.
 18. Meta Questions
 19. 5 Whys (Root Cause)
 20. Sense-Making
+
+**Domain Expertise (21-25):**
+21. First Principles / Scientific Reality
+22. Domain Expert Blind Spots
+23. Marketing vs Scientific Reality
+24. Subject Experience / Ground Truth
+25. Contrarian Expert Search
+
+**Analytical Rigor (26-30):**
+26. Quantification & Base Rates
+27. Causation vs Correlation
+28. Definitional Analysis
+29. Methodology Audit
+30. Incentive Mapping
+
+**Structural Analysis (31-35):**
+31. Information Asymmetry
+32. Comparative Benchmarking
+33. Regulatory & Institutional Capture
+34. Data Provenance & Chain of Custody
+35. Mechanism Tracing
 
 Each: OK Addressed | N/A (explain) | NO Gap (generate task)
 

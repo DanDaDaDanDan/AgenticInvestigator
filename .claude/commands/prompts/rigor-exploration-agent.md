@@ -8,7 +8,7 @@
 
 ## Task
 
-Run comprehensive 20-Framework rigor exploration using GPT-5.2 Pro Extended Thinking.
+Run comprehensive 35-Framework rigor exploration using GPT-5.2 Pro Extended Thinking.
 
 **CRITICAL: This agent MUST use extended thinking for exhaustive exploration.**
 
@@ -68,7 +68,7 @@ OUTPUT REQUIREMENTS:
    - `positions.md` — Documented stakeholder positions
    - `_sources.json` — Captured evidence registry
 
-2. **Run 20-Framework Extended Thinking Analysis:**
+2. **Run 35-Framework Extended Thinking Analysis:**
 
    For EACH framework below, use GPT-5.2 Pro with `reasoning_effort: xhigh` to perform DEEP analysis. Not a checklist — actual exploration.
 
@@ -280,7 +280,7 @@ OUTPUT REQUIREMENTS:
 - What is the scientific consensus in relevant fields?
 - Have we consulted primary scientific literature, not just news articles?
 
-**Example (egg labels):** Chickens are descended from jungle fowl and are naturally agoraphobic - they experience stress in open spaces and prefer cover. This basic ethological fact fundamentally challenges "free-range = better welfare" marketing.
+**Example:** Industry claims a product is "safe" based on sponsored studies, but independent peer-reviewed research shows different results. Always verify scientific claims against primary literature.
 
 **Required sources:** Peer-reviewed journals, academic textbooks, scientific reviews
 
@@ -304,7 +304,7 @@ OUTPUT REQUIREMENTS:
 - What negative realities are being obscured by positive framing?
 - Who funded the studies being cited by marketing?
 
-**Example:** "Free-range" sounds welfare-positive but science shows chickens may be more stressed outdoors due to agoraphobia, predator exposure, and disease risk.
+**Example:** "Natural" or "organic" labeling may imply health benefits that lack scientific support; "clinical strength" may be marketing language without regulatory meaning.
 
 ### 24. Subject Experience / Ground Truth
 **What does the actual subject (person, animal, system) experience?**
@@ -327,6 +327,149 @@ OUTPUT REQUIREMENTS:
 - What inconvenient findings have been downplayed or ignored?
 
 **Action:** Explicitly search for: "[topic] criticism", "[topic] problems", "[topic] myth", "why [popular belief] is wrong"
+
+---
+
+## ANALYTICAL RIGOR FRAMEWORKS (26-30): Quantitative & Methodological
+
+**These frameworks prevent superficial analysis by requiring rigorous analytical standards.**
+
+### 26. Quantification & Base Rates
+**How big is this really? What's the denominator?**
+
+- What are the actual numbers, not just percentages?
+- What's the base rate we're comparing against?
+- Is this statistically significant or within normal variation?
+- Are we looking at absolute or relative risk?
+- What's the denominator? (e.g., "10 cases" means nothing without knowing "out of how many")
+
+**Key questions:**
+- If we quantified every claim, would the story change?
+- What numerical context is missing?
+- Are impressive-sounding numbers actually meaningful?
+
+### 27. Causation vs Correlation
+**Are we confusing cause and effect?**
+
+- Is there actually a causal mechanism, or just correlation?
+- Could there be reverse causation (effect causing the apparent cause)?
+- What confounding variables haven't we controlled for?
+- Is this a spurious correlation (both caused by a third factor)?
+- What would a randomized controlled experiment show?
+
+**Red flags:**
+- "X is associated with Y" treated as "X causes Y"
+- Post hoc ergo propter hoc reasoning
+- Missing discussion of alternative explanations
+
+### 28. Definitional Analysis
+**Who controls the definitions? Are terms being manipulated?**
+
+- What key terms are undefined or vaguely defined?
+- Do different parties use the same word to mean different things?
+- Who benefits from a particular definition?
+- Are there legal vs common vs scientific definitions that differ?
+- Is scope creep happening with definitions?
+
+**Example:** Terms like "violence," "poverty," "success," "safe," or "natural" can be defined narrowly or broadly to support different conclusions.
+
+### 29. Methodology Audit
+**How was the evidence collected? What are the limitations?**
+
+- What methodology produced each key piece of evidence?
+- What are the known limitations of that methodology?
+- Was the sample representative?
+- What biases could be introduced by the data collection method?
+- Could we replicate the findings with different methods?
+
+**Key questions:**
+- Self-reported data? (social desirability bias)
+- Survey data? (question framing, sampling)
+- Observational study? (confounders)
+- Expert opinion? (authority bias)
+
+### 30. Incentive Mapping
+**What incentive structures drive behavior?**
+
+- What do people get rewarded for? Punished for?
+- What behaviors do current incentives encourage?
+- Who profits from the status quo?
+- What perverse incentives might be at play?
+- If we follow the incentives, does behavior make more sense?
+
+**Principle:** When behavior seems irrational, look for hidden incentives. People respond to incentives, not stated policies.
+
+---
+
+## STRUCTURAL ANALYSIS FRAMEWORKS (31-35): Systems & Power
+
+**These frameworks examine structural and systemic factors often missed in surface-level analysis.**
+
+### 31. Information Asymmetry
+**Who knows what? What information is being hidden or gatekept?**
+
+- Who has information that others don't?
+- How does this information asymmetry benefit certain parties?
+- What would change if everyone had the same information?
+- Are there deliberate efforts to obscure information?
+- What information SHOULD be public but isn't?
+
+**Key questions:**
+- What do insiders know that outsiders don't?
+- Who benefits from public ignorance?
+- What disclosures are legally required but hard to find?
+
+### 32. Comparative Benchmarking
+**How does this compare to similar cases/industries/situations?**
+
+- What are genuinely comparable cases?
+- Is this behavior unusual, or industry standard?
+- How do outcomes compare to baselines or alternatives?
+- What can we learn from how similar situations played out?
+- Are we comparing apples to apples?
+
+**Danger:** Cherry-picking comparisons that support preferred conclusions. Seek unfavorable comparisons actively.
+
+### 33. Regulatory & Institutional Capture
+**Who controls the rules? Are regulators serving the regulated?**
+
+- Who writes the regulations?
+- What's the revolving door between industry and regulators?
+- Who funds the research that informs policy?
+- Are enforcement resources adequate?
+- What's the track record of regulatory action?
+
+**Indicators of capture:**
+- Regulations that benefit incumbents over newcomers
+- Enforcement that targets small players, ignores large ones
+- Industry insiders dominating advisory boards
+- Regulatory delays that benefit status quo
+
+### 34. Data Provenance & Chain of Custody
+**Where does information originate? How has it been transmitted?**
+
+- What is the PRIMARY source for each key claim?
+- How many degrees removed are we from the original data?
+- Has information been transformed, summarized, or editorialized?
+- Can we trace the chain back to original documentation?
+- Is there a game of telephone happening?
+
+**Red flags:**
+- "Studies show..." without citing specific studies
+- Circular citation (A cites B cites A)
+- Claims that trace back to a single anonymous source
+- Statistics without methodology
+
+### 35. Mechanism Tracing
+**What is the actual causal mechanism? How does it actually work?**
+
+- What is the step-by-step process by which X causes Y?
+- Can we identify each link in the causal chain?
+- Which links are supported by evidence vs assumed?
+- Where could the mechanism break down?
+- Is the proposed mechanism physically/legally/logically possible?
+
+**Key principle:** If you can't explain HOW something works step by step, you don't understand it. Vague causal claims hide weak reasoning.
 
 ---
 
@@ -356,7 +499,7 @@ OUTPUT REQUIREMENTS:
 
 **Iteration:** N
 **Date:** YYYY-MM-DD
-**Analysis Type:** 25-Framework Deep Exploration (includes Domain Expertise frameworks)
+**Analysis Type:** 35-Framework Deep Exploration (includes Domain Expertise and Analytical Rigor frameworks)
 
 ## Executive Summary
 [3-5 paragraphs summarizing the rigor analysis results]
@@ -373,7 +516,7 @@ OUTPUT REQUIREMENTS:
 **Gaps Identified:** [List]
 **Tasks Generated:** R003
 
-[... Continue for all 25 frameworks ...]
+[... Continue for all 35 frameworks ...]
 
 ### 21. First Principles / Scientific Reality
 [What does science actually say? Peer-reviewed sources required]
@@ -424,8 +567,18 @@ OUTPUT REQUIREMENTS:
 | 23 | Marketing vs Scientific Reality | YES | ? | R### |
 | 24 | Subject Experience / Ground Truth | YES | ? | R### |
 | 25 | Contrarian Expert Search | YES | ? | R### |
+| 26 | Quantification & Base Rates | YES | ? | R### |
+| 27 | Causation vs Correlation | YES | ? | R### |
+| 28 | Definitional Analysis | YES | ? | R### |
+| 29 | Methodology Audit | YES | ? | R### |
+| 30 | Incentive Mapping | YES | ? | R### |
+| 31 | Information Asymmetry | YES | ? | R### |
+| 32 | Comparative Benchmarking | YES | ? | R### |
+| 33 | Regulatory & Institutional Capture | YES | ? | R### |
+| 34 | Data Provenance & Chain of Custody | YES | ? | R### |
+| 35 | Mechanism Tracing | YES | ? | R### |
 
-**Frameworks Completed:** X/25
+**Frameworks Completed:** X/35
 
 ## Domain-Specific Source Audit
 
@@ -442,7 +595,7 @@ OUTPUT REQUIREMENTS:
 
 ## Publication Status
 
-Based on rigorous 20-framework analysis:
+Based on rigorous 35-framework analysis:
 
 **Status:** [READY | READY WITH CAVEATS | NOT READY]
 
@@ -461,7 +614,7 @@ Based on rigorous 20-framework analysis:
 Before completing:
 
 **Process Rigor:**
-- [ ] All 25 frameworks analyzed (not just checked)
+- [ ] All 35 frameworks analyzed (not just checked)
 - [ ] Each framework has minimum 200 words of analysis
 - [ ] Gaps are specific, not vague
 - [ ] Tasks are question-shaped, not topic-shaped
@@ -479,9 +632,25 @@ Before completing:
 - [ ] Contrarian expert opinions sought (Framework 25)
 - [ ] Required domain-specific source types present (see table above)
 
+**Analytical Rigor (CRITICAL - prevents superficial analysis):**
+- [ ] Claims quantified with base rates and denominators (Framework 26)
+- [ ] Causation vs correlation distinguished (Framework 27)
+- [ ] Key terms defined and definitional manipulation identified (Framework 28)
+- [ ] Evidence methodology audited for limitations (Framework 29)
+- [ ] Incentive structures mapped (Framework 30)
+
+**Structural Analysis (CRITICAL - prevents missing systemic factors):**
+- [ ] Information asymmetries identified (Framework 31)
+- [ ] Comparative benchmarking performed (Framework 32)
+- [ ] Regulatory/institutional capture checked (Framework 33)
+- [ ] Data provenance traced to primary sources (Framework 34)
+- [ ] Causal mechanisms explicitly traced (Framework 35)
+
 **Final Check:**
 - [ ] Would a domain expert (veterinarian, scientist, engineer) find obvious gaps?
 - [ ] Have we challenged feel-good narratives with scientific reality?
+- [ ] Are all quantitative claims properly contextualized?
+- [ ] Have we traced all claims to primary sources?
 - [ ] Publication status is based on actual analysis
 
 ---
@@ -524,7 +693,7 @@ After completing analysis, return:
 ```
 RIGOR CHECKPOINT COMPLETE
 
-Frameworks Analyzed: 20/20
+Frameworks Analyzed: 35/35
 Gaps Identified: [number]
 Tasks Generated: [list of R### IDs]
 Publication Status: [READY|NOT READY]
