@@ -136,7 +136,7 @@ function printUsage() {
 
 async function captureWeb(sourceId, url, caseDir) {
   const evidenceDir = path.join(caseDir, 'evidence', 'web', sourceId);
-  const result = await require('./capture-url').run(sourceId, url, evidenceDir);
+  const result = await require('./firecrawl-capture').run(sourceId, url, evidenceDir);
   return result;
 }
 

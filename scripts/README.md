@@ -347,34 +347,6 @@ node scripts/find-wayback-url.js --batch urls.txt wayback-results.json
 
 ---
 
-### `find-failed-captures.js`
-
-Audit capture quality - find captures that may have failed.
-
-```bash
-node scripts/find-failed-captures.js /path/to/case
-```
-
-**Identifies:**
-- Non-200 HTTP status codes
-- Bot block pages
-- 404 Not Found errors
-- Access denied pages
-
----
-
-### `archivebox-backup.js`
-
-Create forensic-grade WARC backups using ArchiveBox.
-
-```bash
-node scripts/archivebox-backup.js urls.txt /path/to/archive
-```
-
-**Requires:** ArchiveBox installed (`pip install archivebox` or Docker).
-
----
-
 ## Integration with Investigation Workflow
 
 ### During Research

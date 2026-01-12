@@ -112,8 +112,8 @@ capture_url() {
     echo "  Evidence: $evidence_dir"
     echo ""
 
-    # Run the Node.js capture script
-    node "$SCRIPT_DIR/capture-url.js" "$source_id" "$url" "$evidence_dir"
+    # Run the Node.js capture script (firecrawl-based)
+    node "$SCRIPT_DIR/firecrawl-capture.js" "$source_id" "$url" "$evidence_dir"
 }
 
 # Parse arguments

@@ -854,5 +854,5 @@ NOT PARALLEL (sequential):
 | `verify-tasks.js` | Task completion checking |
 | `verify-state-consistency.js` | State vs filesystem |
 | `ledger-append.js` | Append to `ledger.json` |
-| `capture-url.js` | Capture web page evidence |
-| `firecrawl-capture.js` | Bot-bypass capture |
+| `firecrawl-capture.js` | Primary web capture (bot-bypass, screenshots, PDF) |
+| `browsertrix-capture.js` | WARC archive backup capture |
