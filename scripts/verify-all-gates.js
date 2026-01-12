@@ -27,6 +27,10 @@
  * Exit codes:
  *   0 - All gates pass
  *   1 - One or more gates failed
+ *
+ * Environment variables for debugging:
+ *   LOG_LEVEL=debug|info|warn|error (default: info)
+ *   LOG_FILE=path/to/file.log (enables file logging)
  */
 
 'use strict';
@@ -34,6 +38,7 @@
 const fs = require('fs');
 const path = require('path');
 const config = require('./lib/config-loader');
+const logger = require('./logger').create('verify-all-gates');
 
 // Load .env when present (keeps CLI usage consistent across scripts)
 try {
@@ -934,9 +939,12 @@ function generateRemediationTasks(gateResults) {
 }
 
 async function run(caseDir, options = {}) {
+  const mainOp = logger.operation('verifyAllGates', { caseDir });
   const startTime = Date.now();
+  logger.info('Starting gate verification', { caseDir });
 
   if (!caseDir || typeof caseDir !== 'string') {
+    logger.error('Missing case directory argument');
     return {
       timestamp: new Date().toISOString(),
       case_dir: caseDir || null,
@@ -950,18 +958,39 @@ async function run(caseDir, options = {}) {
     };
   }
 
-  const gates = {
-    coverage: verifyCoverage(caseDir),
-    tasks: verifyTasks(caseDir),
-    adversarial: verifyAdversarial(caseDir),
-    sources: verifySources(caseDir),
-    content: await verifyContent(caseDir),
-    claims: await verifyClaims(caseDir),
-    contradictions: verifyContradictions(caseDir),
-    rigor: verifyRigor(caseDir),
-    legal: verifyLegal(caseDir)
-  };
+  logger.info('Running 9 termination gates');
+  const gates = {};
 
+  // Run each gate with logging
+  const gateList = [
+    { name: 'coverage', fn: () => verifyCoverage(caseDir) },
+    { name: 'tasks', fn: () => verifyTasks(caseDir) },
+    { name: 'adversarial', fn: () => verifyAdversarial(caseDir) },
+    { name: 'sources', fn: () => verifySources(caseDir) },
+    { name: 'content', fn: () => verifyContent(caseDir), async: true },
+    { name: 'claims', fn: () => verifyClaims(caseDir), async: true },
+    { name: 'contradictions', fn: () => verifyContradictions(caseDir) },
+    { name: 'rigor', fn: () => verifyRigor(caseDir) },
+    { name: 'legal', fn: () => verifyLegal(caseDir) }
+  ];
+
+  for (const gate of gateList) {
+    logger.debug(`Running gate: ${gate.name}`);
+    const gateStart = Date.now();
+    try {
+      gates[gate.name] = gate.async ? await gate.fn() : gate.fn();
+      const duration = Date.now() - gateStart;
+      const passed = gates[gate.name].passed;
+      logger.debug(`Gate ${gate.name}: ${passed ? 'PASS' : 'FAIL'} (${duration}ms)`, {
+        reason: gates[gate.name].reason
+      });
+    } catch (err) {
+      logger.error(`Gate ${gate.name} threw error`, err);
+      gates[gate.name] = { passed: false, reason: err.message };
+    }
+  }
+
+  logger.debug('Running ledger verification');
   const ledger = verifyLedger(caseDir);
 
   const failedGates = Object.entries(gates)
@@ -971,6 +1000,13 @@ async function run(caseDir, options = {}) {
   const passedCount = Object.values(gates).filter(r => r.passed).length;
   const totalGates = Object.keys(gates).length;
   const allPassed = failedGates.length === 0;
+
+  logger.info('Gate verification summary', {
+    passed: passedCount,
+    failed: failedGates.length,
+    total: totalGates,
+    blocking: failedGates
+  });
 
   const output = {
     timestamp: new Date().toISOString(),
@@ -994,10 +1030,24 @@ async function run(caseDir, options = {}) {
 
   const controlDir = path.join(caseDir, 'control');
   if (!fs.existsSync(controlDir)) {
+    logger.debug(`Creating control directory: ${controlDir}`);
     fs.mkdirSync(controlDir, { recursive: true });
   }
   const resultsPath = path.join(controlDir, 'gate_results.json');
+  logger.debug('Writing gate_results.json');
   fs.writeFileSync(resultsPath, JSON.stringify(output, null, 2));
+
+  const duration = Date.now() - startTime;
+  if (allPassed) {
+    logger.info('All gates passed - READY TO TERMINATE', { duration_ms: duration });
+    mainOp.success({ passed: passedCount, total: totalGates, duration_ms: duration });
+  } else {
+    logger.warn('Gate verification failed - CANNOT TERMINATE', {
+      duration_ms: duration,
+      blocking: failedGates
+    });
+    mainOp.fail(new Error(`${failedGates.length} gates failed`));
+  }
 
   return output;
 }
@@ -1043,10 +1093,12 @@ function printHuman(output, options = {}) {
  * Main function
  */
 async function main() {
+  logger.info('verify-all-gates.js started', { args: process.argv.slice(2) });
   const parsed = parseCliArgs(process.argv);
   const caseDir = parsed.caseDir;
 
   if (!caseDir) {
+    logger.error('Missing case directory argument');
     console.error('Usage: node scripts/verify-all-gates.js <case_dir> [--json] [--fix]');
     process.exit(1);
   }
@@ -1058,6 +1110,7 @@ async function main() {
     printHuman(result, { generateFix: parsed.generateFix });
   }
 
+  logger.info('Exiting', { exit_code: result.overall ? 0 : 1 });
   process.exit(result.overall ? 0 : 1);
 }
 

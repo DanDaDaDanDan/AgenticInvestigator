@@ -188,13 +188,47 @@ function buildEntry(type, args) {
       if (sources) entry.sources_added = sources.split(',');
       break;
 
-    case 'source_capture':
+    case 'source_capture': {
       entry.source_id = parseArg(args, '--source');
       entry.url = parseArg(args, '--url');
       entry.evidence_path = parseArg(args, '--path');
-      const files = parseArg(args, '--files');
-      if (files) entry.file_count = parseInt(files, 10);
+
+      // ENFORCEMENT: --path is required and evidence must exist
+      if (!entry.evidence_path) {
+        console.error('Error: source_capture requires --path argument');
+        console.error('Evidence must be captured BEFORE logging. Run:');
+        console.error(`  node scripts/capture.js ${entry.source_id} "${entry.url}" ${caseDir}`);
+        process.exit(1);
+      }
+
+      // Verify evidence actually exists
+      const evidenceFullPath = path.join(caseDir, entry.evidence_path);
+      if (!fs.existsSync(evidenceFullPath)) {
+        console.error(`Error: Evidence path does not exist: ${evidenceFullPath}`);
+        console.error('Capture evidence BEFORE logging. Run:');
+        console.error(`  node scripts/capture.js ${entry.source_id} "${entry.url}" ${caseDir}`);
+        process.exit(1);
+      }
+
+      // Check for metadata.json (proof of actual capture)
+      const metadataPath = path.join(evidenceFullPath, 'metadata.json');
+      if (!fs.existsSync(metadataPath)) {
+        console.error(`Error: No metadata.json found in ${evidenceFullPath}`);
+        console.error('Evidence folder exists but capture may have failed.');
+        console.error('Re-run capture to generate proper evidence.');
+        process.exit(1);
+      }
+
+      // Count actual files captured
+      const capturedFiles = fs.readdirSync(evidenceFullPath).filter(f =>
+        f !== 'metadata.json' && !f.startsWith('.')
+      );
+      entry.file_count = capturedFiles.length;
+
+      const filesArg = parseArg(args, '--files');
+      if (filesArg) entry.file_count = parseInt(filesArg, 10);
       break;
+    }
 
     case 'claim_create':
       entry.claim_id = parseArg(args, '--claim');

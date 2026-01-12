@@ -201,15 +201,71 @@ Dispatch agents for pending tasks. Each task produces:
 2. **Updated claims** - `claims/C####.json` (add sources)
 3. **Captured evidence** - `evidence/web/S###/`
 
-### Execution Agent Workflow
+### Execution Agent Dispatch (REQUIRED PATTERN)
 
-For each task:
-1. Read task file: `tasks/[id].json`
-2. CAPTURE sources first (before citing)
-3. Update claim records with new sources
-4. Write findings file
-5. Mark task completed
-6. Log to ledger
+**CRITICAL:** You MUST load `prompts/execution-agent.md` template when dispatching task execution.
+
+```
+Task tool:
+  subagent_type: "general-purpose"
+  description: "Execute task [TASK_ID]"
+  prompt: |
+    ## TEMPLATE LOADED: execution-agent.md
+
+    ## Context
+    - Case: [case-id]
+    - Task: [TASK_ID]
+    - Case Directory: cases/[case-id]
+
+    ## CRITICAL: CAPTURE BEFORE CITE IS ENFORCED
+
+    ledger-append.js source_capture WILL FAIL if:
+    - Evidence directory does not exist
+    - metadata.json is not present
+
+    For EVERY source you cite:
+    1. Run: node scripts/capture.js S### "URL" cases/[case-id]
+    2. Verify: ls cases/[case-id]/evidence/web/S###/ shows metadata.json
+    3. Log: node scripts/ledger-append.js cases/[case-id] source_capture --source S### --url "URL" --path evidence/web/S###/
+    4. Only THEN can you write [S###] in findings
+
+    ## PRE-COMPLETION VERIFICATION (MANDATORY)
+
+    Before marking task complete, run:
+    node scripts/verify-citations.js cases/[case-id]
+
+    If it fails, capture missing evidence. DO NOT complete task until it passes.
+
+    ## Instructions
+
+    1. Read task file: tasks/[TASK_ID].json
+    2. CAPTURE sources using scripts/capture.js (NOT via MCP tools alone)
+    3. Update claim records with new sources
+    4. Write findings to findings/[TASK_ID]-findings.md
+    5. Run verify-citations.js to confirm all citations have evidence
+    6. Mark task completed
+    7. Log: node scripts/ledger-append.js cases/[case-id] task_complete --task [TASK_ID] --output findings/[TASK_ID]-findings.md --sources S001,S002
+
+    ## Output
+    - findings/[TASK_ID]-findings.md
+    - Updated tasks/[TASK_ID].json (status: completed)
+    - All sources captured in evidence/web/
+```
+
+### ❌ DO NOT Dispatch Like This (WRONG)
+
+```
+# WRONG: No template, no enforcement
+Task tool:
+  prompt: "Investigate [topic] and update findings"  # <-- Missing all enforcement
+```
+
+### ✅ Always Include:
+
+1. Template header indicating execution-agent.md is loaded
+2. Explicit CAPTURE BEFORE CITE instructions with node commands
+3. Pre-completion verify-citations.js requirement
+4. Ledger logging commands
 
 ---
 
@@ -459,9 +515,29 @@ node scripts/ledger-append.js <case> iteration_complete --iteration N
 node scripts/ledger-append.js <case> task_create --task R001 --gap G0001
 node scripts/ledger-append.js <case> task_complete --task R001 --output findings/R001.md
 
-# Sources and claims
-node scripts/ledger-append.js <case> source_capture --source S001 --url "..."
+# Sources (ENFORCED - requires --path, evidence must exist)
+# WRONG: node scripts/ledger-append.js <case> source_capture --source S001 --url "..."
+# CORRECT:
+node scripts/ledger-append.js <case> source_capture --source S001 --url "..." --path evidence/web/S001/
+
+# The above WILL FAIL if:
+# - evidence/web/S001/ does not exist
+# - evidence/web/S001/metadata.json does not exist
+
+# Claims
 node scripts/ledger-append.js <case> claim_update --claim C0042 --sources S001
+```
+
+### Citation Verification
+
+**Run before completing any task with [S###] citations:**
+
+```bash
+node scripts/verify-citations.js cases/[case-id]
+# Scans findings/*.md and summary.md
+# Verifies evidence/web/S###/ exists for each [S###] citation
+# Exit 0 = all citations have evidence
+# Exit 1 = BLOCKER - missing evidence
 ```
 
 ---
