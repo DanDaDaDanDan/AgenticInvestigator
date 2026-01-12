@@ -620,7 +620,7 @@ Outputs `control/gate_results.json`.
 | 5. Content | Claims in evidence | `verify-source-content.js` |
 | 6. Corroboration | Claims meet thresholds | `verify-corroboration.js` |
 | 7. Contradictions | All explored | Built-in |
-| 8. Rigor | 20 frameworks addressed | Built-in |
+| 8. Rigor | 35 frameworks addressed | Built-in |
 | 9. Legal | No blocking legal gaps | `verify-legal.js` |
 
 **All thresholds = 100%. No exceptions.**
@@ -636,7 +636,7 @@ Outputs `control/gate_results.json`.
 | Real-time multi-source | mcp-xai | `research`, `x_search` | - |
 | Cross-model critique | mcp-gemini | `generate_text` | - |
 | Extended reasoning | mcp-openai | `generate_text` | `reasoning_effort: xhigh` |
-| **20-Framework Rigor** | mcp-openai | `generate_text` | `model: gpt-5.2-pro`, `reasoning_effort: xhigh` |
+| **35-Framework Rigor** | mcp-openai | `generate_text` | `model: gpt-5.2-pro`, `reasoning_effort: xhigh` |
 | **Deep Adversarial** | mcp-openai | `generate_text` | `model: gpt-5.2-pro`, `reasoning_effort: xhigh` |
 
 ### Extended Thinking (GPT-5.2 Pro)
@@ -654,7 +654,7 @@ mcp__mcp-openai__generate_text:
 
 | Task Type | Use Extended Thinking? | Why |
 |-----------|------------------------|-----|
-| 20-Framework Rigor | **YES** | Need exhaustive exploration of all angles |
+| 35-Framework Rigor | **YES** | Need exhaustive exploration of all angles |
 | Adversarial Analysis | **YES** | Finding non-obvious counter-arguments |
 | Curiosity Question Gen | **YES** | Creative depth for novel questions |
 | Hypothesis Testing | **YES** | Must consider all competing explanations |
@@ -663,7 +663,7 @@ mcp__mcp-openai__generate_text:
 
 **Agent Templates:**
 - `prompts/deep-thinking-agent.md` - Master template for extended thinking
-- `prompts/rigor-exploration-agent.md` - 20-framework analysis
+- `prompts/rigor-exploration-agent.md` - 35-framework analysis
 - `prompts/adversarial-agent.md` - Counter-hypothesis generation
 
 ### Fast Mode (`--fast`)

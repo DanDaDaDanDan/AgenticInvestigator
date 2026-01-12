@@ -247,7 +247,7 @@ Update TodoWrite at each phase transition.
 | 5. Content | Claims found in evidence |
 | 6. Corroboration | Claims meet thresholds |
 | 7. Contradictions | All explored |
-| 8. Rigor | 20 frameworks addressed |
+| 8. Rigor | 35 frameworks addressed |
 | 9. Legal | No blocking legal gaps |
 
 ```bash
