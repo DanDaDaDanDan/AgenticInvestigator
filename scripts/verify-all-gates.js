@@ -21,7 +21,7 @@
  *   5. Content - Claims verified in captured evidence
  *   6. Claims - AI verification of claims
  *   7. Contradictions - All contradictions explored
- *   8. Rigor - 20-framework rigor checkpoint passed
+ *   8. Rigor - 25-framework rigor checkpoint passed (includes domain expertise)
  *   9. Legal - Legal review file exists
  *
  * Exit codes:
@@ -689,11 +689,47 @@ function verifyRigor(caseDir) {
     // Check for framework coverage markers
     const checkMarks = (rigorContent.match(/\bPASS\b|\bADDRESSED\b|\bCOVERED\b|\[x\]/gi) || []).length;
     const gapMarks = (rigorContent.match(/\bFAIL\b|\bGAP\b|\bMISSING\b/gi) || []).length;
-    const totalFrameworks = 20;
+    const totalFrameworks = 25; // Updated from 20 to include Domain Expertise frameworks (21-25)
 
     result.details.file = rigorFile;
     result.details.checks_passed = checkMarks;
     result.details.gaps_found = gapMarks;
+
+    // CRITICAL: Check for Domain Expertise frameworks (21-25)
+    // These prevent surface-level analysis that misses what experts consider obvious
+    const domainFrameworkPatterns = [
+      /first\s*principles|scientific\s*reality/i,
+      /domain\s*expert|expert\s*blind\s*spot/i,
+      /marketing\s*vs\s*scien/i,
+      /subject\s*experience|ground\s*truth/i,
+      /contrarian\s*expert/i
+    ];
+
+    const domainFrameworksFound = domainFrameworkPatterns.filter(p => p.test(rigorContent)).length;
+    result.details.domain_frameworks_found = domainFrameworksFound;
+
+    // Check for peer-reviewed/scientific sources mentioned
+    const scientificSourcePatterns = [
+      /peer[\s-]*review/i,
+      /journal\s*(of|article)/i,
+      /academic\s*(study|source|research)/i,
+      /veterinary|etholog/i,
+      /scientific\s*(consensus|study|research)/i
+    ];
+
+    const scientificSourceMentions = scientificSourcePatterns.filter(p => p.test(rigorContent)).length;
+    result.details.scientific_source_mentions = scientificSourceMentions;
+
+    // BLOCKER: If no domain expertise frameworks addressed, fail
+    if (domainFrameworksFound === 0) {
+      result.reason = 'Rigor checkpoint missing Domain Expertise frameworks (21-25). These prevent surface-level analysis that misses what experts consider obvious.';
+      return result;
+    }
+
+    // WARNING: If no scientific sources mentioned, flag it
+    if (scientificSourceMentions === 0) {
+      result.details.warning = 'No peer-reviewed or scientific sources mentioned - may miss domain expertise';
+    }
 
     // CRITICAL: Check for embedded "NOT READY" status within the file
     // This catches cases where the rigor checkpoint says something is NOT READY internally
@@ -723,9 +759,9 @@ function verifyRigor(caseDir) {
       return result;
     }
 
-    // Require minimum check coverage (at least 15 of 20 frameworks addressed)
-    if (checkMarks < 15) {
-      result.reason = `Only ${checkMarks} framework checks found (need >=15 of 20)`;
+    // Require minimum check coverage (at least 20 of 25 frameworks addressed - 80%)
+    if (checkMarks < 20) {
+      result.reason = `Only ${checkMarks} framework checks found (need >=20 of 25)`;
       return result;
     }
 
