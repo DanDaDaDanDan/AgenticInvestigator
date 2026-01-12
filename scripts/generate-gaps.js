@@ -12,6 +12,10 @@
  * Output:
  *   control/gaps.json
  *   control/digest.json (iteration summary)
+ *
+ * Environment variables for debugging:
+ *   LOG_LEVEL=debug|info|warn|error (default: info)
+ *   LOG_FILE=path/to/file.log (enables file logging)
  */
 
 'use strict';
@@ -20,6 +24,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const config = require('./lib/config-loader');
+const logger = require('./logger').create('generate-gaps');
 
 // ANSI colors
 const RED = '\x1b[31m';
@@ -58,25 +63,37 @@ function nextGapId() {
  * Run a verifier script and collect its gaps
  */
 async function runVerifier(script, caseDir, options = {}) {
+  const op = logger.operation(`verifier:${script}`);
+  logger.debug(`Running verifier: ${script}`);
+
   const scriptPath = path.join(__dirname, script);
   if (!fs.existsSync(scriptPath)) {
+    logger.error(`Verifier script not found: ${script}`);
+    op.fail(new Error('Script not found'));
     return { ok: false, gaps: [], error: `Script not found: ${script}` };
   }
 
   try {
     const mod = require(scriptPath);
     if (!mod || typeof mod.run !== 'function') {
+      logger.error(`Verifier ${script} does not export run()`);
+      op.fail(new Error('No run() export'));
       return { ok: false, gaps: [], error: `Verifier ${script} does not export run()` };
     }
 
+    logger.debug(`Executing ${script}.run()`);
     const data = await mod.run(caseDir, options);
     const gaps = Array.isArray(data?.gaps) ? data.gaps : [];
     const passed = typeof data?.passed === 'boolean'
       ? data.passed
       : (typeof data?.overall === 'boolean' ? data.overall : false);
 
+    logger.debug(`Verifier ${script} completed`, { passed, gaps: gaps.length });
+    op.success({ passed, gaps: gaps.length });
     return { ok: true, passed, gaps, data };
   } catch (e) {
+    logger.error(`Verifier ${script} threw error`, e);
+    op.fail(e);
     return { ok: false, gaps: [], error: e.message };
   }
 }
@@ -440,12 +457,19 @@ function checkLegal(caseDir) {
 }
 
 async function run(caseDir, options = {}) {
+  const mainOp = logger.operation('generateGaps', { caseDir });
   const startTime = Date.now();
-  if (!caseDir) throw new Error('Missing case directory argument');
+  logger.info('Starting gap generation', { caseDir });
+
+  if (!caseDir) {
+    logger.error('Missing case directory argument');
+    throw new Error('Missing case directory argument');
+  }
 
   // Ensure control directory exists
   const controlDir = path.join(caseDir, 'control');
   if (!fs.existsSync(controlDir)) {
+    logger.debug(`Creating control directory: ${controlDir}`);
     fs.mkdirSync(controlDir, { recursive: true });
   }
 
@@ -464,11 +488,18 @@ async function run(caseDir, options = {}) {
     { name: 'tasks', script: 'verify-tasks.js', options: {} },
     { name: 'state_consistency', script: 'verify-state-consistency.js', options: {} },
     { name: 'legal', script: 'verify-legal.js', options: {} },
-    { name: 'integrity', script: 'verify-integrity.js', options: {} }
+    { name: 'integrity', script: 'verify-integrity.js', options: {} },
+    { name: 'evidence_integrity', script: 'verifiers/verify-evidence-integrity.js', options: {} }
   ];
 
+  logger.info(`Running ${verifiers.length} verifiers`);
+  const progress = logger.progress(verifiers.length, 'verifiers');
+
   for (const v of verifiers) {
+    logger.debug(`Starting verifier: ${v.name}`);
     const result = await runVerifier(v.script, caseDir, v.options);
+    progress.tick(v.name);
+
     verifierResults.push({
       name: v.name,
       script: v.script,
@@ -479,6 +510,7 @@ async function run(caseDir, options = {}) {
     });
 
     if (!result.ok) {
+      logger.warn(`Verifier ${v.name} failed`, { error: result.error });
       const synthetic = normalizeGap({
         type: 'STATE_INCONSISTENT',
         object: { verifier: v.name, script: v.script },
@@ -493,6 +525,7 @@ async function run(caseDir, options = {}) {
       if (normalized) allGaps.push(normalized);
     }
   }
+  progress.done();
 
   // Cross-check termination gates so gap output is faithful to "can terminate" reality
   const gatesResult = await runVerifier('verify-all-gates.js', caseDir, {});
@@ -574,6 +607,7 @@ async function run(caseDir, options = {}) {
     }
   };
 
+  logger.debug('Writing gaps.json');
   fs.writeFileSync(path.join(controlDir, 'gaps.json'), JSON.stringify(output, null, 2));
 
   const digest = {
@@ -583,7 +617,21 @@ async function run(caseDir, options = {}) {
     total_gaps: deduped.length,
     can_terminate: blocking.length === 0
   };
+  logger.debug('Writing digest.json');
   fs.writeFileSync(path.join(controlDir, 'digest.json'), JSON.stringify(digest, null, 2));
+
+  const duration = Date.now() - startTime;
+  logger.info('Gap generation complete', {
+    total_gaps: deduped.length,
+    blocking: blocking.length,
+    duration_ms: duration,
+    can_terminate: blocking.length === 0
+  });
+  mainOp.success({
+    total_gaps: deduped.length,
+    blocking: blocking.length,
+    duration_ms: duration
+  });
 
   return output;
 }
@@ -623,8 +671,10 @@ function printHuman(output) {
 }
 
 async function cli() {
+  logger.info('generate-gaps.js started', { args: process.argv.slice(2) });
   const parsed = parseCliArgs(process.argv);
   if (!parsed.caseDir) {
+    logger.error('Missing case directory argument');
     console.error('Usage: node scripts/generate-gaps.js <case_dir> [--json]');
     process.exit(1);
   }
@@ -635,6 +685,7 @@ async function cli() {
   } else {
     printHuman(output);
   }
+  logger.info('Exiting', { exit_code: output.stats.blocking_count > 0 ? 1 : 0 });
   process.exit(output.stats.blocking_count > 0 ? 1 : 0);
 }
 

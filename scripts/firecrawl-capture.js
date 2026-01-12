@@ -14,6 +14,8 @@
  *
  * Environment:
  *   FIRECRAWL_API_KEY - Required API key from firecrawl.dev (or in .env)
+ *   LOG_LEVEL=debug|info|warn|error (default: info)
+ *   LOG_FILE=path/to/file.log (enables file logging)
  */
 
 // Load .env from project root
@@ -23,6 +25,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const crypto = require('crypto');
+const logger = require('./logger').create('firecrawl');
 
 const API_KEY = process.env.FIRECRAWL_API_KEY;
 const API_URL = 'https://api.firecrawl.dev/v1/scrape';
@@ -38,6 +41,13 @@ if (!API_KEY) {
 
 // HTTP POST request
 function post(url, data) {
+  const op = logger.operation('firecrawlAPI', { url: data.url?.substring(0, 50) });
+  logger.debug('Sending request to Firecrawl API', {
+    endpoint: url,
+    formats: data.formats,
+    timeout: data.timeout
+  });
+
   return new Promise((resolve, reject) => {
     const body = JSON.stringify(data);
     const parsedUrl = new URL(url);
@@ -54,23 +64,49 @@ function post(url, data) {
       }
     };
 
+    logger.debug(`Connecting to ${parsedUrl.hostname}...`);
     const req = https.request(options, (res) => {
+      logger.debug(`Response received: HTTP ${res.statusCode}`);
       let responseBody = '';
-      res.on('data', chunk => responseBody += chunk);
+      let receivedBytes = 0;
+
+      res.on('data', chunk => {
+        responseBody += chunk;
+        receivedBytes += chunk.length;
+        // Log every 100KB
+        if (receivedBytes % 100000 < chunk.length) {
+          logger.debug(`Receiving response: ${receivedBytes} bytes...`);
+        }
+      });
+
       res.on('end', () => {
+        logger.debug(`Response complete: ${receivedBytes} bytes total`);
         try {
           const json = JSON.parse(responseBody);
+          op.success({ status: res.statusCode, bytes: receivedBytes });
           resolve({ status: res.statusCode, data: json });
         } catch (e) {
+          logger.warn(`Response is not JSON (${receivedBytes} bytes)`);
+          op.success({ status: res.statusCode, bytes: receivedBytes, parseError: true });
           resolve({ status: res.statusCode, data: responseBody });
         }
       });
     });
 
-    req.on('error', reject);
-    req.setTimeout(180000, () => reject(new Error('Request timeout')));
+    req.on('error', err => {
+      logger.error('Request error', err);
+      op.fail(err);
+      reject(err);
+    });
+    req.setTimeout(180000, () => {
+      const err = new Error('Request timeout (180s)');
+      logger.error('Request timeout after 180 seconds');
+      op.fail(err);
+      reject(err);
+    });
     req.write(body);
     req.end();
+    logger.debug('Request sent, waiting for response...');
   });
 }
 
@@ -93,45 +129,58 @@ function saveBase64(base64Data, filePath) {
 
 // Capture single URL via Firecrawl
 async function captureUrl(sourceId, url, evidenceDir, attempt = 1) {
+  const op = logger.operation('captureUrl', { sourceId, url: url.substring(0, 60), attempt });
   const startTime = Date.now();
   const errors = [];
 
+  logger.info(`Capturing ${sourceId} (attempt ${attempt})`, { url });
   console.log(`[${sourceId}] Capturing: ${url.substring(0, 60)}...`);
 
+  logger.debug(`Creating evidence directory: ${evidenceDir}`);
   fs.mkdirSync(evidenceDir, { recursive: true });
 
   try {
     // Call Firecrawl API (v2 format)
+    logger.debug('Calling Firecrawl API with formats: html, rawHtml, markdown, screenshot');
     const response = await post(API_URL, {
       url: url,
       formats: ['html', 'rawHtml', 'markdown', 'screenshot@fullPage'],
       waitFor: 3000,
       timeout: 120000
     });
+    logger.debug(`API response status: ${response.status}`);
 
     if (response.status === 429) {
       // Rate limited - wait and retry
       if (attempt < 3) {
         const waitTime = 60000 * attempt;
+        logger.warn(`Rate limited, waiting ${waitTime / 1000}s before retry...`);
         console.log(`  Rate limited, waiting ${waitTime / 1000}s...`);
         await new Promise(r => setTimeout(r, waitTime));
         return captureUrl(sourceId, url, evidenceDir, attempt + 1);
       }
-      throw new Error('Rate limit exceeded after retries');
+      const err = new Error('Rate limit exceeded after retries');
+      op.fail(err);
+      throw err;
     }
 
     if (response.status !== 200) {
-      throw new Error(`API error ${response.status}: ${JSON.stringify(response.data)}`);
+      const err = new Error(`API error ${response.status}: ${JSON.stringify(response.data)}`);
+      op.fail(err);
+      throw err;
     }
 
     const result = response.data;
 
     if (!result.success) {
-      throw new Error(`Scrape failed: ${result.error || 'Unknown error'}`);
+      const err = new Error(`Scrape failed: ${result.error || 'Unknown error'}`);
+      op.fail(err);
+      throw err;
     }
 
     const data = result.data || result;
     const files = {};
+    logger.debug('Processing capture results');
 
     // Save HTML
     if (data.html || data.rawHtml) {
@@ -143,6 +192,7 @@ async function captureUrl(sourceId, url, evidenceDir, attempt = 1) {
         hash: `sha256:${hashBuffer(Buffer.from(htmlContent))}`,
         size: Buffer.byteLength(htmlContent)
       };
+      logger.debug(`Saved HTML: ${files.html.size} bytes`);
     }
 
     // Save markdown
@@ -154,6 +204,7 @@ async function captureUrl(sourceId, url, evidenceDir, attempt = 1) {
         hash: `sha256:${hashBuffer(Buffer.from(data.markdown))}`,
         size: Buffer.byteLength(data.markdown)
       };
+      logger.debug(`Saved markdown: ${files.markdown.size} bytes`);
     }
 
     // Save screenshot
@@ -165,6 +216,7 @@ async function captureUrl(sourceId, url, evidenceDir, attempt = 1) {
         hash: `sha256:${hashBuffer(pngBuffer)}`,
         size: pngBuffer.length
       };
+      logger.debug(`Saved screenshot: ${files.png.size} bytes`);
     }
 
     // Note: Firecrawl v1 API doesn't include PDF directly
@@ -189,23 +241,33 @@ async function captureUrl(sourceId, url, evidenceDir, attempt = 1) {
       path.join(evidenceDir, 'metadata.json'),
       JSON.stringify(metadata, null, 2)
     );
+    logger.debug('Saved metadata.json');
 
-    console.log(`  OK Captured (${Object.keys(files).length} files, ${Date.now() - startTime}ms)`);
+    const duration = Date.now() - startTime;
+    logger.info(`Capture successful: ${sourceId}`, {
+      files: Object.keys(files).length,
+      duration_ms: duration
+    });
+    console.log(`  OK Captured (${Object.keys(files).length} files, ${duration}ms)`);
+    op.success({ files: Object.keys(files).length, duration_ms: duration });
 
     return { success: true, sourceId, files: Object.keys(files) };
 
   } catch (err) {
+    logger.error(`Capture failed for ${sourceId}`, err);
     console.error(`  FAIL Error: ${err.message}`);
     errors.push(err.message);
 
     // Retry on transient errors
     if (attempt < 3 && (err.message.includes('timeout') || err.message.includes('ECONNRESET'))) {
+      logger.info(`Retrying ${sourceId} after transient error (attempt ${attempt + 1})`);
       console.log(`  Retrying (attempt ${attempt + 1})...`);
       await new Promise(r => setTimeout(r, 5000 * attempt));
       return captureUrl(sourceId, url, evidenceDir, attempt + 1);
     }
 
     // Save error metadata
+    logger.debug('Saving error metadata');
     const metadata = {
       source_id: sourceId,
       url: url,
@@ -221,6 +283,7 @@ async function captureUrl(sourceId, url, evidenceDir, attempt = 1) {
       JSON.stringify(metadata, null, 2)
     );
 
+    op.fail(err);
     return { success: false, sourceId, error: err.message };
   }
 }

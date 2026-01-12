@@ -57,6 +57,39 @@ function readJson(filePath) {
   return JSON.parse(raw);
 }
 
+// Extract all [S###] citations from text
+function extractCitations(text) {
+  const pattern = /\[S(\d{3,4})\]/g;
+  const citations = new Set();
+  let match;
+  while ((match = pattern.exec(text)) !== null) {
+    citations.add(`S${match[1]}`);
+  }
+  return Array.from(citations).sort();
+}
+
+// Check if evidence exists for a source ID
+function evidenceExists(caseDir, sourceId) {
+  const webPath = path.join(caseDir, 'evidence', 'web', sourceId);
+  if (fs.existsSync(webPath)) {
+    const metaPath = path.join(webPath, 'metadata.json');
+    if (fs.existsSync(metaPath)) {
+      return true;
+    }
+  }
+
+  // Check document evidence
+  const docDir = path.join(caseDir, 'evidence', 'documents');
+  if (fs.existsSync(docDir)) {
+    const files = fs.readdirSync(docDir);
+    if (files.find(f => f.startsWith(`${sourceId}_`))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function run(caseDir) {
   const startTime = Date.now();
   const tasksDir = path.join(caseDir, 'tasks');
@@ -123,6 +156,31 @@ function run(caseDir) {
           message: `Task ${id} marked completed but findings file missing: ${findingsRel}`,
           suggested_actions: ['write_findings', 'revert_task_status']
         });
+      } else {
+        // CITATION VERIFICATION: Check that all [S###] citations have captured evidence
+        try {
+          const findingsContent = fs.readFileSync(findingsPath, 'utf-8');
+          const citations = extractCitations(findingsContent);
+
+          for (const sourceId of citations) {
+            if (!evidenceExists(caseDir, sourceId)) {
+              gaps.push({
+                type: 'MISSING_EVIDENCE',
+                object: { task_id: id, source_id: sourceId, findings_file: findingsRel },
+                message: `Task ${id} cites [${sourceId}] but evidence/web/${sourceId}/ not found`,
+                suggested_actions: ['capture_source', 'remove_citation']
+              });
+            }
+          }
+        } catch (e) {
+          // If we can't read the file, that's a different error
+          gaps.push({
+            type: 'TASK_INCOMPLETE',
+            object: { task_id: id, findings_file: findingsRel },
+            message: `Task ${id} findings file unreadable: ${e.message}`,
+            suggested_actions: ['fix_findings_file']
+          });
+        }
       }
     }
   }
@@ -186,6 +244,9 @@ function run(caseDir) {
     }
   }
 
+  // Count citation gaps
+  const citationGaps = gaps.filter(g => g.type === 'MISSING_EVIDENCE');
+
   const stats = {
     total: tasks.length,
     main_tasks: mainTasks.length,
@@ -193,7 +254,8 @@ function run(caseDir) {
     completed: tasks.filter(t => String(t.task.status || '').toLowerCase() === 'completed').length,
     high_priority_incomplete: highPriorityIncomplete.length,
     completed_missing_findings: completedMissingFindings.length,
-    curiosity_tasks: curiosityTasks.length
+    curiosity_tasks: curiosityTasks.length,
+    citations_without_evidence: citationGaps.length
   };
 
   const passed = gaps.length === 0;
@@ -216,10 +278,22 @@ function printHuman(output) {
   console.log(`Case: ${output.case_dir}`);
   console.log('');
   console.log(`Total tasks: ${output.stats.total}`);
+  console.log(`Completed: ${output.stats.completed}`);
   console.log(`High priority incomplete: ${output.stats.high_priority_incomplete}`);
   console.log(`Adversarial tasks: ${output.stats.adversarial_tasks}`);
   console.log(`Curiosity tasks: ${output.stats.curiosity_tasks}`);
+  console.log(`Citations without evidence: ${output.stats.citations_without_evidence}`);
   console.log('');
+
+  if (output.stats.citations_without_evidence > 0) {
+    console.log('CITATION ISSUES:');
+    const citationGaps = output.gaps.filter(g => g.type === 'MISSING_EVIDENCE');
+    for (const gap of citationGaps) {
+      console.log(`  ${gap.object.task_id}: [${gap.object.source_id}] missing evidence`);
+    }
+    console.log('');
+  }
+
   console.log(output.passed ? 'PASS: tasks are consistent' : `FAIL: ${output.gaps.length} gap(s) found`);
 }
 
