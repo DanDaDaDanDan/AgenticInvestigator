@@ -72,10 +72,19 @@ OUTPUT REQUIREMENTS:
 
    For EACH framework below, use GPT-5.2 Pro with `reasoning_effort: xhigh` to perform DEEP analysis. Not a checklist — actual exploration.
 
-3. **Generate tasks for gaps identified:**
+3. **CRITICAL: Create task files for ALL gaps (not just document them)**
 
-   Create `tasks/R###.json` files for any investigation gaps:
+   **⚠️ YOU MUST CREATE ACTUAL FILES, NOT JUST WRITE ABOUT THEM**
 
+   For EVERY gap identified, you MUST:
+
+   **Step 3a: Create the task file FIRST**
+   ```bash
+   # Use the Write tool to create tasks/R001.json, tasks/R002.json, etc.
+   # Each task MUST be a separate JSON file
+   ```
+
+   Task file schema (`tasks/R###.json`):
    ```json
    {
      "id": "R001",
@@ -95,9 +104,38 @@ OUTPUT REQUIREMENTS:
    }
    ```
 
-4. **Log task creation:**
+   **Step 3b: Log task creation to ledger**
    ```bash
-   node scripts/ledger-append.js {{case_dir}} task_create --task R### --priority HIGH --perspective Rigor
+   node scripts/ledger-append.js {{case_dir}} task_create --task R001 --priority HIGH --perspective Rigor
+   ```
+
+   **Step 3c: ONLY THEN reference the task in rigor-checkpoint.md**
+   ```markdown
+   **Tasks Generated:** R001, R002  ← These files MUST exist
+   ```
+
+4. **Verification before completing:**
+
+   Before writing rigor-checkpoint.md, verify:
+   ```bash
+   ls {{case_dir}}/tasks/R*.json  # Must show all R### files you created
+   ```
+
+   **❌ WRONG (documenting tasks without creating files):**
+   ```markdown
+   ### 1. Follow the Money
+   - **Tasks:**
+     - R021: Create "Scope & Methods" memo...  ← File doesn't exist!
+   ```
+
+   **✅ CORRECT (create file, then reference):**
+   ```bash
+   # 1. Create file first
+   Write tasks/R021.json with full schema
+   # 2. Log to ledger
+   node scripts/ledger-append.js ... task_create --task R021 ...
+   # 3. Then reference in checkpoint
+   **Tasks Generated:** R021
    ```
 
 ---

@@ -39,6 +39,11 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
+
+// Must match firecrawl-capture.js
+const CAPTURE_SIGNATURE_VERSION = 'v2';
+const CAPTURE_SALT = 'firecrawl-capture-2026-integrity';
 
 const args = process.argv.slice(2);
 
@@ -127,6 +132,75 @@ function parseBool(value) {
   if (value === 'true') return true;
   if (value === 'false') return false;
   return value;
+}
+
+/**
+ * Verify capture signature - returns { valid: boolean, reason: string }
+ * A valid signature proves the capture script ran (not LLM hallucination)
+ */
+function verifyCaptureSignature(meta) {
+  // Check for LLM-written stub indicators (definitive hallucination markers)
+  const stubFields = ['summary', 'key_facts', 'key_claims', 'category',
+                      'credibility', 'relevance', 'independence', 'reliability'];
+  for (const field of stubFields) {
+    if (meta[field]) {
+      return {
+        valid: false,
+        reason: `Metadata contains LLM-written field "${field}" - this is stub evidence, not a real capture`
+      };
+    }
+  }
+
+  // Check for uses "id" instead of "source_id" (LLM pattern)
+  if (meta.id && !meta.source_id) {
+    return {
+      valid: false,
+      reason: 'Metadata uses "id" instead of "source_id" - LLM-generated stub'
+    };
+  }
+
+  // Require signature for new captures (v2+)
+  if (!meta._capture_signature) {
+    // Allow legacy captures that have proper files field
+    if (meta.files && Object.keys(meta.files).length > 0 && meta.method) {
+      return { valid: true, reason: 'Legacy capture (pre-signature) with valid files' };
+    }
+    return {
+      valid: false,
+      reason: 'Missing _capture_signature - evidence not created by capture script'
+    };
+  }
+
+  if (!meta.files) {
+    return { valid: false, reason: 'Missing files field - invalid capture' };
+  }
+
+  // Verify signature cryptographically
+  const fileHashesSorted = Object.values(meta.files)
+    .map(f => f.hash)
+    .filter(Boolean)
+    .sort()
+    .join('|');
+
+  const signatureInput = [
+    meta._signature_version || CAPTURE_SIGNATURE_VERSION,
+    meta.source_id,
+    meta.url,
+    meta.captured_at,
+    fileHashesSorted,
+    CAPTURE_SALT
+  ].join(':');
+
+  const expectedSig = `sig_${meta._signature_version || CAPTURE_SIGNATURE_VERSION}_${crypto.createHash('sha256').update(signatureInput).digest('hex').slice(0, 32)}`;
+
+  if (meta._capture_signature !== expectedSig) {
+    return {
+      valid: false,
+      reason: 'Invalid _capture_signature - signature mismatch (tampered or faked)'
+    };
+  }
+
+  return { valid: true, reason: 'Valid capture signature' };
 }
 
 // Build entry based on type
@@ -219,11 +293,42 @@ function buildEntry(type, args) {
         process.exit(1);
       }
 
+      // CRITICAL: Verify capture signature to prevent LLM hallucination
+      // This cryptographic check ensures only the capture script can create valid evidence
+      let metadata;
+      try {
+        metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf-8'));
+      } catch (e) {
+        console.error(`Error: Invalid JSON in ${metadataPath}: ${e.message}`);
+        process.exit(1);
+      }
+
+      const sigCheck = verifyCaptureSignature(metadata);
+      if (!sigCheck.valid) {
+        console.error('');
+        console.error('╔════════════════════════════════════════════════════════════════╗');
+        console.error('║  EVIDENCE INTEGRITY FAILURE - CAPTURE REJECTED                 ║');
+        console.error('╚════════════════════════════════════════════════════════════════╝');
+        console.error('');
+        console.error(`Source: ${entry.source_id}`);
+        console.error(`Path: ${evidenceFullPath}`);
+        console.error(`Reason: ${sigCheck.reason}`);
+        console.error('');
+        console.error('This evidence was NOT created by the capture script.');
+        console.error('LLMs cannot hallucinate valid capture signatures.');
+        console.error('');
+        console.error('To capture real evidence, run:');
+        console.error(`  node scripts/firecrawl-capture.js ${entry.source_id} "${entry.url}" ${evidenceFullPath}`);
+        console.error('');
+        process.exit(1);
+      }
+
       // Count actual files captured
       const capturedFiles = fs.readdirSync(evidenceFullPath).filter(f =>
         f !== 'metadata.json' && !f.startsWith('.')
       );
       entry.file_count = capturedFiles.length;
+      entry.signature_valid = true;
 
       const filesArg = parseArg(args, '--files');
       if (filesArg) entry.file_count = parseInt(filesArg, 10);

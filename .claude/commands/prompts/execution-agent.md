@@ -28,34 +28,53 @@ Execute investigation task {{task_id}}.
    - Note current `supporting_sources` count
    - Note `corroboration.independence_rule`
 
-4. **CAPTURE BEFORE CITE (MANDATORY - ENFORCED):**
+4. **CAPTURE BEFORE CITE (MANDATORY - CRYPTOGRAPHICALLY ENFORCED):**
 
-   ⚠️ **ENFORCEMENT:** `ledger-append.js source_capture` will FAIL if:
+   ╔════════════════════════════════════════════════════════════════════════════╗
+   ║  ⚠️  ANTI-HALLUCINATION ENFORCEMENT                                        ║
+   ║                                                                            ║
+   ║  Evidence capture uses CRYPTOGRAPHIC SIGNATURES that LLMs CANNOT fake.    ║
+   ║  The capture script generates `_capture_signature` based on file hashes,  ║
+   ║  timestamps, and a secret salt. Any attempt to manually write evidence    ║
+   ║  directories will be DETECTED and REJECTED.                               ║
+   ╚════════════════════════════════════════════════════════════════════════════╝
+
+   **ENFORCEMENT:** `ledger-append.js source_capture` will FAIL if:
    - `--path` argument is missing
    - Evidence directory does not exist
-   - `metadata.json` is not present (proof of actual capture)
+   - `metadata.json` is not present
+   - **`_capture_signature` is missing or invalid (cryptographic check)**
+   - **LLM-written fields detected (summary, key_facts, key_claims, etc.)**
 
    For EVERY source you want to cite, you MUST:
    ```bash
    # 1. Assign a new source ID (check state.json for next_source_id)
-   # 2. Run capture script (this creates evidence/web/S###/)
-   node scripts/capture.js S### "URL" {{case_dir}}
+   # 2. Run capture script - THIS IS THE ONLY WAY TO CREATE VALID EVIDENCE
+   node scripts/firecrawl-capture.js S### "URL" {{case_dir}}/evidence/web/S###
 
-   # 3. Verify capture succeeded - MUST see metadata.json
+   # 3. Verify capture succeeded - MUST see metadata.json WITH signature
    ls {{case_dir}}/evidence/web/S###/
-   # Expected: metadata.json, content.md (or .html/.pdf)
+   # Expected: metadata.json (with _capture_signature), capture.html, capture.md, capture.png
 
-   # 4. Log capture - THIS WILL FAIL if evidence doesn't exist
+   # 4. Log capture - THIS WILL REJECT HALLUCINATED EVIDENCE
    node scripts/ledger-append.js {{case_dir}} source_capture --source S### --url "URL" --path evidence/web/S###/
    ```
 
    **You CANNOT cite [S###] without completing ALL 4 steps above.**
 
-   ❌ **DO NOT:**
+   ❌ **ABSOLUTELY PROHIBITED (WILL BE DETECTED):**
+   - **Creating evidence directories with Write tool** — No valid signature
+   - **Writing metadata.json manually** — LLM fields detected, signature invalid
    - Use MCP tools to research and then cite without capturing
    - Create sources.json entries without actual evidence
    - Write [S###] citations in findings before capture completes
    - Mark claims as "verified" before evidence is captured
+
+   ✅ **THE ONLY VALID APPROACH:**
+   - Run `node scripts/firecrawl-capture.js` for EVERY URL you need as evidence
+   - Wait for capture to complete
+   - Verify metadata.json has `_capture_signature` field
+   - Then and ONLY then cite the source
 
 5. **Investigate the task:**
    - Use sources from `sources.json`
@@ -138,14 +157,26 @@ Execute investigation task {{task_id}}.
 - **Answer the question** — Tasks are question-shaped; findings must answer them
 - **Update claims** — If task relates to a claim (R### tasks), update the claim file
 
-### What Happens If You Skip Capture
+### What Happens If You Try to Bypass Capture
 
-If you try to:
-1. **Log source without evidence:** `ledger-append.js source_capture` exits with error
-2. **Complete task with uncaptured citations:** `verify-citations.js` fails, blocking completion
-3. **Mark claim verified without sources:** Gap will reappear in next `generate-gaps.js` run
+**THE SYSTEM CRYPTOGRAPHICALLY ENFORCES EVIDENCE INTEGRITY:**
 
-**The system enforces these rules. You cannot bypass them.**
+| Bypass Attempt | Detection Method | Result |
+|----------------|------------------|--------|
+| Create evidence folder with Write tool | Missing `_capture_signature` | `ledger-append.js` REJECTS |
+| Write metadata.json manually | Invalid signature + LLM field detection | `ledger-append.js` REJECTS |
+| Copy/forge signature from another capture | Signature includes source_id, url, hashes | Cryptographic mismatch, REJECTED |
+| Log source without evidence | Directory/file existence check | `ledger-append.js` exits with error |
+| Complete task with uncaptured citations | verify-citations.js validation | Task completion BLOCKED |
+| Mark claim verified without sources | generate-gaps.js detects | Gap reappears next iteration |
+
+**Why You Cannot Fake Evidence:**
+- `_capture_signature` = SHA256(version + source_id + url + captured_at + file_hashes + secret_salt)
+- The salt is hardcoded in the capture script, not in prompts
+- File hashes are computed from actual file content
+- Any change to any field invalidates the signature
+
+**The system enforces these rules cryptographically. There is no bypass.**
 
 ## Evidence Requirements Check
 
