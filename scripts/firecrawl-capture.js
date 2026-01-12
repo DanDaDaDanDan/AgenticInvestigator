@@ -151,6 +151,62 @@ function saveBase64(base64Data, filePath) {
   return buffer;
 }
 
+// Generate PDF from URL using Playwright
+// This is used because Firecrawl doesn't support PDF generation
+let playwrightBrowser = null;
+
+async function generatePdfFromUrl(url) {
+  const { chromium } = require('playwright');
+
+  try {
+    // Reuse browser instance for efficiency
+    if (!playwrightBrowser) {
+      playwrightBrowser = await chromium.launch({ headless: true });
+    }
+
+    const context = await playwrightBrowser.newContext({
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    });
+    const page = await context.newPage();
+
+    // Navigate with timeout
+    await page.goto(url, {
+      waitUntil: 'networkidle',
+      timeout: 60000
+    });
+
+    // Wait a bit for any lazy-loaded content
+    await page.waitForTimeout(2000);
+
+    // Generate PDF
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '1cm', right: '1cm', bottom: '1cm', left: '1cm' }
+    });
+
+    await context.close();
+    return pdfBuffer;
+  } catch (err) {
+    logger.warn(`Playwright PDF generation error: ${err.message}`);
+    throw err;
+  }
+}
+
+// Cleanup Playwright browser on exit
+process.on('exit', () => {
+  if (playwrightBrowser) {
+    playwrightBrowser.close().catch(() => {});
+  }
+});
+
+process.on('SIGINT', () => {
+  if (playwrightBrowser) {
+    playwrightBrowser.close().catch(() => {});
+  }
+  process.exit(0);
+});
+
 // Capture single URL via Firecrawl
 async function captureUrl(sourceId, url, evidenceDir, attempt = 1) {
   const op = logger.operation('captureUrl', { sourceId, url: url.substring(0, 60), attempt });
@@ -165,10 +221,12 @@ async function captureUrl(sourceId, url, evidenceDir, attempt = 1) {
 
   try {
     // Call Firecrawl API (v2 format)
-    logger.debug('Calling Firecrawl API with formats: html, rawHtml, markdown, screenshot');
+    // Formats: html (cleaned), rawHtml (original), markdown, screenshot, links
+    // Note: PDF is generated separately via Playwright (Firecrawl doesn't support PDF output)
+    logger.debug('Calling Firecrawl API with formats: html, rawHtml, markdown, screenshot, links');
     const response = await post(API_URL, {
       url: url,
-      formats: ['html', 'rawHtml', 'markdown', 'screenshot@fullPage'],
+      formats: ['html', 'rawHtml', 'markdown', 'screenshot@fullPage', 'links'],
       waitFor: 3000,
       timeout: 120000
     });
@@ -243,8 +301,37 @@ async function captureUrl(sourceId, url, evidenceDir, attempt = 1) {
       logger.debug(`Saved screenshot: ${files.png.size} bytes`);
     }
 
-    // Note: Firecrawl v1 API doesn't include PDF directly
-    // We'll generate PDF from HTML using Playwright in a separate step
+    // Save links (useful for investigation context)
+    if (data.links && Array.isArray(data.links) && data.links.length > 0) {
+      const linksPath = path.join(evidenceDir, 'links.json');
+      const linksContent = JSON.stringify(data.links, null, 2);
+      fs.writeFileSync(linksPath, linksContent);
+      files.links = {
+        path: 'links.json',
+        hash: `sha256:${hashBuffer(Buffer.from(linksContent))}`,
+        count: data.links.length
+      };
+      logger.debug(`Saved links: ${files.links.count} URLs`);
+    }
+
+    // Generate PDF from URL using Playwright (Firecrawl doesn't support PDF generation)
+    try {
+      logger.debug('Generating PDF with Playwright...');
+      const pdfBuffer = await generatePdfFromUrl(url);
+      if (pdfBuffer) {
+        const pdfPath = path.join(evidenceDir, 'capture.pdf');
+        fs.writeFileSync(pdfPath, pdfBuffer);
+        files.pdf = {
+          path: 'capture.pdf',
+          hash: `sha256:${hashBuffer(pdfBuffer)}`,
+          size: pdfBuffer.length
+        };
+        logger.debug(`Saved PDF: ${files.pdf.size} bytes`);
+      }
+    } catch (pdfErr) {
+      logger.warn(`PDF generation failed (non-fatal): ${pdfErr.message}`);
+      errors.push(`PDF generation failed: ${pdfErr.message}`);
+    }
 
     // Create metadata with capture signature (anti-hallucination measure)
     const capturedAt = new Date().toISOString();
