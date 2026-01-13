@@ -1,8 +1,6 @@
-# Article Generator (Orchestrator Mode)
+# /article - Generate Publication Articles
 
-You are the **orchestrator**. You dispatch article writing agents - you do NOT write articles directly.
-
----
+Generate publication-ready articles from investigation findings.
 
 ## Usage
 
@@ -11,76 +9,62 @@ You are the **orchestrator**. You dispatch article writing agents - you do NOT w
 /article [case-id]    # Generate articles for specific case
 ```
 
-Case resolution order:
-1. Explicit `[case-id]`
-2. `cases/.active` (set via `node scripts/active-case.js set <case-id>`)
-3. Error with hint
+## Task
 
----
+Create two publication articles from `summary.md`:
+1. **Short** (400-800 words) - Quick overview
+2. **Full** (2,000-4,000 words) - Publication-ready
 
-## Article Specifications
+## Instructions
 
-### Article 1: Short Overview (400-800 words)
-- Quick-read format covering all salient facts
-- Strong lede, clear "so what"
-- Preserves nuance, no speculation
+1. **Read source material:**
+   - `summary.md` (PRIMARY SOURCE - contains all findings with [S###] citations)
+   - `questions/*.md` (framework answers for context)
 
-### Article 2: Full Professional (2,000-4,000 words)
-- Publication-ready, NYT/ProPublica quality
-- Complete source citations with [SXXX] IDs
-- All perspectives balanced
-- Includes methodology note
+2. **Generate both articles:**
 
----
+   Write to `articles/short.md`:
+   ```markdown
+   # [HEADLINE]
 
-## Orchestrator Flow
+   *[One-sentence deck]*
 
-```
-1. READ: state.json
-2. DISPATCH: Article agents (parallel)
-3. WAIT: Agents write to articles/article-short.md and articles/article-full.md
-4. REPORT: Completion status
-```
+   ---
 
----
+   [400-800 word article with [S###] citations]
 
-## Dispatch Agents (parallel, ONE message)
+   ---
 
-```
-Task 1: Short overview article (400-800 words)
-Task 2: Full professional article (2,000-4,000 words)
-```
+   **Sources:** [Count of unique S### citations]
+   ```
 
-### Agent Prompt Template
+   Write to `articles/full.md`:
+   ```markdown
+   # [HEADLINE]
 
-```
-Task tool:
-  subagent_type: "general-purpose"
-  description: "Generate [type] article"
-  prompt: |
-    TASK: Generate [short overview | full professional] article
-    CASE: cases/[case-id]/
+   *[One-sentence deck]*
 
-    Read summary.md (PRIMARY SOURCE), sources.md.
+   ---
 
-    Generate article using your configured tool (see prompts/_tooling.md).
+   [2,000-4,000 word article with [S###] citations]
 
-    RULES:
-    - NEVER introduce facts not in summary.md
-    - ALWAYS preserve [SXXX] citations
-    - Present contested claims as contested
-    - Neutral, professional tone
+   ---
 
-    Write to:
-    - Short overview: articles/article-short.md
-    - Full professional: articles/article-full.md
+   ## Source Key
+   [S001] Brief description
+   [S002] Brief description
+   ...
 
-    RETURN: Word count, source citations count
-```
+   ## Methodology Note
+   [How investigation was conducted]
+   ```
 
----
+3. **Update state.json:**
+   ```json
+   { "gates": { "article": true } }
+   ```
 
-## Language Standards
+## Writing Standards
 
 | Do | Don't |
 |----|-------|
@@ -89,47 +73,20 @@ Task tool:
 | "Critics argue..." | "The truth is..." |
 | "Records show..." | "Clearly..." |
 
----
+## Rules
 
-## Output Format
+- NEVER introduce facts not in summary.md
+- ALWAYS preserve [S###] citations inline
+- Present contested claims as contested
+- Neutral, professional tone
+- All perspectives balanced
+- NYT/ProPublica quality standard
 
-### articles/article-short.md
+## Output
 
-```markdown
-# [HEADLINE]
+- `articles/short.md` - Quick read (400-800 words)
+- `articles/full.md` - Full professional (2,000-4,000 words)
 
-*[Deck - one sentence summary]*
+## Next Step
 
----
-
-[400-800 word article with [SXXX] citations]
-
----
-
-**Source material**: summary.md
-**Case**: [case-id]
-```
-
-### articles/article-full.md
-
-```markdown
-# [HEADLINE]
-
-*[Deck - one sentence summary]*
-
----
-
-[2,000-4,000 word article with [SXXX] citations]
-
----
-
-## Source Key
-[List of [SXXX] citations with brief descriptions]
-
-## Editorial Notes
-**Source material**: summary.md
-**Case**: [case-id]
-**Verification status**: [from fact-check.md]
-**Legal review status**: [if exists]
-**Integrity check status**: [if exists]
-```
+After article generation, orchestrator invokes `/verify` to check all 6 gates.

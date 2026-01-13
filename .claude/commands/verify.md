@@ -1,12 +1,6 @@
-# Investigation Verification (Orchestrator Mode)
+# /verify - Check 6 Gates
 
-You are the **orchestrator**. You perform verification in two phases:
-1. **Structural verification** - Run scripts for deterministic checks
-2. **Semantic verification** - Use Gemini 3 Pro via MCP for judgment-based checks
-
-**See `framework/rules.md` for verification rules and termination signals.**
-
----
+Verify investigation readiness for publication.
 
 ## Usage
 
@@ -15,190 +9,134 @@ You are the **orchestrator**. You perform verification in two phases:
 /verify [case-id]    # Verify specific case
 ```
 
-Case resolution order:
-1. Explicit `[case-id]`
-2. `cases/.active` (set via `node scripts/active-case.js set <case-id>`)
-3. Error with hint
+## The 6 Gates
 
----
+| # | Gate | Check | Pass Criteria |
+|---|------|-------|---------------|
+| 1 | Questions | All `questions/*.md` | Status: investigated (or not-applicable) |
+| 2 | Curiosity | `/curiosity` judgment | Verdict: SATISFIED |
+| 3 | Article | `articles/full.md` | Exists with [S###] citations |
+| 4 | Sources | Evidence verification | All [S###] verified or auto-removed |
+| 5 | Integrity | `/integrity` review | Status: READY |
+| 6 | Legal | `/legal-review` | Status: READY |
 
-## Two-Phase Verification Architecture
+## Verification Flow
 
-### Phase 1: Structural Verification (Scripts)
+### Gate 1: Questions Check
 
-Run deterministic checks via scripts:
+Read each `questions/*.md` file. Check **Status:** field.
 
-```bash
-# Run all structural gates
-node scripts/verify-all-gates.js cases/[case-id]
-
-# Or run gap generation for detailed report
-node scripts/generate-gaps.js cases/[case-id]
+```
+35/35 frameworks have Status: investigated → PASS
+Any framework has Status: pending → FAIL
 ```
 
-Structural checks include:
-- File existence (summary.md, legal-review.md, etc.)
-- Citation presence (does summary have [SXXX] references?)
-- Evidence folder existence for cited sources
-- Task completion status
-- Legal review status (READY vs NOT READY)
+### Gate 2: Curiosity Check
 
-### Phase 2: Semantic Verification (Gemini 3 Pro MCP)
+Invoke `/curiosity` if not already run this iteration.
 
-After structural checks pass, use Gemini 3 Pro for semantic verification:
+```
+Verdict: SATISFIED → PASS
+Verdict: NOT SATISFIED → FAIL (returns list of outstanding leads)
+```
+
+### Gate 3: Article Check
+
+```bash
+# Check if article exists and has citations
+ls articles/full.md  # Must exist
+grep -c '\[S[0-9]\+\]' articles/full.md  # Must have citations
+```
+
+### Gate 4: Sources Check
+
+For each [S###] citation in `summary.md` and `articles/*.md`:
+
+1. **Evidence exists?** `evidence/S###/metadata.json` present
+2. **Content supports claim?** Use Gemini to verify claim appears in evidence
+3. **Source still accessible?** Check URL not 404
+
+**Auto-removal flow:**
+- If source cannot be verified, try `/capture-source` to re-capture
+- If still fails, search for alternate source
+- If no alternate found:
+  - Remove citation from summary.md and articles
+  - Log to `removed-points.md`
+  - Continue verification
+
+### Gate 5: Integrity Check
+
+Invoke `/integrity` if not already run.
+
+```
+Status: READY → PASS
+Status: READY WITH CHANGES → FAIL (but specific fixes needed)
+Status: NOT READY → FAIL
+```
+
+### Gate 6: Legal Check
+
+Invoke `/legal-review` if not already run.
+
+```
+Status: READY → PASS
+Status: READY WITH CHANGES → FAIL (but specific fixes needed)
+Status: NOT READY → FAIL
+```
+
+## Output
+
+Update `state.json` with gate results:
+
+```json
+{
+  "gates": {
+    "questions": true,
+    "curiosity": true,
+    "article": true,
+    "sources": true,
+    "integrity": true,
+    "legal": true
+  }
+}
+```
+
+## Result
+
+**ALL PASS:** Return "Verification: PASS - Ready for publication"
+
+**ANY FAIL:** Return specific failures:
+```
+Verification: FAIL
+- Gate 1 (Questions): 32/35 complete
+- Gate 4 (Sources): S089 unverifiable, removed
+- Gate 5 (Integrity): Needs balance improvement
+```
+
+## Next Steps
+
+- If PASS: Investigation complete
+- If FAIL: Orchestrator routes back to appropriate phase:
+  - Questions fail → `/action question`
+  - Curiosity fail → `/action follow`
+  - Article fail → `/action article`
+  - Sources fail → Already handled by auto-removal
+  - Integrity/Legal fail → Address specific issues
+
+## Semantic Verification (Gate 4)
+
+Use Gemini 3 Pro for semantic source verification:
 
 ```
 mcp__mcp-gemini__generate_text
   model: "gemini-3-pro"
-  prompt: [See semantic verification prompts below]
-```
-
-**Why Gemini 3 Pro?**
-- Cross-model verification prevents Claude's blind spots from self-validating
-- LLM understands context (e.g., "SSN: [REDACTED]" is not a PII leak)
-- Judgment-based checks (legal risk, factual claims) require understanding, not regex
-
----
-
-## Semantic Verification Criteria
-
-When calling Gemini 3 Pro, verify the following:
-
-### 1. Citation Coverage Check
-
-Ask Gemini to verify that every factual claim has a citation:
-
-> Analyze this summary for citation coverage. A factual claim is any statement about:
-> - Specific dates, times, amounts, or statistics
-> - Actions taken by people or organizations
-> - Events that occurred
-> - Quotes or statements attributed to someone
->
-> For each factual claim, verify it has a [SXXX] citation.
-> Report any factual claims without citations.
-
-### 2. Legal Risk Assessment
-
-Ask Gemini to identify legal risks:
-
-> Review this text for potential legal risks:
-> - Statements of criminal conduct without "alleged" or attribution
-> - Defamatory claims stated as fact rather than attributed
-> - Per se defamatory content (criminal accusations, professional incompetence)
-> - Opinion presented as fact
->
-> For each risk found, identify the specific text and suggest hedging language.
-
-### 3. PII Detection
-
-Ask Gemini to find PII with context understanding:
-
-> Scan this text for unprotected personally identifiable information:
-> - Social Security Numbers (not if redacted)
-> - Phone numbers (if linked to private individuals)
-> - Home addresses (if for private individuals)
-> - Financial account numbers
->
-> Note: Properly attributed business contacts and public records are acceptable.
-> Report only genuinely sensitive PII that should be removed.
-
-### 4. Balance and Fairness
-
-Ask Gemini to assess journalistic balance:
-
-> Evaluate this investigation for balance:
-> - Are all major viewpoints represented?
-> - Is scrutiny applied equally to all parties?
-> - Are counterarguments and exculpatory evidence included?
-> - Is language neutral (no loaded terms)?
->
-> Report any imbalances that should be addressed.
-
----
-
-## Orchestrator Flow
-
-```
-1. RUN: node scripts/generate-gaps.js cases/[case-id]
-2. READ: control/gaps.json (check blocking gaps)
-3. IF structural blocking gaps exist:
-   -> DISPATCH: agents to address gaps
-   -> Loop back to step 1
-4. IF no structural blocking gaps:
-   -> RUN: Gemini 3 Pro semantic verification via MCP
-   -> Create gaps for any semantic issues found
-5. IF semantic issues found:
-   -> Add to control/gaps.json
-   -> DISPATCH: agents to fix
-   -> Loop back to step 1
-6. IF all clear:
-   -> RUN: node scripts/verify-all-gates.js
-   -> REPORT: PASS/FAIL
-```
-
-**Log verification:**
-```bash
-node scripts/ledger-append.js cases/[case-id] gate_check --gate verification --passed true/false
-```
-
----
-
-## Gemini 3 Pro MCP Call Example
-
-```
-Use: mcp__mcp-gemini__generate_text
-
-Parameters:
-  model: "gemini-3-pro"
-  thinking_level: "high"
   prompt: |
-    You are a verification agent for an investigative report.
+    Verify this claim appears in the source content:
 
-    ## Content to Verify
-    [Insert summary.md content here]
+    CLAIM: "[text citing S###]"
 
-    ## Verification Tasks
-    1. CITATION COVERAGE: List any factual claims without [SXXX] citations
-    2. LEGAL RISK: Identify statements that could be defamatory or libelous
-    3. PII CHECK: Find any unprotected personal information
-    4. BALANCE: Assess whether all viewpoints are fairly represented
+    SOURCE CONTENT:
+    [content from evidence/S###/content.md]
 
-    ## Output Format
-    For each issue found:
-    - Type: [CITATION_GAP | LEGAL_RISK | PII_RISK | BALANCE_ISSUE]
-    - Location: [line or section]
-    - Issue: [description]
-    - Suggested Fix: [how to address]
-
-    If no issues found for a category, state "PASS: [category]"
+    Does the source support this claim? Answer: VERIFIED | NOT FOUND | CONTRADICTS
 ```
-
----
-
-## Core Checklist
-
-All must be YES for verification to pass:
-
-**Structural (Scripts)**
-- [ ] All required files exist
-- [ ] Summary has citations (non-zero)
-- [ ] All cited sources have evidence folders
-- [ ] All HIGH priority tasks completed
-- [ ] Legal review present and not "NOT READY"
-
-**Semantic (Gemini 3 Pro)**
-- [ ] Every factual claim has citation
-- [ ] No unmitigated legal risks
-- [ ] No unprotected PII
-- [ ] Coverage is balanced and fair
-
----
-
-## Anti-Gaming Rules
-
-- Do NOT skip Gemini 3 Pro verification
-- Do NOT give benefit of the doubt on semantic issues
-- Do NOT mark PARTIAL as YES
-- Do NOT cherry-pick which claims to check
-- Do NOT ignore alternative theories
-- If semantic verification fails: Fix issues. Re-verify.
