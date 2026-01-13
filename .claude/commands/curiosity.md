@@ -1,6 +1,6 @@
 # /curiosity - Evaluate Lead Exhaustion
 
-Determine if all leads have been pursued to conclusion.
+Determine if the investigation has been pursued thoroughly.
 
 ## Usage
 
@@ -10,41 +10,25 @@ Determine if all leads have been pursued to conclusion.
 
 ## Task
 
-Verify that ALL leads have been pursued to a terminal state, then evaluate if the investigation is truly complete.
+Make a genuine judgment call: Have we followed the interesting threads to their conclusions?
 
-## Mandatory Lead Check (No Discretion)
+This is NOT a checklist. It requires honest evaluation of investigation completeness.
 
-**BEFORE any judgment calls, verify:**
+## This Requires Genuine Judgment
 
-```
-For EVERY lead in leads.json:
-  status MUST be "investigated" OR "dead_end"
+Consider using **extended thinking** for this evaluation:
 
-  If ANY lead has status "pending" → AUTOMATIC FAIL
-```
+- `mcp__mcp-openai__generate_text` (GPT 5.2 Pro) for deep reasoning about completeness
 
-**There is NO discretion here.** Every lead must be pursued. You cannot skip leads because:
-- They seem low value
-- They're difficult to research
-- They're tangential
-- Similar leads were already investigated
-- Time/effort concerns
-
-If a lead exists, it must be investigated or proven to be a genuine dead end.
-
-## This Requires Genuine Judgment (After Lead Check)
-
-Once all leads are terminal, use **extended thinking** for completeness evaluation:
-
-- `mcp__mcp-openai__generate_text` (GPT 5.2 Pro) for deep reasoning
+This is a judgment call, not a mechanical check. Extended thinking can help ensure you're being honest with yourself about whether the investigation is truly complete.
 
 ## Evaluation Criteria
 
-### 1. Lead Coverage (Mandatory - No Exceptions)
+### 1. Lead Coverage
 
-- Are ALL leads in a terminal state? (investigated or dead_end)
-- If ANY lead is "pending" → AUTOMATIC FAIL, stop evaluation
-- Were dead_end determinations genuine? (multiple search attempts, documented failure)
+- Have HIGH priority leads been pursued to conclusion?
+- Have MEDIUM priority leads been genuinely investigated?
+- Were dead_end determinations based on real investigation attempts?
 
 ### 2. Thread Completion
 
@@ -79,13 +63,12 @@ For each interesting discovery:
 
 ## Red Flags (Automatic NOT SATISFIED)
 
-- **ANY lead still "pending"** (not just HIGH priority - ALL leads)
+- HIGH priority leads still pending
 - Lead marked "dead_end" without genuine investigation attempt
 - Contradiction identified but not explored
 - Expert disagrees with conclusion but we didn't investigate why
 - "Low confidence" answers without attempt to improve
 - Novel question identified but not pursued
-- MEDIUM priority leads skipped with "judgment call" rationale
 
 ## Output
 
