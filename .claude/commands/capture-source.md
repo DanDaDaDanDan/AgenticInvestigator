@@ -78,18 +78,56 @@ The capture script writes content.md from fetched data. You must NEVER:
 
 ## PDF and Document Handling
 
-For PDFs (court filings, legislation, reports):
+### Finding Government PDFs
+
+Use XAI web search with domain filtering to find official documents:
+
+```
+mcp__mcp-xai__web_search
+  query: "NC statute 122C mental health commitment PDF"
+  allowed_domains: ["ncleg.gov", "nccourts.gov", "ncdhhs.gov"]
+```
+
+Common government domains:
+- State legislation: `ncleg.gov`, `legislature.state.gov`
+- Courts: `nccourts.gov`, `uscourts.gov`, `courtlistener.com`
+- Federal: `govinfo.gov`, `federalregister.gov`, `congress.gov`
+- Health: `cdc.gov`, `ncdhhs.gov`, `hhs.gov`
+
+### Downloading PDFs
 
 ```bash
 node scripts/capture.js --document S### https://example.gov/file.pdf cases/<case-id>
 ```
 
-This downloads the PDF to `evidence/S###/file.pdf` with metadata.json.
+This saves the PDF to `evidence/S###/file.pdf` with metadata.json.
 
-**If PDF capture fails:**
-1. Note the URL exists but couldn't be captured
-2. Do NOT create a fake source with synthesized content
-3. Mark the lead as needing the PDF content for full investigation
+### Extracting PDF Content
+
+After downloading, read the PDF with Gemini to create content.md:
+
+```
+mcp__mcp-gemini__generate_text
+  prompt: "Extract the key provisions about [topic] from this document.
+           Include section numbers and exact quotes for important passages."
+  files: ["cases/<case-id>/evidence/S###/document.pdf"]
+```
+
+Then save Gemini's output to `evidence/S###/content.md`.
+
+### Complete PDF Workflow
+
+1. **Search** - Find PDF URL using XAI with domain filtering
+2. **Download** - `capture.js --document` saves PDF + metadata.json
+3. **Extract** - Gemini reads PDF and extracts relevant content
+4. **Save** - Write extracted content to content.md
+5. **Register** - Add to sources.json with type "legal" or "government"
+
+### If PDF Capture Fails
+
+1. Try alternate URL (Wayback Machine, different format)
+2. Note the URL exists but couldn't be captured
+3. Do NOT synthesize content - mark lead as needing the document
 
 ## Failure Handling
 
