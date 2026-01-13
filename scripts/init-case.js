@@ -8,7 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 
-// 35 frameworks from _frameworks.md
+// 35 frameworks from .claude/reference/frameworks.md
 const FRAMEWORKS = [
   { num: '01', slug: 'follow-the-money', name: 'Follow the Money' },
   { num: '02', slug: 'follow-the-silence', name: 'Follow the Silence' },
