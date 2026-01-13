@@ -7,10 +7,8 @@
  *   Batch:       node firecrawl-capture.js --batch <url-list> <case-dir>
  *
  * Environment:
- *   FIRECRAWL_API_KEY - Required API key from firecrawl.dev (or in .env)
+ *   FIRECRAWL_API_KEY - Required API key from firecrawl.dev
  */
-
-require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 
 const fs = require('fs');
 const path = require('path');

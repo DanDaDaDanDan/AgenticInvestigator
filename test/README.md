@@ -6,10 +6,7 @@ Tests for AgenticInvestigator v2 architecture.
 
 ```bash
 # Run all tests
-npm test
-
-# Run with verbose output
-npm run test:verbose
+node --test test/*.test.js
 
 # Run specific test file
 node --test test/schema.test.js

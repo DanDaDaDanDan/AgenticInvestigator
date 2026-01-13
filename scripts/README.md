@@ -1,15 +1,15 @@
 # Scripts
 
-Utility scripts for AgenticInvestigator.
+Utility scripts for AgenticInvestigator. No npm dependencies required - pure Node.js.
 
 ## Prerequisites
 
+**Required environment variable:**
 ```bash
-npm install
+export FIRECRAWL_API_KEY="your-key-here"
 ```
 
-**Required:**
-- Firecrawl API key: `FIRECRAWL_API_KEY` in `.env`
+Get your API key from: https://app.firecrawl.dev
 
 ---
 
