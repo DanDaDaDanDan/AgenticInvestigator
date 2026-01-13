@@ -25,7 +25,7 @@ node --test test/schema.test.js
 
 ## Fixtures
 
-`fixtures/v2-case/` - A minimal valid v2 case structure for schema testing.
+`case/` - A minimal valid v2 case structure for schema testing.
 
 ## Requirements
 
