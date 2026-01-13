@@ -42,7 +42,7 @@ Verify `articles/full.md` exists and contains [S###] citations.
 
 ### Gate 4: Sources
 For each [S###] citation in summary.md and articles:
-- Evidence exists in `evidence/web/S###/`
+- Evidence exists in `evidence/S###/`
 - **Content semantically supports the claim** (use LLM verification)
 
 This is the most important gate. A citation is only valid if the source actually says what we claim it says.

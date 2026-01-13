@@ -142,8 +142,9 @@ test('evidence directory structure constants', async (t) => {
   const captureScript = path.join(ROOT, 'scripts', 'capture.js');
   const content = fs.readFileSync(captureScript, 'utf-8');
 
-  // Verify evidence path structure
-  assert.ok(content.includes("'evidence', 'web'"), 'Should use evidence/web/ structure');
+  // Verify evidence path structure (evidence/S###, not evidence/web/S###)
+  assert.ok(content.includes("'evidence', sourceId"), 'Should use evidence/S### structure');
+  assert.ok(!content.includes("'evidence', 'web'"), 'Should not have web subfolder');
 });
 
 // Integration test - requires FIRECRAWL_API_KEY

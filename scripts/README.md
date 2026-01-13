@@ -46,9 +46,9 @@ node scripts/capture.js --document S015 https://sec.gov/filing.pdf cases/[case-i
 ```
 
 Creates:
-- `evidence/web/S001/content.md` - Markdown content
-- `evidence/web/S001/links.json` - Extracted links
-- `evidence/web/S001/metadata.json` - Timestamps, hashes
+- `evidence/S001/content.md` - Markdown content
+- `evidence/S001/links.json` - Extracted links
+- `evidence/S001/metadata.json` - Timestamps, hashes
 
 ---
 
@@ -57,7 +57,7 @@ Creates:
 Direct Firecrawl API capture (markdown extraction).
 
 ```bash
-node scripts/firecrawl-capture.js S001 https://example.com evidence/web/S001
+node scripts/firecrawl-capture.js S001 https://example.com evidence/S001
 ```
 
 Creates `content.md`, `links.json`, and `metadata.json`.
