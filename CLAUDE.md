@@ -278,15 +278,38 @@ See `reference/frameworks.md` for the full list and guiding questions.
 
 **Continue until ALL 6 gates pass.**
 
-Do NOT ask the user:
+### Continuation Signal
+
+After every `/action`, the router outputs an **ORCHESTRATOR SIGNAL**:
+
+```
+═══════════════════════════════════════════════════════
+ORCHESTRATOR SIGNAL
+═══════════════════════════════════════════════════════
+Status: → CONTINUE
+Next: /action question
+DO NOT STOP. Execute the next action immediately.
+═══════════════════════════════════════════════════════
+```
+
+**React to the signal:**
+
+| Signal | Action |
+|--------|--------|
+| `Status: → CONTINUE` | Execute the next `/action` immediately |
+| `Status: ✓ COMPLETE` | Report completion to user |
+
+### Do NOT Ask
+
 - "Would you like me to continue?"
 - "Should I fix this?"
 - "5/6 gates passing, what next?"
 
-DO:
-- Read state.json
-- Dispatch appropriate `/action` command
-- Loop until complete
+### Do
+
+- Read the ORCHESTRATOR SIGNAL after each `/action`
+- Execute the suggested next action
+- Loop until signal says COMPLETE
 
 **Only pause for:**
 - External API failures
