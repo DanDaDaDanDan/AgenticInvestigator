@@ -41,16 +41,38 @@ Invoke `/curiosity` if not already run this iteration.
 Verify `articles/full.md` exists and contains [S###] citations.
 
 ### Gate 4: Sources
-For each [S###] citation in summary.md and articles:
+
+For each [S###] citation in summary.md and articles, verify:
+
+**4a. Source Integrity (Fabrication Check)**
+
+Check each evidence/S###/ folder:
+```bash
+ls evidence/S###/
+```
+
+**FAIL if:**
+- No metadata.json exists (source was never captured)
+- content.md starts with "Research compilation..."
+- URL in sources.json is a homepage, not specific article
+- Timestamp is suspiciously round (e.g., `T20:00:00.000Z`)
+
+These indicate fabricated sources that must be deleted and re-captured properly.
+
+**4b. Content Verification**
+
 - Evidence exists in `evidence/S###/`
 - **Content semantically supports the claim** (use LLM verification)
 
 This is the most important gate. A citation is only valid if the source actually says what we claim it says.
 
-**Auto-removal:** If source cannot be verified:
-1. Try re-capture (URL may have changed)
-2. Search for alternate source (XAI real-time search)
-3. If none found, remove citation and log to `removed-points.md`
+**4c. Auto-removal**
+
+If source cannot be verified:
+1. If fabricated → delete evidence/S###/ and remove from sources.json
+2. Try re-capture (URL may have changed)
+3. Search for alternate source (XAI real-time search)
+4. If none found, remove citation and log to `removed-points.md`
 
 ### Gate 5: Integrity
 Invoke `/integrity` if not already run.

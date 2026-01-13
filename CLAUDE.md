@@ -226,6 +226,52 @@ All subsequent `/action` commits happen within the case repository.
 
 ---
 
+## Source Integrity
+
+### One Source = One URL
+
+A source is a **single, specific URL** that was actually fetched. Never:
+
+- Create "research compilation" sources synthesizing multiple URLs
+- Point to homepages instead of specific articles
+- Write content.md manually instead of capturing
+
+### Verification Required
+
+Every source MUST have:
+```
+evidence/S###/
+├── content.md       # Written by capture script, NOT manually
+├── metadata.json    # REQUIRED - proves capture happened
+```
+
+**If metadata.json doesn't exist, the source is invalid.**
+
+### Red Flags for Fabricated Sources
+
+- No metadata.json in evidence folder
+- content.md starts with "Research compilation..."
+- Timestamp is round number like `T20:00:00.000Z`
+- URL is a homepage, not specific article
+- Title includes "Compilation" or "Summary"
+
+### MCP Search → URL Extraction → Capture
+
+When MCP search tools return results:
+
+1. **Extract specific URLs** from the response (look for markdown links, citation blocks)
+2. **Capture each URL** with `node scripts/capture.js`
+3. **Verify metadata.json exists**
+4. **Only then cite** with [S###]
+
+### PDF Handling
+
+For PDFs: `node scripts/capture.js --document S### <url>`
+
+If PDF capture fails, note the URL but do NOT synthesize content.
+
+---
+
 ## Source Auto-Removal
 
 When `/verify` finds unverifiable source:
