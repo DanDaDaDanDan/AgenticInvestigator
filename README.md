@@ -75,7 +75,7 @@ Each case creates `cases/[topic-slug]/` with:
 node scripts/capture.js S001 "https://example.com/article" cases/[case-id]
 ```
 
-Creates `evidence/web/S001/` with screenshot, PDF, HTML, and metadata.
+Creates `evidence/web/S001/` with markdown content, links, and metadata.
 
 ## The 35 Frameworks
 
