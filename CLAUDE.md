@@ -271,9 +271,6 @@ See `reference/frameworks.md` for the full list and guiding questions.
 - Do NOT "document gaps" instead of fixing them
 - Do NOT cite without captured evidence
 - Do NOT self-report gate passage
-- **Do NOT skip leads** - every lead must reach terminal state
-- **Do NOT use judgment calls to avoid leads** - "not worth pursuing" is not valid
-- **Do NOT mark leads dead_end without genuine investigation** - multiple search attempts required
 
 ---
 

@@ -247,9 +247,6 @@ function main() {
   if (result.leadInfo) {
     console.log('───────────────────────────────────────────────────────');
     console.log(`Leads: ${result.leadInfo.pending} pending, ${result.leadInfo.investigated} investigated, ${result.leadInfo.dead_end} dead_end`);
-    if (result.leadInfo.pending > 0) {
-      console.log(`*** ${result.leadInfo.pending} LEADS REMAINING - MUST PURSUE ALL ***`);
-    }
   }
 
   console.log('───────────────────────────────────────────────────────');
