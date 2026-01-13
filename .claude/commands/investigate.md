@@ -60,11 +60,15 @@ When all questions answered, update state.json: phase=FOLLOW, gates.questions=tr
 
 ### FOLLOW
 
-1. Read `leads.json` for pending leads (HIGH priority first)
-2. Dispatch `/action follow L###` for each lead
-3. Dispatch `/action curiosity` to check if satisfied
-4. If NOT SATISFIED: continue following leads
+**Pursue ALL leads. No exceptions. No judgment calls about "worth pursuing."**
+
+1. Read `leads.json` for ALL pending leads
+2. Dispatch `/action follow L###` for EVERY pending lead (HIGH first, then MEDIUM)
+3. Only after ALL leads are terminal (investigated/dead_end): dispatch `/action curiosity`
+4. If NOT SATISFIED: new leads generated → follow those too
 5. If SATISFIED: update state.json: phase=WRITE, gates.curiosity=true
+
+**You cannot skip leads.** Every lead must reach a terminal state before `/curiosity` can pass.
 
 ### WRITE
 

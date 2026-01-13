@@ -2,7 +2,7 @@
 /**
  * check-continue.js - Gate checker for orchestrator continuation
  *
- * Reads state.json and outputs continuation signal.
+ * Reads state.json and leads.json to determine next action.
  * Called by /action after each command to tell orchestrator what to do next.
  *
  * Usage: node scripts/check-continue.js [case-path]
@@ -53,14 +53,52 @@ function countPassingGates(gates) {
   return Object.values(gates).filter(Boolean).length;
 }
 
-function determineNextAction(state) {
+function loadLeads(casePath) {
+  const leadsPath = path.join(casePath, 'leads.json');
+  if (!fs.existsSync(leadsPath)) {
+    return { leads: [] };
+  }
+  return JSON.parse(fs.readFileSync(leadsPath, 'utf-8'));
+}
+
+function getNextPendingLead(leads) {
+  // Priority order: HIGH first, then MEDIUM
+  const priorityOrder = { 'HIGH': 0, 'MEDIUM': 1, 'LOW': 2 };
+
+  const pendingLeads = leads
+    .filter(l => l.status === 'pending')
+    .sort((a, b) => {
+      const aPriority = priorityOrder[a.priority] ?? 3;
+      const bPriority = priorityOrder[b.priority] ?? 3;
+      return aPriority - bPriority;
+    });
+
+  return pendingLeads.length > 0 ? pendingLeads[0] : null;
+}
+
+function countLeadsByStatus(leads) {
+  const counts = { pending: 0, investigated: 0, dead_end: 0, total: leads.length };
+  leads.forEach(l => {
+    if (counts[l.status] !== undefined) {
+      counts[l.status]++;
+    }
+  });
+  return counts;
+}
+
+function determineNextAction(state, casePath) {
   const { phase, gates } = state;
 
   // Check if all gates pass
   const allGatesPass = Object.values(gates).every(Boolean);
   if (allGatesPass) {
-    return { status: 'COMPLETE', next: null, reason: 'All 6 gates passing' };
+    return { status: 'COMPLETE', next: null, reason: 'All 6 gates passing', leadInfo: null };
   }
+
+  // Load leads for FOLLOW phase decisions
+  const leadsData = loadLeads(casePath);
+  const leads = leadsData.leads || [];
+  const leadCounts = countLeadsByStatus(leads);
 
   // Determine next action based on phase
   switch (phase) {
@@ -68,36 +106,66 @@ function determineNextAction(state) {
       return {
         status: 'CONTINUE',
         next: '/action research',
-        reason: 'Bootstrap phase - need initial research'
+        reason: 'Bootstrap phase - need initial research',
+        leadInfo: null
       };
 
     case 'QUESTION':
       if (!gates.questions) {
-        // Check which batch to run (would need leads.json to determine)
         return {
           status: 'CONTINUE',
           next: '/action question',
-          reason: 'Questions phase - answer framework questions'
+          reason: 'Questions phase - answer framework questions',
+          leadInfo: null
         };
       }
       return {
         status: 'CONTINUE',
         next: 'Update phase to FOLLOW',
-        reason: 'Questions complete, move to FOLLOW phase'
+        reason: 'Questions complete, move to FOLLOW phase',
+        leadInfo: null
       };
 
     case 'FOLLOW':
+      // Check for pending leads - MUST pursue ALL before curiosity
+      const nextLead = getNextPendingLead(leads);
+
+      if (nextLead) {
+        // There are pending leads - MUST follow them
+        return {
+          status: 'CONTINUE',
+          next: `/action follow ${nextLead.id}`,
+          reason: `Pending lead: "${nextLead.lead}"`,
+          leadInfo: {
+            pending: leadCounts.pending,
+            investigated: leadCounts.investigated,
+            dead_end: leadCounts.dead_end,
+            total: leadCounts.total,
+            nextLead: nextLead
+          }
+        };
+      }
+
+      // All leads are terminal - now check curiosity
       if (!gates.curiosity) {
         return {
           status: 'CONTINUE',
-          next: '/action follow OR /action curiosity',
-          reason: 'Follow phase - pursue leads until curiosity satisfied'
+          next: '/action curiosity',
+          reason: 'All leads terminal - evaluate completeness',
+          leadInfo: {
+            pending: 0,
+            investigated: leadCounts.investigated,
+            dead_end: leadCounts.dead_end,
+            total: leadCounts.total
+          }
         };
       }
+
       return {
         status: 'CONTINUE',
         next: 'Update phase to WRITE',
-        reason: 'Curiosity satisfied, move to WRITE phase'
+        reason: 'Curiosity satisfied, move to WRITE phase',
+        leadInfo: null
       };
 
     case 'WRITE':
@@ -105,13 +173,15 @@ function determineNextAction(state) {
         return {
           status: 'CONTINUE',
           next: '/action article',
-          reason: 'Write phase - generate articles'
+          reason: 'Write phase - generate articles',
+          leadInfo: null
         };
       }
       return {
         status: 'CONTINUE',
         next: 'Update phase to VERIFY',
-        reason: 'Article complete, move to VERIFY phase'
+        reason: 'Article complete, move to VERIFY phase',
+        leadInfo: null
       };
 
     case 'VERIFY':
@@ -124,19 +194,21 @@ function determineNextAction(state) {
         return {
           status: 'CONTINUE',
           next: `/action verify (failing: ${failingGates.join(', ')})`,
-          reason: 'Verify phase - fix failing gates'
+          reason: 'Verify phase - fix failing gates',
+          leadInfo: null
         };
       }
-      return { status: 'COMPLETE', next: null, reason: 'All gates pass' };
+      return { status: 'COMPLETE', next: null, reason: 'All gates pass', leadInfo: null };
 
     case 'COMPLETE':
-      return { status: 'COMPLETE', next: null, reason: 'Investigation complete' };
+      return { status: 'COMPLETE', next: null, reason: 'Investigation complete', leadInfo: null };
 
     default:
       return {
         status: 'CONTINUE',
         next: '/action verify',
-        reason: `Unknown phase: ${phase}`
+        reason: `Unknown phase: ${phase}`,
+        leadInfo: null
       };
   }
 }
@@ -160,7 +232,7 @@ function main() {
   const state = JSON.parse(fs.readFileSync(statePath, 'utf-8'));
 
   const passingGates = countPassingGates(state.gates);
-  const result = determineNextAction(state);
+  const result = determineNextAction(state, casePath);
 
   console.log('');
   console.log('═══════════════════════════════════════════════════════');
@@ -170,6 +242,16 @@ function main() {
   console.log(`Phase: ${state.phase}`);
   console.log(`Iteration: ${state.iteration}`);
   console.log(`Gates: ${passingGates}/6 passing`);
+
+  // Show lead status in FOLLOW phase
+  if (result.leadInfo) {
+    console.log('───────────────────────────────────────────────────────');
+    console.log(`Leads: ${result.leadInfo.pending} pending, ${result.leadInfo.investigated} investigated, ${result.leadInfo.dead_end} dead_end`);
+    if (result.leadInfo.pending > 0) {
+      console.log(`*** ${result.leadInfo.pending} LEADS REMAINING - MUST PURSUE ALL ***`);
+    }
+  }
+
   console.log('───────────────────────────────────────────────────────');
 
   if (result.status === 'COMPLETE') {
@@ -188,7 +270,7 @@ function main() {
   console.log('═══════════════════════════════════════════════════════');
   console.log('');
 
-  // Exit with 0 for CONTINUE, 1 for COMPLETE (so scripts can check)
+  // Exit with 0 for COMPLETE, 2 for CONTINUE
   process.exit(result.status === 'COMPLETE' ? 0 : 2);
 }
 
