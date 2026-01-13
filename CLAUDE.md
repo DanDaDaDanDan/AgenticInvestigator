@@ -11,6 +11,7 @@ Behavioral rules for Claude Code operating in this project.
 - Orchestrator reads ONLY `state.json`
 - All research, analysis, and writing done by sub-agents via `/action` router
 - Git history IS the ledger (no separate ledger file)
+- **Each case = separate git repository** (created during BOOTSTRAP)
 
 ---
 
@@ -124,29 +125,42 @@ Behavioral rules for Claude Code operating in this project.
 
 ## Case Structure
 
+**Each case is its own git repository**, created during BOOTSTRAP at `cases/[topic-slug]/`.
+
 ```
-cases/[topic-slug]/
-├── state.json           # Minimal (phase, iteration, gates)
-├── summary.md           # Living document, always current
-├── leads.json           # Leads: pending, investigated, dead_end
-├── sources.json         # Source registry
-├── removed-points.md    # Auto-removed points (human review)
+cases/[topic-slug]/           # ← Standalone git repo (git init here)
+├── .git/                    # Case-specific git history
+├── state.json               # Minimal (phase, iteration, gates)
+├── summary.md               # Living document, always current
+├── leads.json               # Leads: pending, investigated, dead_end
+├── sources.json             # Source registry
+├── removed-points.md        # Auto-removed points (human review)
 │
-├── questions/           # 35 framework documents
+├── questions/               # 35 framework documents
 │   ├── 01-follow-the-money.md
 │   ├── 02-follow-the-silence.md
 │   └── ... (35 total)
 │
-├── evidence/            # Captured sources
+├── evidence/                # Captured sources
 │   └── S###/
 │       ├── metadata.json
 │       ├── content.md
 │       └── screenshot.png
 │
 └── articles/
-    ├── short.md         # 400-800 words
-    └── full.md          # 2000-4000 words
+    ├── short.md             # 400-800 words
+    └── full.md              # 2000-4000 words
 ```
+
+### Bootstrap Creates Repository
+
+During BOOTSTRAP phase, `/action research` must:
+1. Create `cases/[topic-slug]/` directory
+2. Run `git init` inside the case directory
+3. Create initial files (state.json, sources.json, leads.json)
+4. Make initial commit: "Initialize [topic] investigation"
+
+All subsequent `/action` commits happen within the case repository.
 
 ---
 
@@ -204,10 +218,11 @@ cases/[topic-slug]/
 
 1. **CAPTURE BEFORE CITE** - No `[S###]` without `evidence/S###/`
 2. **EVERY FACT NEEDS A SOURCE** - Every factual statement needs `[S###]` citation
-3. **Git commits per action** - Every `/action` auto-commits
+3. **Git commits per action** - Every `/action` auto-commits (within the case repo)
 4. **Steelman ALL positions** - Strongest version of EVERY side
 5. **Document uncertainty** - "We don't know" is valid
 6. **Detect circular reporting** - Multiple outlets citing same source = 1 source
+7. **One case = one repo** - Never mix case data across repositories
 
 ---
 
