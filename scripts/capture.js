@@ -63,7 +63,7 @@ function resolveCaseDir(maybeCase) {
   const cwd = process.cwd();
   if (looksLikeCaseDir(cwd)) return cwd;
 
-  throw new Error('Could not resolve case directory. Provide [case_dir|case_id] or set active case with: node scripts/active-case.js set <case-id>');
+  throw new Error('Could not resolve case directory. Provide [case_dir|case_id] or set active case by writing case-id to cases/.active');
 }
 
 function resolveCaseDirFromExplicit(maybeCase) {

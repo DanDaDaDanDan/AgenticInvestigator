@@ -1,9 +1,0 @@
-{
-  "id": "T007",
-  "status": "completed",
-  "priority": "MEDIUM",
-  "type": "investigation",
-  "perspective": "Hypotheses",
-  "created_at": "2026-01-01T00:00:00Z",
-  "findings_file": "findings/T007-findings.md"
-}

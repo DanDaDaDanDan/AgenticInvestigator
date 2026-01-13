@@ -77,16 +77,11 @@ node scripts/find-wayback-url.js https://example.com --json
 
 ### `logger.js`
 
-Logging utility used by other scripts.
+Logging utility used by other scripts. Supports:
+- Log levels: DEBUG, INFO, WARN, ERROR
+- File logging with rotation
+- Operation tracking with success/failure states
 
----
-
-### `config.js` / `lib/config-loader.js`
-
-Configuration management.
-
----
-
-### `run-tests.js`
-
-Test runner for the project.
+Environment variables:
+- `LOG_LEVEL` - Set log level (default: info)
+- `LOG_FILE` - Enable file logging to specified path
