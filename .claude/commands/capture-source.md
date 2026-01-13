@@ -45,9 +45,8 @@ node scripts/firecrawl-capture.js S003 https://protected-site.com cases/[case-id
 
 ```
 evidence/web/S001/
-├── capture.html     # Raw HTML
-├── capture.png      # Screenshot
-├── capture.pdf      # PDF rendering
+├── content.md       # Markdown content
+├── links.json       # Extracted links
 └── metadata.json    # Timestamps, hashes
 ```
 
