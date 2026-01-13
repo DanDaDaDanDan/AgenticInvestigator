@@ -13,6 +13,13 @@ Assess legal risks before publication.
 
 Evaluate `summary.md` and `articles/full.md` for defamation and legal risks.
 
+## MCP Tools
+
+For complex legal judgment calls, consider **extended thinking**:
+
+- `mcp__mcp-openai__generate_text` (GPT 5.2 Pro) for nuanced risk assessment
+- Particularly useful for per se defamatory claims and evidence tier classification
+
 ## Instructions
 
 1. **Read source material:**

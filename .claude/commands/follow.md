@@ -15,11 +15,29 @@ Take a lead from `leads.json` and investigate until you either:
 - Hit a dead end (documented why)
 - Generate new leads needing separate investigation
 
+## MCP Tools
+
+Leads often involve current events or live information. Consider **real-time search** (see `reference/tooling.md`):
+
+- `mcp__mcp-xai__web_search` - Current news, recent articles, live web
+- `mcp__mcp-xai__x_search` - Social discourse, public statements, breaking news
+- `mcp__mcp-xai__research` - Broad real-time research
+
+**When to use real-time vs deep research:**
+- Real-time: Recent events, current status, what people are saying now
+- Deep research: Historical context, academic sources, comprehensive understanding
+
+For leads requiring complex judgment, consider **extended thinking**:
+- `mcp__mcp-openai__generate_text` for weighing conflicting evidence
+
 ## Instructions
 
 1. **Read the lead** from `leads.json`
 
-2. **Research the specific question** using MCP tools
+2. **Choose appropriate search approach:**
+   - Real-time for current/recent information
+   - Deep research for comprehensive understanding
+   - Both if the lead spans past and present
 
 3. **Capture all sources** before citing
 
@@ -39,10 +57,22 @@ Take a lead from `leads.json` and investigate until you either:
 - `investigated` - Completed with result
 - `dead_end` - Pursued but no useful info found
 
+## Dead End Criteria
+
+A lead is a genuine dead end if:
+- Information doesn't exist or isn't public
+- Multiple search approaches found nothing
+- Sources contradict each other without resolution
+
+A lead is NOT a dead end if:
+- You just haven't searched enough
+- The information is hard to find but probably exists
+- You found partial information that could be expanded
+
 ## Output
 
 - Updated `leads.json` with result
-- Sources captured to `evidence/S###/`
+- Sources captured to `evidence/web/S###/`
 - Updated `questions/*.md` with findings
 - Updated `summary.md` with key points
 

@@ -13,6 +13,13 @@ Verify journalistic standards before publication.
 
 Evaluate `summary.md` and `articles/full.md` against journalistic ethics standards.
 
+## MCP Tools
+
+For nuanced judgment calls on fairness and balance, consider **extended thinking**:
+
+- `mcp__mcp-openai__generate_text` (GPT 5.2 Pro) for detecting subtle bias
+- Particularly useful for steelman checks and adversarial review
+
 ## Instructions
 
 1. **Read source material:**
