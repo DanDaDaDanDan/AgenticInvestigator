@@ -36,15 +36,15 @@ node scripts/capture.js S001 https://example.com cases/[case-id]
 node scripts/capture.js --document S002 https://sec.gov/file.pdf cases/[case-id]
 ```
 
-**Bot-Bypass (Cloudflare):**
+**Direct Firecrawl:**
 ```bash
-node scripts/firecrawl-capture.js S003 https://protected-site.com cases/[case-id]/evidence/web/S003
+node scripts/firecrawl-capture.js S003 https://example.com cases/[case-id]/evidence/S003
 ```
 
 ## Output
 
 ```
-evidence/web/S001/
+evidence/S001/
 ├── content.md       # Markdown content
 ├── links.json       # Extracted links
 └── metadata.json    # Timestamps, hashes

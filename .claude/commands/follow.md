@@ -72,7 +72,7 @@ A lead is NOT a dead end if:
 ## Output
 
 - Updated `leads.json` with result
-- Sources captured to `evidence/web/S###/`
+- Sources captured to `evidence/S###/`
 - Updated `questions/*.md` with findings
 - Updated `summary.md` with key points
 

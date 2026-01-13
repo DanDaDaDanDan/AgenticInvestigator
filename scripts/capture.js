@@ -164,7 +164,7 @@ async function captureWeb(sourceId, url, caseDir) {
   const op = logger.operation('captureWeb', { sourceId, url });
   logger.info(`Capturing web source ${sourceId} from ${url}`);
 
-  const evidenceDir = path.join(caseDir, 'evidence', 'web', sourceId);
+  const evidenceDir = path.join(caseDir, 'evidence', sourceId);
   logger.debug(`Evidence directory: ${evidenceDir}`);
 
   try {

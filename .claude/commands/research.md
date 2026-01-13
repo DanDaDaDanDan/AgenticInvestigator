@@ -49,7 +49,7 @@ Also consider **real-time search** for current events:
 
 ## Output
 
-- Captured sources in `evidence/web/S###/`
+- Captured sources in `evidence/S###/`
 - Initial `summary.md` with key findings
 - Leads identified for further investigation
 
