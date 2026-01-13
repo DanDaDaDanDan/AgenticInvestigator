@@ -154,11 +154,13 @@ cases/[topic-slug]/           # ← Standalone git repo (git init here)
 
 ### Bootstrap Creates Repository
 
-During BOOTSTRAP phase, `/action research` must:
-1. Create `cases/[topic-slug]/` directory
-2. Run `git init` inside the case directory
-3. Create initial files (state.json, sources.json, leads.json)
-4. Make initial commit: "Initialize [topic] investigation"
+During BOOTSTRAP phase:
+1. Run `node scripts/init-case.js "[topic]"` which:
+   - Creates `cases/[topic-slug]/` directory
+   - Creates initial files (state.json, sources.json, leads.json, 35 question files)
+   - Runs `git init` inside the case directory
+   - Makes initial commit: "Initialize investigation: [topic]"
+2. Then dispatch `/action research` to begin research
 
 All subsequent `/action` commits happen within the case repository.
 
