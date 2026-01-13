@@ -86,7 +86,7 @@ Investigation rigor ensured through 35 analytical frameworks:
 - **Analytical Rigor (26-30)**: Quantification, Causation vs Correlation, Definitional Analysis, Methodology Audit, Incentive Mapping
 - **Structural Analysis (31-35)**: Information Asymmetry, Comparative Benchmarking, Regulatory Capture, Data Provenance, Mechanism Tracing
 
-See `.claude/reference/frameworks.md` for full details.
+See `reference/frameworks.md` for full details.
 
 ## MCP Servers
 
@@ -102,7 +102,7 @@ See `.claude/reference/frameworks.md` for full details.
 |------|----------|
 | `CLAUDE.md` | Behavioral rules, workflow, schemas |
 | `.claude/commands/*.md` | Command procedures |
-| `.claude/reference/frameworks.md` | 35 analytical frameworks |
+| `reference/frameworks.md` | 35 analytical frameworks |
 | `scripts/README.md` | Script documentation |
 
 ## Philosophy
