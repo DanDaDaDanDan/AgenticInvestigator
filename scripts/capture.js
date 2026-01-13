@@ -185,31 +185,37 @@ async function captureDocument(sourceId, url, filename, caseDir) {
   const op = logger.operation('captureDocument', { sourceId, url, filename });
   logger.info(`Capturing document ${sourceId} from ${url}`);
 
-  const docDir = path.join(caseDir, 'evidence', 'documents');
-  fs.mkdirSync(docDir, { recursive: true });
-  logger.debug(`Document directory: ${docDir}`);
+  // Use same evidence/S###/ structure as web captures
+  const evidenceDir = path.join(caseDir, 'evidence', sourceId);
+  fs.mkdirSync(evidenceDir, { recursive: true });
+  logger.debug(`Evidence directory: ${evidenceDir}`);
 
   const baseName = filename
     ? safeFilename(filename)
-    : safeFilename(path.basename(new URL(url).pathname) || `${sourceId}.bin`);
+    : safeFilename(path.basename(new URL(url).pathname) || 'document.bin');
 
-  const finalName = `${sourceId}_${baseName || 'document'}`;
-  const filePath = path.join(docDir, finalName);
+  const filePath = path.join(evidenceDir, baseName);
   logger.debug(`Target file: ${filePath}`);
 
   try {
     const { size, hash } = await downloadToFile(url, filePath);
 
+    // Create metadata.json in same format as web captures
     const meta = {
       source_id: sourceId,
       url,
-      filename: finalName,
-      downloaded_at: new Date().toISOString(),
-      size,
-      hash
+      method: 'download',
+      captured_at: new Date().toISOString(),
+      files: {
+        document: {
+          path: baseName,
+          size,
+          hash
+        }
+      }
     };
-    fs.writeFileSync(`${filePath}.meta.json`, JSON.stringify(meta, null, 2));
-    logger.debug(`Metadata written to ${filePath}.meta.json`);
+    fs.writeFileSync(path.join(evidenceDir, 'metadata.json'), JSON.stringify(meta, null, 2));
+    logger.debug(`Metadata written to ${evidenceDir}/metadata.json`);
 
     op.success({ size, hash: hash.slice(0, 20) + '...' });
     return { success: true, source_id: sourceId, url, file_path: filePath, size, hash };
