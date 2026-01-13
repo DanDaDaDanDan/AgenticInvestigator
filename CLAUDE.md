@@ -231,50 +231,7 @@ When `/verify` finds unverifiable source:
 
 ## 35 Frameworks
 
-**Core Investigation (1-20):**
-1. Follow the Money
-2. Follow the Silence
-3. Follow the Timeline
-4. Follow the Documents
-5. Follow the Contradictions
-6. Follow the Relationships
-7. Stakeholder Mapping
-8. Network Analysis
-9. Means/Motive/Opportunity
-10. Competing Hypotheses
-11. Assumptions Check
-12. Pattern Analysis
-13. Counterfactual
-14. Pre-Mortem
-15. Cognitive Bias Check
-16. Uncomfortable Questions
-17. Second-Order Effects
-18. Meta Questions
-19. 5 Whys (Root Cause)
-20. Sense-Making
-
-**Domain Expertise (21-25):**
-21. First Principles / Scientific Reality
-22. Domain Expert Blind Spots
-23. Marketing vs Scientific Reality
-24. Subject Experience / Ground Truth
-25. Contrarian Expert Search
-
-**Analytical Rigor (26-30):**
-26. Quantification & Base Rates
-27. Causation vs Correlation
-28. Definitional Analysis
-29. Methodology Audit
-30. Incentive Mapping
-
-**Structural Analysis (31-35):**
-31. Information Asymmetry
-32. Comparative Benchmarking
-33. Regulatory & Institutional Capture
-34. Data Provenance & Chain of Custody
-35. Mechanism Tracing
-
-See `.claude/commands/_frameworks.md` for full framework details.
+See `.claude/commands/_frameworks.md` for the full list and guiding questions.
 
 ---
 

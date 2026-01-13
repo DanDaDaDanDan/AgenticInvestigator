@@ -38,16 +38,14 @@ Evaluate `summary.md` and `articles/full.md` for defamation and legal risks.
    | 4 INSUFFICIENT | Don't publish | Speculation, biased source alone |
 
 4. **Perform checks:**
-   - **Subject Classification:** Public/private figure for each person
-   - **Claim Risk Assessment:** Risk level for each factual claim
-   - **Evidence Tier Review:** Sufficient evidence for each claim?
-   - **Attribution Audit:** Proper hedging language used?
+   - Subject classification (public/private)
+   - Claim risk assessment
+   - Evidence tier review
+   - Attribution audit (proper hedging?)
 
 5. **Write output to `legal-review.md`**
 
-6. **Update state.json:**
-   - If READY: `{ "gates": { "legal": true } }`
-   - If NOT READY: `{ "gates": { "legal": false } }`
+6. **Update state.json:** Set `gates.legal` based on result
 
 ## High-Risk Claims (per se defamatory)
 
@@ -57,55 +55,11 @@ Evaluate `summary.md` and `articles/full.md` for defamation and legal risks.
 - Financial fraud
 - Mental health claims
 
-## Output Format
-
-Write to `legal-review.md`:
-
-```markdown
-# Legal Risk Assessment
-
-**Status:** READY | READY WITH CHANGES | NOT READY
-**Overall Risk:** LOW | MEDIUM | HIGH | HIGHEST
-
-## Subject Classifications
-| Subject | Classification | Applicable Standard |
-|---------|---------------|---------------------|
-
-## High-Risk Claims
-| Claim | Subject | Risk | Evidence Tier | Issue |
-|-------|---------|------|---------------|-------|
-
-## Required Hedging
-| Original Text | Suggested Revision | Reason |
-|---------------|-------------------|--------|
-
-## Evidence Gaps
-### Critical (must address before publication)
-1. ...
-
-### Important (should address)
-1. ...
-
-## Pre-Publication Checklist
-- [ ] All subjects properly classified
-- [ ] High-risk claims have Tier 1-2 evidence
-- [ ] Hedging language applied where needed
-- [ ] No claims based solely on anonymous sources
-- [ ] Opinion clearly distinguished from fact
-- [ ] Subject's response sought/documented
-- [ ] Headlines don't state allegations as fact
-
----
-*This is AI-generated analysis, not legal advice.*
-*Legal review completed: YYYY-MM-DD*
-```
-
 ## Status Values
 
 - **READY:** Pass Gate 6
-- **READY WITH CHANGES:** Specific fixes needed, then re-check
+- **READY WITH CHANGES:** Specific fixes needed
 - **NOT READY:** Major issues, back to FOLLOW phase
 
-## Next Step
-
-Orchestrator uses status to determine gate passage or remediation.
+---
+*This is AI-generated analysis, not legal advice.*
