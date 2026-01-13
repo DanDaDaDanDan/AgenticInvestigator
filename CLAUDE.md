@@ -231,7 +231,7 @@ When `/verify` finds unverifiable source:
 
 ## 35 Frameworks
 
-See `.claude/reference/frameworks.md` for the full list and guiding questions.
+See `reference/frameworks.md` for the full list and guiding questions.
 
 ---
 
