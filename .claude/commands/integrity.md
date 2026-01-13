@@ -18,7 +18,7 @@ Evaluate `summary.md` and `articles/full.md` against journalistic ethics standar
 1. **Read source material:**
    - `summary.md` - Main findings
    - `articles/full.md` - Article to review
-   - `questions/*.md` - Framework answers (for perspective coverage)
+   - `questions/*.md` - For perspective coverage
    - `sources.json` - Source registry
 
 2. **Evaluate against standards:**
@@ -31,66 +31,19 @@ Evaluate `summary.md` and `articles/full.md` against journalistic ethics standar
    | Impartiality | No favoritism | Loaded language |
 
 3. **Perform checks:**
-   - **Balance Analysis:** Count sources by viewpoint, assess distribution
-   - **Language Audit:** Scan for loaded/biased language
-   - **Steelman Check:** Is strongest version of each argument presented?
+   - **Balance Analysis:** Source distribution by viewpoint
+   - **Language Audit:** Loaded/biased language
+   - **Steelman Check:** Strongest version of each argument presented?
    - **Adversarial Review:** What would criticized parties object to?
 
 4. **Write output to `integrity-review.md`**
 
-5. **Update state.json:**
-   - If READY: `{ "gates": { "integrity": true } }`
-   - If NOT READY: `{ "gates": { "integrity": false } }`
-
-## Output Format
-
-Write to `integrity-review.md`:
-
-```markdown
-# Integrity Review
-
-**Status:** READY | READY WITH CHANGES | NOT READY
-
-## Balance Assessment
-| Position | Sources | % |
-|----------|---------|---|
-
-**Balance Rating:** EXEMPLARY | GOOD | ADEQUATE | POOR
-
-## Language Issues
-| Location | Issue | Suggested Revision |
-|----------|-------|-------------------|
-
-## Steelman Check
-| Position | Strongest Version? | Score |
-|----------|-------------------|-------|
-
-## Adversarial Review
-What would subjects object to?
-
-## Required Corrections
-### Blocking
-1. ...
-
-### Recommended
-1. ...
-
-## Checklist
-- [ ] All positions represented proportionally
-- [ ] Language neutral throughout
-- [ ] Scrutiny applied equally
-- [ ] Facts separated from analysis
-- [ ] Strongest arguments presented
-- [ ] Exculpatory evidence included
-
----
-*Integrity review completed: YYYY-MM-DD*
-```
+5. **Update state.json:** Set `gates.integrity` based on result
 
 ## Status Values
 
 - **READY:** Pass Gate 5
-- **READY WITH CHANGES:** Specific fixes needed, then re-check
+- **READY WITH CHANGES:** Specific fixes needed
 - **NOT READY:** Major issues, back to FOLLOW phase
 
 ## Next Step

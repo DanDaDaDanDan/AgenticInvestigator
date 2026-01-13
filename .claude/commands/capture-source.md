@@ -1,25 +1,13 @@
-# Source Capture (Agent Mode)
+# /capture-source - Capture Web Evidence
 
-You are a **capture agent**. Your job is to capture web sources as evidence and verify the capture succeeded.
-
-**See `framework/rules.md` for the 5-layer capture protocol.**
-
----
+Capture web sources as evidence for citations.
 
 ## Usage
 
 ```
-/capture-source S001 https://example.com          # Capture web page
-/capture-source --document S002 https://sec.gov/file.pdf  # Capture PDF document
+/capture-source <url>
+/capture-source --document <url>
 ```
-
-Case resolution order:
-1. Explicit `[case-id]` (when provided by orchestrator)
-2. `cases/.active` (set via `node scripts/active-case.js set <case-id>`)
-3. Current working directory (if run inside a case)
-4. Error with hint
-
----
 
 ## Purpose
 
@@ -28,137 +16,51 @@ Evidence capture is critical for anti-hallucination:
 2. **Prove content** - Evidence actually contains cited claims
 3. **Permanence** - Content preserved even if URL disappears
 
----
+## Workflow
 
-## Capture Workflow
-
-```
-1. VALIDATE: Check URL is valid
-2. ASSIGN: Get next source ID from state.json (or infer from sources.json)
-3. CAPTURE: Run capture script
-4. VERIFY: Check evidence folder exists with required files
-5. REGISTER: Add to sources.md with evidence path
-6. UPDATE: Increment next_source_id in state.json (optional convenience counter)
-```
-
----
+1. **Get next source ID** from `state.json.next_source`
+2. **Capture** using the capture script
+3. **Verify** evidence folder exists with required files
+4. **Register** in sources.json
+5. **Increment** next_source in state.json
 
 ## Capture Commands
 
-### Web Page Capture
-
+**Web Page:**
 ```bash
 node scripts/capture.js S001 https://example.com cases/[case-id]
 ```
 
-Creates:
-- `evidence/web/S001/capture.html` - Raw HTML
-- `evidence/web/S001/capture.png` - Full-page screenshot
-- `evidence/web/S001/capture.pdf` - PDF rendering
-- `evidence/web/S001/metadata.json` - Timestamps, hashes, status
-
-### Document Capture
-
+**Document:**
 ```bash
 node scripts/capture.js --document S002 https://sec.gov/file.pdf cases/[case-id]
 ```
 
-Creates:
-- `evidence/documents/S002_filename.pdf` - The document
-- `evidence/documents/S002_filename.pdf.meta.json` - Metadata
-
-### Bot-Bypass Capture (Cloudflare-protected sites)
-
+**Bot-Bypass (Cloudflare):**
 ```bash
 node scripts/firecrawl-capture.js S003 https://protected-site.com cases/[case-id]/evidence/web/S003
 ```
 
----
+## Output
 
-## Verification After Capture
-
-**ALWAYS verify capture succeeded before citing the source.**
-
-### Check 1: Evidence Folder Exists
-
-```bash
-ls cases/[case-id]/evidence/web/S001/
-# Must show: metadata.json + at least one of (capture.html, capture.pdf, capture.png)
+```
+evidence/web/S001/
+├── capture.html     # Raw HTML
+├── capture.png      # Screenshot
+├── capture.pdf      # PDF rendering
+└── metadata.json    # Timestamps, hashes
 ```
 
-### Check 2: Metadata Valid
+## Rules
 
-```bash
-cat cases/[case-id]/evidence/web/S001/metadata.json | jq '.files'
-# Must show captured files with hashes
-```
-
-### Check 3: Run Verification Script
-
-```bash
-node scripts/verify-sources.js cases/[case-id]
-# Check S001 shows OK (valid) not NO (missing)
-```
-
----
-
-## Registration Format
-
-After successful capture, add to `sources.md`:
-
-```markdown
-| S001 | Primary | [Description] | [URL] | [Captured Date] |
-```
-
-And update `sources.json` (if exists):
-
-```json
-{
-  "S001": {
-    "url": "https://...",
-    "captured_at": "2026-01-09T14:30:00Z",
-    "evidence_path": "evidence/web/S001/",
-    "files": ["metadata.json", "capture.html", "capture.png"],
-    "verified": true
-  }
-}
-```
-
----
-
-## Anti-Hallucination Rules
-
-1. **Never cite before capture** - No `[S001]` until evidence exists
-2. **Never fake capture dates** - Only write date after successful capture
-3. **Always verify** - Check evidence folder before registering
-4. **Report failures** - If capture fails, don't hide it
-
----
+1. **Never cite before capture** - No `[S###]` until evidence exists
+2. **Always verify** - Check evidence folder before registering
+3. **Report failures** - If capture fails, don't hide it
+4. **Do NOT cite** failed captures
 
 ## Failure Handling
 
 If capture fails:
-
-1. **Try alternate method** - Firecrawl for bot-protected, wget for simple pages
-2. **Check Wayback Machine** - `./scripts/find-wayback-url.js`
-3. **Document failure** - Note in sources.md that capture failed
-4. **Do NOT cite** - Cannot use `[SXXX]` without evidence
-
----
-
-## Return Format
-
-After capturing sources, return:
-
-```
-CAPTURED: [count] sources
-  S001: https://example.com - SUCCESS (html, png, pdf)
-  S002: https://sec.gov/file.pdf - SUCCESS (document)
-  S003: https://protected.com - FAILED (Cloudflare block, trying Firecrawl)
-
-VERIFICATION:
-  node scripts/verify-sources.js [case_dir]
-  Result: [X]/[Y] sources have evidence
-
-NEXT_SOURCE_ID: S004
-```
+1. Try alternate method (Firecrawl for bot-protected)
+2. Check Wayback Machine: `node scripts/find-wayback-url.js <url>`
+3. Document failure

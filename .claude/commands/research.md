@@ -5,7 +5,7 @@ Conduct deep research on an investigation topic.
 ## Usage
 
 ```
-/research <topic> [--engine gemini|openai|xai]
+/research <topic>
 ```
 
 ## Task
@@ -14,10 +14,7 @@ Research the topic broadly to build initial understanding before asking the 35 f
 
 ## Instructions
 
-1. **Use MCP deep research tools:**
-   - `mcp__mcp-gemini__deep_research` (default - fast)
-   - `mcp__mcp-openai__deep_research` (thorough)
-   - `mcp__mcp-xai__research` with sources: ["x", "web", "news"] (real-time)
+1. **Use MCP deep research tools** for comprehensive coverage
 
 2. **Research focus:**
    - Key claims and controversies
@@ -25,30 +22,18 @@ Research the topic broadly to build initial understanding before asking the 35 f
    - Organizations and relationships
    - Timeline of events
    - Conflicting accounts or contradictions
+   - Scientific/academic perspectives
 
-3. **CRITICAL: Include scientific sources**
+3. **Capture sources immediately** - Use `/capture-source` for important URLs
 
-   Search for:
-   - "[topic] peer-reviewed research"
-   - "[topic] scientific consensus"
-   - "[topic] expert criticism"
-   - "[topic] myth debunked"
-   - "what do experts say about [topic]"
-
-4. **Capture sources immediately**
-
-   For any important URL found, use `/capture-source` before continuing.
-
-5. **Update summary.md**
-
-   Write initial findings to summary.md with [S###] citations for captured sources.
+4. **Update summary.md** - Write initial findings with [S###] citations
 
 ## Output
 
 - Captured sources in `evidence/S###/`
 - Initial `summary.md` with key findings
-- Leads identified for further investigation (note in summary.md)
+- Leads identified for further investigation
 
 ## Next Step
 
-After research, the orchestrator will invoke `/question` to apply the 35 frameworks.
+After research, the orchestrator invokes `/question` to apply the 35 frameworks.
