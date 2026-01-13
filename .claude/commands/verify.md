@@ -20,6 +20,15 @@ Verify investigation readiness for publication.
 | 5 | Integrity | `/integrity` returns READY |
 | 6 | Legal | `/legal-review` returns READY |
 
+## MCP Tools for Verification
+
+Gate 4 (Sources) requires **semantic verification** - checking that evidence actually supports claims. Consider using:
+
+- `mcp__mcp-gemini__generate_text` for semantic claim-evidence matching
+- `mcp__mcp-openai__generate_text` for complex judgment calls
+
+This is about verifying that citations actually support what they're cited for, not just that they exist.
+
 ## Gate Details
 
 ### Gate 1: Questions
@@ -33,10 +42,15 @@ Verify `articles/full.md` exists and contains [S###] citations.
 
 ### Gate 4: Sources
 For each [S###] citation in summary.md and articles:
-- Evidence exists in `evidence/S###/`
-- Content supports the claim
+- Evidence exists in `evidence/web/S###/`
+- **Content semantically supports the claim** (use LLM verification)
 
-**Auto-removal:** If source cannot be verified, try re-capture, then search for alternate. If none found, remove citation and log to `removed-points.md`.
+This is the most important gate. A citation is only valid if the source actually says what we claim it says.
+
+**Auto-removal:** If source cannot be verified:
+1. Try re-capture (URL may have changed)
+2. Search for alternate source (XAI real-time search)
+3. If none found, remove citation and log to `removed-points.md`
 
 ### Gate 5: Integrity
 Invoke `/integrity` if not already run.
