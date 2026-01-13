@@ -33,7 +33,7 @@ Creates:
 
 ### `capture.js`
 
-Capture web page evidence using Firecrawl API.
+Capture web page evidence using Firecrawl API (markdown only).
 
 **Web Page:**
 ```bash
@@ -46,20 +46,21 @@ node scripts/capture.js --document S015 https://sec.gov/filing.pdf cases/[case-i
 ```
 
 Creates:
-- `evidence/web/S001/capture.html`
-- `evidence/web/S001/capture.png`
-- `evidence/web/S001/capture.pdf`
-- `evidence/web/S001/metadata.json`
+- `evidence/web/S001/content.md` - Markdown content
+- `evidence/web/S001/links.json` - Extracted links
+- `evidence/web/S001/metadata.json` - Timestamps, hashes
 
 ---
 
 ### `firecrawl-capture.js`
 
-Direct Firecrawl API capture for bot-protected sites.
+Direct Firecrawl API capture (markdown extraction).
 
 ```bash
 node scripts/firecrawl-capture.js S001 https://example.com evidence/web/S001
 ```
+
+Creates `content.md`, `links.json`, and `metadata.json`.
 
 ---
 

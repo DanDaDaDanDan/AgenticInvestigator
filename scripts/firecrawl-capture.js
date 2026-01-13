@@ -1,12 +1,6 @@
 #!/usr/bin/env node
 /**
- * firecrawl-capture.js - Web capture using Firecrawl API
- *
- * Features:
- * - Excellent bot bypass (Cloudflare, Akamai, etc.)
- * - Returns HTML, screenshot (PNG), PDF in one call
- * - Full JavaScript rendering
- * - Automatic retry with backoff
+ * firecrawl-capture.js - Web capture using Firecrawl API (markdown only)
  *
  * Usage:
  *   Single URL:  node firecrawl-capture.js <source_id> <url> <evidence_dir>
@@ -14,11 +8,8 @@
  *
  * Environment:
  *   FIRECRAWL_API_KEY - Required API key from firecrawl.dev (or in .env)
- *   LOG_LEVEL=debug|info|warn|error (default: info)
- *   LOG_FILE=path/to/file.log (enables file logging)
  */
 
-// Load .env from project root
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 
 const fs = require('fs');
@@ -30,7 +21,6 @@ const logger = require('./logger').create('firecrawl');
 const API_KEY = process.env.FIRECRAWL_API_KEY;
 const API_URL = 'https://api.firecrawl.dev/v1/scrape';
 
-// Parse arguments
 const args = process.argv.slice(2);
 
 if (!API_KEY) {
@@ -39,14 +29,8 @@ if (!API_KEY) {
   process.exit(1);
 }
 
-// HTTP POST request
 function post(url, data) {
   const op = logger.operation('firecrawlAPI', { url: data.url?.substring(0, 50) });
-  logger.debug('Sending request to Firecrawl API', {
-    endpoint: url,
-    formats: data.formats,
-    timeout: data.timeout
-  });
 
   return new Promise((resolve, reject) => {
     const body = JSON.stringify(data);
@@ -64,244 +48,95 @@ function post(url, data) {
       }
     };
 
-    logger.debug(`Connecting to ${parsedUrl.hostname}...`);
     const req = https.request(options, (res) => {
-      logger.debug(`Response received: HTTP ${res.statusCode}`);
       let responseBody = '';
-      let receivedBytes = 0;
-
-      res.on('data', chunk => {
-        responseBody += chunk;
-        receivedBytes += chunk.length;
-        // Log every 100KB
-        if (receivedBytes % 100000 < chunk.length) {
-          logger.debug(`Receiving response: ${receivedBytes} bytes...`);
-        }
-      });
-
+      res.on('data', chunk => { responseBody += chunk; });
       res.on('end', () => {
-        logger.debug(`Response complete: ${receivedBytes} bytes total`);
         try {
           const json = JSON.parse(responseBody);
-          op.success({ status: res.statusCode, bytes: receivedBytes });
+          op.success({ status: res.statusCode });
           resolve({ status: res.statusCode, data: json });
         } catch (e) {
-          logger.warn(`Response is not JSON (${receivedBytes} bytes)`);
-          op.success({ status: res.statusCode, bytes: receivedBytes, parseError: true });
+          op.success({ status: res.statusCode, parseError: true });
           resolve({ status: res.statusCode, data: responseBody });
         }
       });
     });
 
-    req.on('error', err => {
-      logger.error('Request error', err);
-      op.fail(err);
-      reject(err);
-    });
+    req.on('error', err => { op.fail(err); reject(err); });
     req.setTimeout(180000, () => {
       const err = new Error('Request timeout (180s)');
-      logger.error('Request timeout after 180 seconds');
       op.fail(err);
       reject(err);
     });
     req.write(body);
     req.end();
-    logger.debug('Request sent, waiting for response...');
   });
 }
 
-// Calculate SHA256 hash
 function hashBuffer(buffer) {
   return crypto.createHash('sha256').update(buffer).digest('hex');
 }
 
-// Generate capture signature - IMPOSSIBLE for LLM to fake without running script
-// Signature = SHA256(source_id + url + captured_at + sorted file hashes + secret salt)
-const CAPTURE_SIGNATURE_VERSION = 'v2';
-const CAPTURE_SALT = 'firecrawl-capture-2026-integrity';
+// Capture signature for verification
+const CAPTURE_SALT = 'firecrawl-capture-2026';
 
 function generateCaptureSignature(sourceId, url, capturedAt, files) {
-  const fileHashesSorted = Object.values(files)
-    .map(f => f.hash)
-    .filter(Boolean)
-    .sort()
-    .join('|');
-
-  const signatureInput = [
-    CAPTURE_SIGNATURE_VERSION,
-    sourceId,
-    url,
-    capturedAt,
-    fileHashesSorted,
-    CAPTURE_SALT
-  ].join(':');
-
-  return `sig_${CAPTURE_SIGNATURE_VERSION}_${crypto.createHash('sha256').update(signatureInput).digest('hex').slice(0, 32)}`;
+  const fileHashes = Object.values(files).map(f => f.hash).filter(Boolean).sort().join('|');
+  const input = ['v2', sourceId, url, capturedAt, fileHashes, CAPTURE_SALT].join(':');
+  return `sig_v2_${crypto.createHash('sha256').update(input).digest('hex').slice(0, 32)}`;
 }
 
-// Save base64 data to file
-function saveBase64(base64Data, filePath) {
-  // Handle data URL format
-  let data = base64Data;
-  if (data.includes(',')) {
-    data = data.split(',')[1];
-  }
-  const buffer = Buffer.from(data, 'base64');
-  fs.writeFileSync(filePath, buffer);
-  return buffer;
-}
-
-// Generate PDF from URL using Playwright
-// This is used because Firecrawl doesn't support PDF generation
-let playwrightBrowser = null;
-
-async function generatePdfFromUrl(url) {
-  const { chromium } = require('playwright');
-
-  try {
-    // Reuse browser instance for efficiency
-    if (!playwrightBrowser) {
-      playwrightBrowser = await chromium.launch({ headless: true });
-    }
-
-    const context = await playwrightBrowser.newContext({
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    });
-    const page = await context.newPage();
-
-    // Navigate with timeout
-    await page.goto(url, {
-      waitUntil: 'networkidle',
-      timeout: 60000
-    });
-
-    // Wait a bit for any lazy-loaded content
-    await page.waitForTimeout(2000);
-
-    // Generate PDF
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: { top: '1cm', right: '1cm', bottom: '1cm', left: '1cm' }
-    });
-
-    await context.close();
-    return pdfBuffer;
-  } catch (err) {
-    logger.warn(`Playwright PDF generation error: ${err.message}`);
-    throw err;
-  }
-}
-
-// Cleanup Playwright browser on exit
-process.on('exit', () => {
-  if (playwrightBrowser) {
-    playwrightBrowser.close().catch(() => {});
-  }
-});
-
-process.on('SIGINT', () => {
-  if (playwrightBrowser) {
-    playwrightBrowser.close().catch(() => {});
-  }
-  process.exit(0);
-});
-
-// Capture single URL via Firecrawl
 async function captureUrl(sourceId, url, evidenceDir, attempt = 1) {
-  const op = logger.operation('captureUrl', { sourceId, url: url.substring(0, 60), attempt });
   const startTime = Date.now();
-  const errors = [];
-
   logger.info(`Capturing ${sourceId} (attempt ${attempt})`, { url });
   console.log(`[${sourceId}] Capturing: ${url.substring(0, 60)}...`);
 
-  logger.debug(`Creating evidence directory: ${evidenceDir}`);
   fs.mkdirSync(evidenceDir, { recursive: true });
 
   try {
-    // Call Firecrawl API (v2 format)
-    // Formats: html (cleaned), rawHtml (original), markdown, screenshot, links
-    // Note: PDF is generated separately via Playwright (Firecrawl doesn't support PDF output)
-    logger.debug('Calling Firecrawl API with formats: html, rawHtml, markdown, screenshot, links');
+    // Only request markdown and links
     const response = await post(API_URL, {
       url: url,
-      formats: ['html', 'rawHtml', 'markdown', 'screenshot@fullPage', 'links'],
+      formats: ['markdown', 'links'],
       waitFor: 3000,
       timeout: 120000
     });
-    logger.debug(`API response status: ${response.status}`);
 
     if (response.status === 429) {
-      // Rate limited - wait and retry
       if (attempt < 3) {
         const waitTime = 60000 * attempt;
-        logger.warn(`Rate limited, waiting ${waitTime / 1000}s before retry...`);
         console.log(`  Rate limited, waiting ${waitTime / 1000}s...`);
         await new Promise(r => setTimeout(r, waitTime));
         return captureUrl(sourceId, url, evidenceDir, attempt + 1);
       }
-      const err = new Error('Rate limit exceeded after retries');
-      op.fail(err);
-      throw err;
+      throw new Error('Rate limit exceeded after retries');
     }
 
     if (response.status !== 200) {
-      const err = new Error(`API error ${response.status}: ${JSON.stringify(response.data)}`);
-      op.fail(err);
-      throw err;
+      throw new Error(`API error ${response.status}: ${JSON.stringify(response.data)}`);
     }
 
     const result = response.data;
-
     if (!result.success) {
-      const err = new Error(`Scrape failed: ${result.error || 'Unknown error'}`);
-      op.fail(err);
-      throw err;
+      throw new Error(`Scrape failed: ${result.error || 'Unknown error'}`);
     }
 
     const data = result.data || result;
     const files = {};
-    logger.debug('Processing capture results');
-
-    // Save HTML
-    if (data.html || data.rawHtml) {
-      const htmlPath = path.join(evidenceDir, 'capture.html');
-      const htmlContent = data.html || data.rawHtml;
-      fs.writeFileSync(htmlPath, htmlContent);
-      files.html = {
-        path: 'capture.html',
-        hash: `sha256:${hashBuffer(Buffer.from(htmlContent))}`,
-        size: Buffer.byteLength(htmlContent)
-      };
-      logger.debug(`Saved HTML: ${files.html.size} bytes`);
-    }
 
     // Save markdown
     if (data.markdown) {
-      const mdPath = path.join(evidenceDir, 'capture.md');
+      const mdPath = path.join(evidenceDir, 'content.md');
       fs.writeFileSync(mdPath, data.markdown);
       files.markdown = {
-        path: 'capture.md',
+        path: 'content.md',
         hash: `sha256:${hashBuffer(Buffer.from(data.markdown))}`,
         size: Buffer.byteLength(data.markdown)
       };
-      logger.debug(`Saved markdown: ${files.markdown.size} bytes`);
     }
 
-    // Save screenshot
-    if (data.screenshot) {
-      const pngPath = path.join(evidenceDir, 'capture.png');
-      const pngBuffer = saveBase64(data.screenshot, pngPath);
-      files.png = {
-        path: 'capture.png',
-        hash: `sha256:${hashBuffer(pngBuffer)}`,
-        size: pngBuffer.length
-      };
-      logger.debug(`Saved screenshot: ${files.png.size} bytes`);
-    }
-
-    // Save links (useful for investigation context)
+    // Save links
     if (data.links && Array.isArray(data.links) && data.links.length > 0) {
       const linksPath = path.join(evidenceDir, 'links.json');
       const linksContent = JSON.stringify(data.links, null, 2);
@@ -311,32 +146,10 @@ async function captureUrl(sourceId, url, evidenceDir, attempt = 1) {
         hash: `sha256:${hashBuffer(Buffer.from(linksContent))}`,
         count: data.links.length
       };
-      logger.debug(`Saved links: ${files.links.count} URLs`);
     }
 
-    // Generate PDF from URL using Playwright (Firecrawl doesn't support PDF generation)
-    try {
-      logger.debug('Generating PDF with Playwright...');
-      const pdfBuffer = await generatePdfFromUrl(url);
-      if (pdfBuffer) {
-        const pdfPath = path.join(evidenceDir, 'capture.pdf');
-        fs.writeFileSync(pdfPath, pdfBuffer);
-        files.pdf = {
-          path: 'capture.pdf',
-          hash: `sha256:${hashBuffer(pdfBuffer)}`,
-          size: pdfBuffer.length
-        };
-        logger.debug(`Saved PDF: ${files.pdf.size} bytes`);
-      }
-    } catch (pdfErr) {
-      logger.warn(`PDF generation failed (non-fatal): ${pdfErr.message}`);
-      errors.push(`PDF generation failed: ${pdfErr.message}`);
-    }
-
-    // Create metadata with capture signature (anti-hallucination measure)
+    // Create metadata
     const capturedAt = new Date().toISOString();
-    const captureSignature = generateCaptureSignature(sourceId, url, capturedAt, files);
-
     const metadata = {
       source_id: sourceId,
       url: url,
@@ -344,69 +157,39 @@ async function captureUrl(sourceId, url, evidenceDir, attempt = 1) {
       description: data.metadata?.description || '',
       captured_at: capturedAt,
       capture_duration_ms: Date.now() - startTime,
-      method: 'firecrawl',
-      firecrawl_version: 'v1',
-      http_status: data.metadata?.statusCode || 200,
       files: files,
-      // CRITICAL: Capture signature proves this was created by the capture script
-      // LLMs cannot generate valid signatures without actually running capture
-      _capture_signature: captureSignature,
-      _signature_version: CAPTURE_SIGNATURE_VERSION,
-      errors: errors.length > 0 ? errors : undefined
+      _capture_signature: generateCaptureSignature(sourceId, url, capturedAt, files)
     };
 
-    fs.writeFileSync(
-      path.join(evidenceDir, 'metadata.json'),
-      JSON.stringify(metadata, null, 2)
-    );
-    logger.debug('Saved metadata.json');
+    fs.writeFileSync(path.join(evidenceDir, 'metadata.json'), JSON.stringify(metadata, null, 2));
 
     const duration = Date.now() - startTime;
-    logger.info(`Capture successful: ${sourceId}`, {
-      files: Object.keys(files).length,
-      duration_ms: duration
-    });
     console.log(`  OK Captured (${Object.keys(files).length} files, ${duration}ms)`);
-    op.success({ files: Object.keys(files).length, duration_ms: duration });
 
     return { success: true, sourceId, files: Object.keys(files) };
 
   } catch (err) {
-    logger.error(`Capture failed for ${sourceId}`, err);
     console.error(`  FAIL Error: ${err.message}`);
-    errors.push(err.message);
 
-    // Retry on transient errors
     if (attempt < 3 && (err.message.includes('timeout') || err.message.includes('ECONNRESET'))) {
-      logger.info(`Retrying ${sourceId} after transient error (attempt ${attempt + 1})`);
       console.log(`  Retrying (attempt ${attempt + 1})...`);
       await new Promise(r => setTimeout(r, 5000 * attempt));
       return captureUrl(sourceId, url, evidenceDir, attempt + 1);
     }
 
-    // Save error metadata
-    logger.debug('Saving error metadata');
     const metadata = {
       source_id: sourceId,
       url: url,
       captured_at: new Date().toISOString(),
-      method: 'firecrawl',
-      http_status: null,
       files: {},
-      errors: errors
+      errors: [err.message]
     };
+    fs.writeFileSync(path.join(evidenceDir, 'metadata.json'), JSON.stringify(metadata, null, 2));
 
-    fs.writeFileSync(
-      path.join(evidenceDir, 'metadata.json'),
-      JSON.stringify(metadata, null, 2)
-    );
-
-    op.fail(err);
     return { success: false, sourceId, error: err.message };
   }
 }
 
-// Parse URL list file
 function parseUrlList(filePath) {
   const content = fs.readFileSync(filePath, 'utf-8');
   return content.split('\n')
@@ -423,20 +206,16 @@ function parseUrlList(filePath) {
     .filter(e => e.url);
 }
 
-// Batch capture
 async function batchCapture(urlListFile, caseDir) {
   const entries = parseUrlList(urlListFile);
-  console.log(`Found ${entries.length} URLs to capture`);
-  console.log('');
+  console.log(`Found ${entries.length} URLs to capture\n`);
 
   const results = { success: [], failed: [], skipped: [] };
-  const startTime = Date.now();
 
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i];
     const evidenceDir = path.join(caseDir, 'evidence', 'web', entry.sourceId);
 
-    // Skip if already captured successfully
     const metaPath = path.join(evidenceDir, 'metadata.json');
     if (fs.existsSync(metaPath)) {
       try {
@@ -458,45 +237,15 @@ async function batchCapture(urlListFile, caseDir) {
       results.failed.push({ ...entry, error: result.error });
     }
 
-    // Rate limiting: wait between requests
     if (i < entries.length - 1) {
       await new Promise(r => setTimeout(r, 2000));
     }
   }
 
-  // Summary
-  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log('');
-  console.log('='.repeat(60));
-  console.log('FIRECRAWL BATCH CAPTURE SUMMARY');
-  console.log('='.repeat(60));
-  console.log(`Total time: ${elapsed}s`);
-  console.log(`Success: ${results.success.length}`);
-  console.log(`Skipped: ${results.skipped.length}`);
-  console.log(`Failed: ${results.failed.length}`);
-
-  if (results.failed.length > 0) {
-    console.log('');
-    console.log('Failed captures:');
-    for (const f of results.failed) {
-      console.log(`  ${f.sourceId}: ${f.error}`);
-    }
-  }
-
-  // Save results
-  const resultsFile = path.join(caseDir, 'firecrawl-results.json');
-  fs.writeFileSync(resultsFile, JSON.stringify({
-    timestamp: new Date().toISOString(),
-    elapsed_seconds: parseFloat(elapsed),
-    results
-  }, null, 2));
-
-  console.log(`\nResults saved to: ${resultsFile}`);
-
+  console.log(`\nSuccess: ${results.success.length}, Skipped: ${results.skipped.length}, Failed: ${results.failed.length}`);
   return results;
 }
 
-// Main
 async function main() {
   if (args[0] === '--batch') {
     if (args.length < 3) {
@@ -507,7 +256,6 @@ async function main() {
   } else {
     if (args.length < 3) {
       console.error('Usage: node firecrawl-capture.js <source_id> <url> <evidence_dir>');
-      console.error('       node firecrawl-capture.js --batch <url-list> <case-dir>');
       process.exit(1);
     }
     const result = await captureUrl(args[0], args[1], args[2]);
@@ -515,7 +263,6 @@ async function main() {
   }
 }
 
-// Export for programmatic use
 module.exports = { run: captureUrl, captureUrl, batchCapture };
 
 if (require.main === module) {
