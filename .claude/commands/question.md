@@ -18,11 +18,11 @@ Apply the 35 analytical frameworks via structured Q&A.
 
 ## Task
 
-For each framework in the batch, answer the guiding questions from `_frameworks.md`.
+For each framework in the batch, answer the guiding questions from `.claude/reference/frameworks.md`.
 
 ## Instructions
 
-1. **Read the framework** from `_frameworks.md`
+1. **Read the framework** from `.claude/reference/frameworks.md`
 
 2. **For each question in the framework:**
    - Write answer with inline [S###] citations
