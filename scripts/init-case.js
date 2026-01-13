@@ -3,10 +3,13 @@
  * init-case.js - Create new investigation case with 35 framework files
  *
  * Usage: node scripts/init-case.js "topic description"
+ *
+ * Creates a new case directory with its own git repository.
  */
 
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 // 35 frameworks from reference/frameworks.md
 const FRAMEWORKS = [
@@ -218,6 +221,34 @@ function main() {
 
   console.log(`Created: questions/ (35 files)`);
 
+  // Initialize git repository
+  console.log('');
+  console.log('Initializing git repository...');
+
+  try {
+    execSync('git init', { cwd: casePath, stdio: 'pipe' });
+    console.log('Created: .git/');
+
+    // Create .gitignore for case-specific ignores
+    const gitignore = `# Case-specific ignores
+*.tmp
+*.log
+`;
+    fs.writeFileSync(path.join(casePath, '.gitignore'), gitignore);
+    console.log('Created: .gitignore');
+
+    // Stage all files and make initial commit
+    execSync('git add .', { cwd: casePath, stdio: 'pipe' });
+    execSync(`git commit -m "Initialize investigation: ${topic}"`, {
+      cwd: casePath,
+      stdio: 'pipe'
+    });
+    console.log('Committed: Initialize investigation');
+  } catch (err) {
+    console.error('Warning: Git initialization failed:', err.message);
+    console.error('You may need to initialize git manually.');
+  }
+
   // Summary
   console.log('');
   console.log('='.repeat(50));
@@ -225,6 +256,7 @@ function main() {
   console.log('');
   console.log('Structure:');
   console.log(`  cases/${caseSlug}/`);
+  console.log('  ├── .git/              (case repository)');
   console.log('  ├── state.json');
   console.log('  ├── summary.md');
   console.log('  ├── sources.json');
@@ -235,7 +267,7 @@ function main() {
   console.log('  ├── evidence/');
   console.log('  └── articles/');
   console.log('');
-  console.log('Next step: /investigate --new or /action research');
+  console.log('Next step: /action research');
 }
 
 main();
