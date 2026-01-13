@@ -1,0 +1,15 @@
+{
+  "case": "v2-case",
+  "topic": "Test case for v2 architecture",
+  "phase": "BOOTSTRAP",
+  "iteration": 1,
+  "next_source": 1,
+  "gates": {
+    "questions": false,
+    "curiosity": false,
+    "article": false,
+    "sources": false,
+    "integrity": false,
+    "legal": false
+  }
+}
