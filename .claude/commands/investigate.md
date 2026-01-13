@@ -47,11 +47,9 @@ BOOTSTRAP → QUESTION → FOLLOW → WRITE → VERIFY → COMPLETE
 
 ### BOOTSTRAP (New Cases Only)
 
-1. Run `node scripts/init-case.js "[topic]"` to create case structure
-2. Initialize git repo in case directory: `cd cases/<slug> && git init`
-3. Make initial commit: `git commit -m "Initialize investigation"`
-4. Dispatch `/action research "[topic]"`
-5. After research, update state.json phase to QUESTION
+1. Run `node scripts/init-case.js "[topic]"` - creates case structure, git repo, and initial commit
+2. Dispatch `/action research "[topic]"`
+3. After research, update state.json phase to QUESTION
 
 ### QUESTION
 
