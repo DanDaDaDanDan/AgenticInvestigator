@@ -2,6 +2,9 @@
 logs/
 *.log
 
+# MCP cache (mcp-osint)
+cache/
+
 # Investigation cases (contain research data)
 cases/
 

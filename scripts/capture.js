@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
- * capture.js - Cross-platform capture wrapper (Node).
+ * capture.js - Document/PDF download for evidence capture
  *
- * Mirrors the bash `scripts/capture` interface, but works in vanilla Windows too.
+ * Downloads documents (PDFs, files) and creates metadata.json.
+ * For web pages, use mcp-osint osint_fetch + osint-save.js instead.
  *
  * Usage:
- *   node scripts/capture.js <source_id> <url> [case_dir|case_id]
  *   node scripts/capture.js --document <source_id> <url> [filename] [case_dir|case_id]
+ *   node scripts/capture.js -d <source_id> <url> [filename] [case_dir|case_id]
  *
  * Case resolution order:
  *   1) explicit case_dir arg (existing directory)
@@ -149,43 +150,23 @@ function downloadToFile(url, filePath) {
 }
 
 function printUsage() {
-  console.log('capture.js - Capture URL evidence for source verification');
+  console.log('capture.js - Download documents/PDFs for evidence capture');
+  console.log('');
+  console.log('For web pages, use: osint_fetch MCP tool + osint-save.js');
   console.log('');
   console.log('Usage:');
-  console.log('  node scripts/capture.js <source_id> <url> [case_dir|case_id]');
   console.log('  node scripts/capture.js --document <source_id> <url> [filename] [case_dir|case_id]');
+  console.log('  node scripts/capture.js -d <source_id> <url> [filename] [case_dir|case_id]');
   console.log('');
   console.log('Examples:');
-  console.log('  node scripts/capture.js S001 https://example.com/article cases/my-case');
-  console.log('  node scripts/capture.js --document S015 https://sec.gov/filing.pdf 10k.pdf cases/my-case');
-}
-
-async function captureWeb(sourceId, url, caseDir) {
-  const op = logger.operation('captureWeb', { sourceId, url });
-  logger.info(`Capturing web source ${sourceId} from ${url}`);
-
-  const evidenceDir = path.join(caseDir, 'evidence', sourceId);
-  logger.debug(`Evidence directory: ${evidenceDir}`);
-
-  try {
-    const result = await require('./firecrawl-capture').run(sourceId, url, evidenceDir);
-    if (result.success) {
-      op.success({ files: result.files ? Object.keys(result.files).length : 0 });
-    } else {
-      op.fail(new Error(result.error || 'capture failed'), { errors: result.errors });
-    }
-    return result;
-  } catch (err) {
-    op.fail(err);
-    throw err;
-  }
+  console.log('  node scripts/capture.js -d S015 https://sec.gov/filing.pdf cases/my-case');
+  console.log('  node scripts/capture.js --document S015 https://example.gov/report.pdf 10k.pdf cases/my-case');
 }
 
 async function captureDocument(sourceId, url, filename, caseDir) {
   const op = logger.operation('captureDocument', { sourceId, url, filename });
   logger.info(`Capturing document ${sourceId} from ${url}`);
 
-  // Use same evidence/S###/ structure as web captures
   const evidenceDir = path.join(caseDir, 'evidence', sourceId);
   fs.mkdirSync(evidenceDir, { recursive: true });
   logger.debug(`Evidence directory: ${evidenceDir}`);
@@ -200,7 +181,7 @@ async function captureDocument(sourceId, url, filename, caseDir) {
   try {
     const { size, hash } = await downloadToFile(url, filePath);
 
-    // Create metadata.json in same format as web captures
+    // Create metadata.json
     const meta = {
       source_id: sourceId,
       url,
@@ -236,48 +217,32 @@ async function main() {
   }
 
   const isDoc = args[0] === '--document' || args[0] === '-d';
-  if (isDoc) {
-    logger.info('Document capture mode');
-    const sourceId = args[1];
-    const url = args[2];
-    let filename = null;
-    let maybeCase = null;
-
-    // Try to interpret argv[3] as case id/dir when it resolves to an existing case directory.
-    if (args[3]) {
-      const explicitCaseDir = resolveCaseDirFromExplicit(args[3]);
-      if (explicitCaseDir) {
-        maybeCase = args[3];
-        logger.debug(`Resolved case from arg[3]: ${maybeCase}`);
-      } else {
-        filename = args[3];
-        maybeCase = args[4] || null;
-        logger.debug(`Using filename from arg[3]: ${filename}, case: ${maybeCase}`);
-      }
-    }
-
-    if (!sourceId || !url) {
-      logger.error('Missing required arguments: sourceId and url');
-      printUsage();
-      process.exit(1);
-    }
-
-    const caseDir = resolveCaseDir(maybeCase);
-    logger.info(`Document capture: ${sourceId}`, { url, caseDir });
-    console.log(`Downloading document for ${sourceId}`);
-    console.log(`  URL: ${url}`);
-    console.log(`  Case: ${caseDir}`);
-
-    const result = await captureDocument(sourceId, url, filename, caseDir);
-    console.log(`Saved: ${result.file_path}`);
-    console.log(`Hash: ${result.hash}`);
-    mainOp.success({ sourceId, type: 'document' });
-    process.exit(0);
+  if (!isDoc) {
+    console.error('Error: This script only supports document downloads.');
+    console.error('For web pages, use: osint_fetch MCP tool + osint-save.js');
+    console.error('');
+    printUsage();
+    process.exit(1);
   }
 
-  const sourceId = args[0];
-  const url = args[1];
-  const maybeCase = args[2];
+  logger.info('Document capture mode');
+  const sourceId = args[1];
+  const url = args[2];
+  let filename = null;
+  let maybeCase = null;
+
+  // Try to interpret argv[3] as case id/dir when it resolves to an existing case directory.
+  if (args[3]) {
+    const explicitCaseDir = resolveCaseDirFromExplicit(args[3]);
+    if (explicitCaseDir) {
+      maybeCase = args[3];
+      logger.debug(`Resolved case from arg[3]: ${maybeCase}`);
+    } else {
+      filename = args[3];
+      maybeCase = args[4] || null;
+      logger.debug(`Using filename from arg[3]: ${filename}, case: ${maybeCase}`);
+    }
+  }
 
   if (!sourceId || !url) {
     logger.error('Missing required arguments: sourceId and url');
@@ -286,24 +251,16 @@ async function main() {
   }
 
   const caseDir = resolveCaseDir(maybeCase);
-  logger.info(`Web capture: ${sourceId}`, { url, caseDir });
-  console.log(`Capturing ${sourceId}`);
+  logger.info(`Document capture: ${sourceId}`, { url, caseDir });
+  console.log(`Downloading document for ${sourceId}`);
   console.log(`  URL: ${url}`);
   console.log(`  Case: ${caseDir}`);
 
-  const result = await captureWeb(sourceId, url, caseDir);
-  console.log(`Success: ${result.success}`);
-  if (result.errors && result.errors.length > 0) {
-    logger.warn(`Capture completed with errors`, { errorCount: result.errors.length });
-    console.log(`Errors: ${result.errors.length}`);
-  }
-
-  if (result.success) {
-    mainOp.success({ sourceId, type: 'web' });
-  } else {
-    mainOp.fail(new Error('capture failed'));
-  }
-  process.exit(result.success ? 0 : 1);
+  const result = await captureDocument(sourceId, url, filename, caseDir);
+  console.log(`Saved: ${result.file_path}`);
+  console.log(`Hash: ${result.hash}`);
+  mainOp.success({ sourceId, type: 'document' });
+  process.exit(0);
 }
 
 if (require.main === module) {
