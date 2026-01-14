@@ -29,19 +29,27 @@ After capture, **verify these files exist**:
 
 ```
 evidence/S###/
-├── content.md       # REQUIRED - actual captured content
-├── metadata.json    # REQUIRED - with sha256 hash
+├── content.md       # Markdown for reading
+├── raw.html         # Original HTML (web pages) - CRITICAL for verification
+├── metadata.json    # With verification block and capture signature
 └── [document.pdf]   # For PDFs - the actual file
 ```
 
-**If metadata.json doesn't have sha256, the capture FAILED.** Do not cite.
+**metadata.json MUST contain:**
+- `verification.computed_hash` - SHA256 of raw file
+- `_capture_signature` - Proves capture via osint-save.js
 
-### 3. Never Write content.md Manually
+**If verification block is missing or hash mismatches, the capture FAILED.** Do not cite.
 
-The capture tools write content.md from fetched data. You must NEVER:
+Run verification: `node scripts/verify-source.js S### cases/[case-id]`
+
+### 3. Never Write Evidence Manually
+
+The capture tools write evidence from fetched data. You must NEVER:
 - Create evidence/S###/ directories manually
-- Write content.md yourself
-- Create a source without using capture tools
+- Write content.md or raw.html yourself
+- Create metadata.json without using osint-save.js
+- Skip saving raw_html (required for hash verification)
 
 ---
 
@@ -57,11 +65,12 @@ mcp__mcp-osint__osint_get
   question: "Extract key facts about [topic]" (optional)
 ```
 
-**Returns:**
+**Returns (save FULL response):**
 ```json
 {
   "format": "markdown",
   "content": "# Article Title\n\nThe full markdown content...",
+  "raw_html": "<html>...</html>",
   "metadata": {
     "url": "https://example.com/article",
     "title": "Article Title",
@@ -69,11 +78,17 @@ mcp__mcp-osint__osint_get
     "size_bytes": 23456,
     "captured_at": "2026-01-14T..."
   },
-  "links": ["https://...", "..."]
+  "links": ["https://...", "..."],
+  "provenance": { "source": "firecrawl", "method": "scrape", "cache_hit": false }
 }
 ```
 
-**Save to evidence:** Use Write tool to save content to evidence/S###/content.md and metadata to metadata.json.
+**CRITICAL: Save the FULL response including `raw_html`!**
+
+Save to evidence using osint-save.js:
+1. Save full osint_get response to temp JSON file
+2. Run: `node scripts/osint-save.js S### cases/[case-id] temp.json`
+3. This creates content.md, raw.html, and metadata.json with verification block
 
 ### PDFs
 

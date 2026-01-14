@@ -12,24 +12,71 @@ Utility scripts for AgenticInvestigator. No npm dependencies required - pure Nod
 
 ### `osint-save.js`
 
-Save `osint_get` web page output as evidence with proper metadata and capture signature.
+Save `osint_get` output as verifiable evidence with hash verification support.
 
 ```bash
 # From JSON file (RECOMMENDED - works on all platforms)
+# Save the FULL osint_get response (including raw_html) for verification
 node scripts/osint-save.js S001 cases/[case-id] osint-output.json
 
-# From URL + markdown file
+# From URL + markdown file (legacy, no verification)
 node scripts/osint-save.js S001 cases/[case-id] --url https://example.com --markdown content.md --title "Title"
 ```
 
-**Important:** On Windows, always use the JSON file method. Do NOT use stdin/echo - JSON escaping breaks.
+**Important:**
+- On Windows, always use the JSON file method
+- Save the FULL osint_get response to enable hash verification
+- The `raw_html` field is critical for verifying web page captures
 
 Creates:
-- `evidence/S001/content.md` - Markdown content
+- `evidence/S001/content.md` - Markdown content (for reading)
+- `evidence/S001/raw.html` - Original HTML (for verification)
 - `evidence/S001/links.json` - Extracted links (if provided)
-- `evidence/S001/metadata.json` - Timestamps, hashes, capture signature
+- `evidence/S001/metadata.json` - Timestamps, hashes, verification block, capture signature
 
 **Note:** For PDFs, use `osint_get` with `output_path` directly - it handles download and SHA256.
+
+---
+
+### `verify-source.js`
+
+Verify evidence integrity via hash verification and red flag detection.
+
+```bash
+# Verify single source
+node scripts/verify-source.js S001 cases/[case-id]
+
+# Verify all sources in a case
+node scripts/verify-source.js --all cases/[case-id]
+
+# Verify only sources cited in full.md
+node scripts/verify-source.js --check-article cases/[case-id]
+
+# With verbose output
+node scripts/verify-source.js --all cases/[case-id] --verbose
+
+# JSON output (for programmatic use)
+node scripts/verify-source.js --check-article cases/[case-id] --json
+```
+
+**Verification checks:**
+- Evidence directory exists
+- metadata.json exists and is valid JSON
+- Required fields present (source_id, url, captured_at, files)
+- Capture signature present and valid format
+- SHA256 hash of raw file matches stored hash
+- Hash matches osint_get reported hash (if available)
+
+**Red flag detection:**
+- Round timestamps (e.g., `T20:00:00.000Z`) - suggests manual creation
+- Homepage URLs - should be specific article URLs
+- Compilation patterns in content.md - suggests fabrication
+- Missing capture signature
+
+**Exit codes:**
+- 0: All sources verified
+- 1: Verification failures found
+- 2: Usage error
 
 ---
 
