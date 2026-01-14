@@ -334,9 +334,9 @@ See `reference/frameworks.md` for the full list and guiding questions.
 
 | Target | What happens | Returns |
 |--------|--------------|---------|
-| Web URL | Firecrawl → markdown | `format: "markdown"`, `content`, `sha256` |
+| Web URL | Firecrawl → markdown | `format: "markdown"`, `content`, `raw_html`, `links`, `sha256` |
 | PDF URL | Download binary | `format: "pdf"`, `output_path`, `sha256` |
-| resource_id | Connector extract | `format: "json"/"text"`, `content`, `sha256` |
+| resource_id | Connector extract | `format: "json"/"text"`, `content`, `sha256` (supports filters, columns, limit) |
 
 **Example:**
 ```
