@@ -262,13 +262,15 @@ evidence/S###/
 When MCP search tools return results:
 
 1. **Extract specific URLs** from the response (look for markdown links, citation blocks)
-2. **Capture each URL** with `node scripts/capture.js`
+2. **Capture each URL** using:
+   - Web pages: `osint_fetch` → `osint-save.js S### cases/<case-id>`
+   - PDFs: `capture.js --document S### <url> cases/<case-id>`
 3. **Verify metadata.json exists**
 4. **Only then cite** with [S###]
 
 ### PDF Handling
 
-For PDFs: `node scripts/capture.js --document S### <url>`
+For PDFs: `node scripts/capture.js --document S### <url> cases/<case-id>`
 
 If PDF capture fails, note the URL but do NOT synthesize content.
 
@@ -302,10 +304,43 @@ See `reference/frameworks.md` for the full list and guiding questions.
 
 | Need | Server | Tool |
 |------|--------|------|
+| **Web capture** | mcp-osint | `osint_fetch` → `osint-save.js` |
+| **Structured data** | mcp-osint | `osint_search`, `osint_get` |
 | Semantic verification | mcp-gemini | `generate_text` (gemini-3-pro) |
 | Deep research (fast) | mcp-gemini | `deep_research` |
 | Deep research (max) | mcp-openai | `deep_research` |
 | Real-time search | mcp-xai | `research`, `x_search`, `web_search` |
+
+### OSINT Data Sources
+
+| Source | Data Type |
+|--------|-----------|
+| `courtlistener` | Court cases, legal opinions |
+| `legiscan` | State/federal legislation |
+| `sec_edgar` | SEC filings, financials |
+| `openalex` | Academic research |
+| `pubmed` | Medical/health research |
+| `data_gov` | Federal government data |
+| `census` | Demographics |
+| `fred` | Economic data |
+| `gdelt` | Global news events |
+
+### Capture Workflow
+
+**Web pages:**
+1. `osint_fetch` → get markdown
+2. `osint-save.js` → save to evidence/S###/
+3. Verify metadata.json exists
+
+**PDFs:**
+1. `capture.js --document` → download
+2. `gemini generate_text` with file → extract
+3. Save content.md
+
+**Structured data:**
+1. `osint_search` → find resource
+2. `osint_get` → fetch data
+3. Save to evidence with metadata
 
 ---
 

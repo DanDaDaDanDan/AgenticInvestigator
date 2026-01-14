@@ -2,7 +2,8 @@
  * Tests for capture.js
  *
  * Tests case resolution logic and utility functions.
- * Note: Actual capture tests require FIRECRAWL_API_KEY and are skipped without it.
+ * Note: capture.js now only supports document downloads.
+ * For web pages, use osint_fetch + osint-save.js.
  */
 
 const test = require('node:test');
@@ -117,7 +118,7 @@ test('capture.js script exists and is executable', async (t) => {
 
   const content = fs.readFileSync(captureScript, 'utf-8');
   assert.ok(content.includes('#!/usr/bin/env node'), 'Should have shebang');
-  assert.ok(content.includes('firecrawl-capture'), 'Should use firecrawl-capture');
+  assert.ok(content.includes('--document'), 'Should support --document flag');
 });
 
 test('capture.js has correct usage message', async (t) => {
@@ -127,15 +128,15 @@ test('capture.js has correct usage message', async (t) => {
   assert.ok(content.includes('<source_id>'), 'Usage should mention source_id');
   assert.ok(content.includes('<url>'), 'Usage should mention url');
   assert.ok(content.includes('--document'), 'Usage should mention --document flag');
+  assert.ok(content.includes('osint_fetch'), 'Should reference osint_fetch for web pages');
 });
 
 test('capture.js error message is accurate', async (t) => {
   const captureScript = path.join(ROOT, 'scripts', 'capture.js');
   const content = fs.readFileSync(captureScript, 'utf-8');
 
-  // Should reference cases/.active, not the deleted active-case.js
+  // Should reference cases/.active
   assert.ok(content.includes('cases/.active'), 'Should reference .active file');
-  assert.ok(!content.includes('active-case.js'), 'Should not reference deleted script');
 });
 
 test('evidence directory structure constants', async (t) => {
@@ -147,14 +148,11 @@ test('evidence directory structure constants', async (t) => {
   assert.ok(!content.includes("'evidence', 'web'"), 'Should not have web subfolder');
 });
 
-// Integration test - requires FIRECRAWL_API_KEY
-test('capture integration (skipped without API key)', async (t) => {
-  if (!process.env.FIRECRAWL_API_KEY) {
-    t.skip('FIRECRAWL_API_KEY not set');
-    return;
-  }
+test('osint-save.js script exists', async (t) => {
+  const osintSaveScript = path.join(ROOT, 'scripts', 'osint-save.js');
+  assert.ok(fs.existsSync(osintSaveScript), 'osint-save.js should exist');
 
-  // This would test actual capture functionality
-  // For now, just verify the API key check works
-  assert.ok(process.env.FIRECRAWL_API_KEY.length > 0, 'API key should be present');
+  const content = fs.readFileSync(osintSaveScript, 'utf-8');
+  assert.ok(content.includes('#!/usr/bin/env node'), 'Should have shebang');
+  assert.ok(content.includes('osint_fetch'), 'Should reference osint_fetch');
 });

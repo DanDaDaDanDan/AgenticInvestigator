@@ -4,16 +4,50 @@ Utility scripts for AgenticInvestigator. No npm dependencies required - pure Nod
 
 ## Prerequisites
 
-**Required environment variable:**
-```bash
-export FIRECRAWL_API_KEY="your-key-here"
-```
-
-Get your API key from: https://app.firecrawl.dev
+**Required:** mcp-osint MCP server (for web capture via `osint_fetch`)
 
 ---
 
 ## Scripts
+
+### `osint-save.js`
+
+Save `osint_fetch` MCP output as evidence.
+
+```bash
+# From JSON file
+node scripts/osint-save.js S001 cases/[case-id] osint-output.json
+
+# From stdin
+echo '{"url":"...","markdown":"..."}' | node scripts/osint-save.js S001 cases/[case-id] --stdin
+
+# From URL + markdown file
+node scripts/osint-save.js S001 cases/[case-id] --url https://example.com --markdown content.md --title "Title"
+```
+
+Creates:
+- `evidence/S001/content.md` - Markdown content
+- `evidence/S001/links.json` - Extracted links (if provided)
+- `evidence/S001/metadata.json` - Timestamps, hashes, capture signature
+
+---
+
+### `capture.js`
+
+Download documents/PDFs for evidence capture.
+
+```bash
+node scripts/capture.js -d S015 https://sec.gov/filing.pdf cases/[case-id]
+node scripts/capture.js --document S015 https://example.gov/report.pdf 10k.pdf cases/[case-id]
+```
+
+Creates:
+- `evidence/S015/[filename]` - Downloaded document
+- `evidence/S015/metadata.json` - Timestamps, hash
+
+**Note:** For web pages, use `osint_fetch` MCP tool + `osint-save.js` instead.
+
+---
 
 ### `init-case.js`
 
@@ -31,39 +65,6 @@ Creates:
 
 ---
 
-### `capture.js`
-
-Capture web page evidence using Firecrawl API (markdown only).
-
-**Web Page:**
-```bash
-node scripts/capture.js S001 https://example.com cases/[case-id]
-```
-
-**Document:**
-```bash
-node scripts/capture.js --document S015 https://sec.gov/filing.pdf cases/[case-id]
-```
-
-Creates:
-- `evidence/S001/content.md` - Markdown content
-- `evidence/S001/links.json` - Extracted links
-- `evidence/S001/metadata.json` - Timestamps, hashes
-
----
-
-### `firecrawl-capture.js`
-
-Direct Firecrawl API capture (markdown extraction).
-
-```bash
-node scripts/firecrawl-capture.js S001 https://example.com evidence/S001
-```
-
-Creates `content.md`, `links.json`, and `metadata.json`.
-
----
-
 ### `find-wayback-url.js`
 
 Find Wayback Machine archived URLs.
@@ -71,7 +72,20 @@ Find Wayback Machine archived URLs.
 ```bash
 node scripts/find-wayback-url.js https://example.com
 node scripts/find-wayback-url.js https://example.com --json
+node scripts/find-wayback-url.js --batch input.txt output.json
 ```
+
+---
+
+### `check-continue.js`
+
+Determine next orchestrator action based on state.json and leads.json.
+
+```bash
+node scripts/check-continue.js cases/[case-id]
+```
+
+Outputs ORCHESTRATOR SIGNAL with next action.
 
 ---
 
@@ -85,3 +99,20 @@ Logging utility used by other scripts. Supports:
 Environment variables:
 - `LOG_LEVEL` - Set log level (default: info)
 - `LOG_FILE` - Enable file logging to specified path
+
+---
+
+## Capture Workflow
+
+### Web Pages
+
+1. Use `osint_fetch` MCP tool to fetch URL
+2. Write response to JSON file
+3. Run `osint-save.js` to save as evidence
+4. Verify `metadata.json` exists
+
+### Documents/PDFs
+
+1. Run `capture.js --document` to download
+2. Use `gemini generate_text` with file to extract content
+3. Save extracted content to `content.md`

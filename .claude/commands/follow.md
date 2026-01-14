@@ -15,7 +15,11 @@ Take a lead from `leads.json` and investigate until you either:
 - Hit a dead end (documented why)
 - Generate new leads needing separate investigation
 
+---
+
 ## MCP Tools
+
+### Real-Time Search (Primary)
 
 Leads often involve current events or live information:
 
@@ -23,12 +27,69 @@ Leads often involve current events or live information:
 - `mcp__mcp-xai__x_search` - Social discourse, public statements, breaking news
 - `mcp__mcp-xai__research` - Broad real-time research
 
-**When to use real-time vs deep research:**
-- Real-time: Recent events, current status, what people are saying now
-- Deep research: Historical context, academic sources, comprehensive understanding
+### OSINT Structured Sources
+
+For authoritative data, use `mcp-osint`:
+
+| Lead Type | Best Source | Query Example |
+|-----------|-------------|---------------|
+| Legal filings | `courtlistener` | "case number 2024-CV-12345" |
+| Legislation | `legiscan` | "bill status HB 1234 Texas" |
+| Academic claims | `openalex` / `pubmed` | "study on X effect" |
+| Financial data | `sec_edgar` | "10-K filing company name" |
+| Economic stats | `fred` | "unemployment rate 2024" |
+| Government data | `data_gov` | "EPA inspection records" |
+| Demographics | `census` | "population county X" |
+| Global events | `gdelt` | "conflict region timeline" |
+
+#### OSINT Search Syntax
+
+```
+mcp__mcp-osint__osint_search
+  query: "specific search query"
+  source: "courtlistener" (optional - omit for auto-routing)
+  limit: 10
+```
+
+After finding a resource:
+```
+mcp__mcp-osint__osint_get
+  resource_id: "<from search results>"
+  question: "what specific information to extract"
+```
+
+### Web Page Fetching
+
+Use `osint_fetch` to capture web pages:
+
+```
+mcp__mcp-osint__osint_fetch
+  url: "https://example.com/article"
+  extract_question: "Extract facts about [topic]" (optional)
+```
+
+### Extended Thinking
 
 For leads requiring complex judgment:
+
 - `mcp__mcp-openai__generate_text` for weighing conflicting evidence
+
+---
+
+## When to Use What
+
+| Lead Involves | Primary Tool | Notes |
+|---------------|--------------|-------|
+| Recent news | `xai__web_search` | Real-time results |
+| Social media | `xai__x_search` | X/Twitter search |
+| Court cases | `osint_search` (courtlistener) | Authoritative legal data |
+| Legislation | `osint_search` (legiscan) | Bill text and status |
+| Academic papers | `osint_search` (openalex/pubmed) | Peer-reviewed sources |
+| Company info | `osint_search` (sec_edgar) | Official SEC filings |
+| Statistics | `osint_search` (fred/census) | Government statistics |
+| Historical context | `deep_research` | Comprehensive analysis |
+
+---
 
 ## Critical: Source Capture
 
@@ -41,58 +102,70 @@ MCP tools return results with citation URLs. Look for:
 
 ### 2. Capture before citing
 
-For each URL you want to cite:
+**For web pages (use osint_fetch):**
+```
+mcp__mcp-osint__osint_fetch
+  url: "https://exact-url.com/article"
+```
+Then save: `node scripts/osint-save.js S### cases/<case-id> output.json`
 
+**For PDFs:**
 ```bash
-node scripts/capture.js S### <url> cases/<case-id>
-
-# Verify
-ls evidence/S###/  # Must see metadata.json AND content.md
+node scripts/capture.js --document S### https://example.gov/file.pdf cases/<case-id>
 ```
 
-### 3. Never synthesize
+**For OSINT structured data:**
+Use `osint_get` and save the response with proper metadata.
+
+### 3. Verify capture
+
+```bash
+ls evidence/S###/
+# Must see: content.md AND metadata.json
+```
+
+### 4. Never synthesize
 
 **DO NOT** create sources like:
 - "Research compilation from..."
 - "Summary of academic literature"
 - Sources pointing to homepages instead of specific articles
 
-Each source = one specific URL that was actually fetched.
+Each source = one specific URL or resource that was actually fetched.
+
+---
 
 ## Instructions
 
 1. **Read the lead** from `leads.json`
 
-2. **Search** using appropriate MCP tools
+2. **Choose appropriate tool:**
+   - Current events → XAI real-time search
+   - Legal/court data → osint_search (courtlistener)
+   - Academic claims → osint_search (openalex/pubmed)
+   - Financial data → osint_search (sec_edgar)
+   - Government data → osint_search (data_gov/census)
 
-3. **Extract URLs** from search results
+3. **Execute search** using MCP tools
 
-4. **Capture each URL** with `/capture-source`
-   - Verify metadata.json exists
-   - For PDFs: use `--document` mode
+4. **Extract and capture sources:**
+   - Web pages: `osint_fetch` → `osint-save.js`
+   - PDFs: `capture.js --document`
+   - Structured data: `osint_get` → save to evidence
 
-5. **Update the lead status** in `leads.json`:
+5. **Verify metadata.json exists** for each capture
+
+6. **Update the lead status** in `leads.json`:
    - `investigated` with result and source IDs
    - `dead_end` with explanation
 
-6. **Update the framework document** - Add findings to `questions/*.md`
+7. **Update the framework document** - Add findings to `questions/*.md`
 
-7. **Update summary.md** - Add significant findings with [S###] citations
+8. **Update summary.md** - Add significant findings with [S###] citations
 
-8. **Generate new leads** if discovered
+9. **Generate new leads** if discovered
 
-## PDF Sources
-
-For PDF documents (court filings, government reports):
-
-```bash
-node scripts/capture.js --document S### https://example.gov/file.pdf cases/<case-id>
-```
-
-If capture fails:
-- Note the URL exists
-- Do NOT synthesize the content
-- Mark lead as partially investigated
+---
 
 ## Lead Statuses
 
@@ -111,6 +184,31 @@ A lead is NOT a dead end if:
 - You just haven't searched enough
 - The information is hard to find but probably exists
 - You found partial information that could be expanded
+
+---
+
+## OSINT-Specific Guidance
+
+### Academic/Medical Claims
+
+1. Search with `osint_search` (openalex or pubmed)
+2. Preview with `osint_preview` to check relevance
+3. Fetch full record with `osint_get`
+4. Save with proper citation (DOI, PMID, etc.)
+
+### Legal/Court Cases
+
+1. Search with `osint_search` (courtlistener)
+2. Get case details with `osint_get`
+3. For full opinions, may need to fetch URL separately
+
+### Financial Data
+
+1. Search with `osint_search` (sec_edgar)
+2. Preview filing structure
+3. Fetch specific sections with `osint_get`
+
+---
 
 ## Output
 
