@@ -161,7 +161,13 @@ For government databases, academic papers, court records, etc., use mcp-osint se
    mcp__mcp-osint__osint_get
      target: "<resource_id from search results>"
      output_path: "cases/<case-id>/evidence/S###/paper.pdf" (if PDF)
+     question: "Extract key findings about X" (optional)
+     columns: ["col1", "col2"] (optional - for tabular data)
+     filters: [{"column": "year", "operator": "gte", "value": 2020}] (optional)
+     limit: 100 (optional - max rows, default 100)
    ```
+
+   **Filter operators:** `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `contains`, `starts_with`, `in`
 
 4. **Save as evidence:**
    - For PDFs: Use Gemini to extract content to content.md

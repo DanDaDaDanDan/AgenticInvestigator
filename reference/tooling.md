@@ -23,35 +23,43 @@ Primary tool for data retrieval. Two main operations: **search** and **get**.
 
 ```
 mcp__mcp-osint__osint_get
-  target: "https://example.com/article"    # URL or resource_id
-  output_path: "evidence/S001/paper.pdf"   # Required for PDFs
-  question: "What are the key findings?"   # Optional extraction
+  target: "https://example.com/article"    # URL or resource_id from osint_search
+  output_path: "evidence/S001/paper.pdf"   # Required for PDF/binary URLs
+  question: "What are the key findings?"   # Optional - what to extract
   summarize: true                          # Optional - extract only relevant content
+  columns: ["name", "value"]               # For resource_id tabular data only
+  filters: [{"column": "state", "operator": "eq", "value": "CA"}]  # For resource_id only
+  limit: 100                               # For tabular data (default: 100, max: 500)
 ```
+
+**Filter operators:** `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `contains`, `starts_with`, `in`
 
 **Returns consistent structure:**
 ```json
 {
   "format": "markdown|pdf|json|text|binary",
   "content": "...",           // For text formats
+  "raw_html": "...",          // For web pages - full HTML
   "output_path": "...",       // For binary files
   "metadata": {
     "url": "...",
+    "title": "...",           // For web pages
     "sha256": "abc123...",    // Always computed
     "size_bytes": 12345,
+    "content_type": "text/html",
     "captured_at": "2026-01-14T..."
   },
   "links": ["..."],           // For web pages
-  "provenance": { "source": "firecrawl|download|connector", "cache_hit": false }
+  "provenance": { "source": "firecrawl|download|connector", "method": "scrape|http_get|connector_extract", "cache_hit": false }
 }
 ```
 
 **Routing logic:**
 | Input | Action | Returns |
 |-------|--------|---------|
-| Web URL | Firecrawl scrape | `format: "markdown"`, `content`, `raw_html` |
+| Web URL | Firecrawl scrape | `format: "markdown"`, `content`, `raw_html`, `links` |
 | PDF URL | Download binary | `format: "pdf"`, `output_path` |
-| resource_id | Connector extract | `format: "json"/"text"`, `content` |
+| resource_id | Connector extract | `format: "json"/"text"`, `content` (supports columns, filters, limit) |
 
 ### Search
 
