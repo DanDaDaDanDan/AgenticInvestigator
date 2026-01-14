@@ -1,27 +1,39 @@
 #!/usr/bin/env node
 /**
- * osint-save.js - Save osint_get web page output as evidence
+ * osint-save.js - Save osint_get output as verifiable evidence
  *
- * Converts mcp-osint osint_get response to standard evidence format.
+ * Converts mcp-osint osint_get response to standard evidence format with
+ * hash verification support to prevent source fabrication.
  *
  * Usage:
  *   node scripts/osint-save.js <source_id> <case_dir> <json_file>
  *   node scripts/osint-save.js <source_id> <case_dir> --stdin
  *   node scripts/osint-save.js <source_id> <case_dir> --url <url> --markdown <md_file> [--title "Title"]
  *
- * Input JSON format (osint_get web page output):
+ * Input JSON format (osint_get response - save FULL response):
  *   {
- *     "url": "https://...",
- *     "title": "Page Title",
- *     "markdown": "# Content...",   // or "content" field
+ *     "format": "markdown",
+ *     "content": "# Article...",      // Markdown content
+ *     "raw_html": "<html>...",        // CRITICAL: Raw HTML for verification
+ *     "metadata": {
+ *       "url": "https://...",
+ *       "title": "Page Title",
+ *       "sha256": "abc123...",        // Hash from osint_get
+ *       "size_bytes": 12345,
+ *       "captured_at": "..."
+ *     },
  *     "links": ["url1", "url2"],
- *     "metadata": { ... }
+ *     "provenance": { "source": "firecrawl", "method": "scrape", "cache_hit": false }
  *   }
  *
  * Output (evidence/S###/):
- *   - content.md (markdown content)
+ *   - content.md (markdown for reading)
+ *   - raw.html (original HTML for verification)
  *   - links.json (extracted links)
- *   - metadata.json (capture metadata with hashes)
+ *   - metadata.json (with verification block and capture signature)
+ *
+ * Verification: The SHA256 of raw.html should match metadata.sha256 from osint_get.
+ * This proves the content was actually fetched, not fabricated.
  */
 
 'use strict';
@@ -96,17 +108,41 @@ async function saveEvidence(sourceId, caseDir, osintData) {
   fs.mkdirSync(evidenceDir, { recursive: true });
 
   const files = {};
+  let verificationFile = null;
+  let verificationHash = null;
 
-  // Save markdown content
-  if (osintData.markdown) {
+  // Save raw_html for web pages (CRITICAL for verification)
+  // osint_get computes SHA256 of raw_html, so we need this to verify
+  if (osintData.raw_html) {
+    const rawPath = path.join(evidenceDir, 'raw.html');
+    const rawBuffer = Buffer.from(osintData.raw_html);
+    fs.writeFileSync(rawPath, rawBuffer);
+    files.raw_html = {
+      path: 'raw.html',
+      hash: `sha256:${hashBuffer(rawBuffer)}`,
+      size: rawBuffer.length
+    };
+    verificationFile = 'raw.html';
+    verificationHash = files.raw_html.hash;
+    logger.debug(`Saved raw.html (${rawBuffer.length} bytes)`);
+  }
+
+  // Save markdown content (for reading)
+  if (osintData.markdown || osintData.content) {
     const mdPath = path.join(evidenceDir, 'content.md');
-    const mdBuffer = Buffer.from(osintData.markdown);
+    const mdContent = osintData.markdown || osintData.content;
+    const mdBuffer = Buffer.from(mdContent);
     fs.writeFileSync(mdPath, mdBuffer);
-    files.markdown = {
+    files.content = {
       path: 'content.md',
       hash: `sha256:${hashBuffer(mdBuffer)}`,
       size: mdBuffer.length
     };
+    // If no raw_html, use content.md for verification (resource_id case)
+    if (!verificationFile) {
+      verificationFile = 'content.md';
+      verificationHash = files.content.hash;
+    }
     logger.debug(`Saved content.md (${mdBuffer.length} bytes)`);
   }
 
@@ -124,7 +160,12 @@ async function saveEvidence(sourceId, caseDir, osintData) {
     logger.debug(`Saved links.json (${osintData.links.length} links)`);
   }
 
-  // Generate metadata
+  // Extract osint_get's reported hash (from metadata.sha256)
+  const osintReportedHash = osintData.metadata?.sha256
+    ? (osintData.metadata.sha256.startsWith('sha256:') ? osintData.metadata.sha256 : `sha256:${osintData.metadata.sha256}`)
+    : null;
+
+  // Generate metadata with verification block
   const capturedAt = new Date().toISOString();
   const metadata = {
     source_id: sourceId,
@@ -135,19 +176,34 @@ async function saveEvidence(sourceId, caseDir, osintData) {
     capture_duration_ms: Date.now() - startTime,
     capture_method: 'osint_get',
     files: files,
+    // Verification block - enables hash verification
+    verification: {
+      raw_file: verificationFile,
+      computed_hash: verificationHash,
+      osint_reported_hash: osintReportedHash,
+      verified: osintReportedHash ? (verificationHash === osintReportedHash) : null
+    },
+    // Provenance from osint_get response
+    provenance: osintData.provenance || null,
     _capture_signature: generateCaptureSignature(sourceId, osintData.url || '', capturedAt, files)
   };
 
   fs.writeFileSync(path.join(evidenceDir, 'metadata.json'), JSON.stringify(metadata, null, 2));
   logger.debug(`Saved metadata.json`);
 
-  op.success({ files: Object.keys(files).length });
+  // Warn if hash mismatch
+  if (osintReportedHash && verificationHash !== osintReportedHash) {
+    logger.warn(`Hash mismatch for ${sourceId}: computed=${verificationHash}, osint_reported=${osintReportedHash}`);
+  }
+
+  op.success({ files: Object.keys(files).length, verified: metadata.verification.verified });
 
   return {
     success: true,
     sourceId,
     evidenceDir,
-    files: Object.keys(files)
+    files: Object.keys(files),
+    verified: metadata.verification.verified
   };
 }
 

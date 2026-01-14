@@ -238,42 +238,72 @@ A source is a **single, specific URL** that was actually fetched. Never:
 - Point to homepages instead of specific articles
 - Write content.md manually instead of capturing
 
-### Verification Required
+### Verifiable Evidence Structure
 
 Every source MUST have:
 ```
 evidence/S###/
-├── content.md       # Written by capture script, NOT manually
-├── metadata.json    # REQUIRED - proves capture happened
+├── content.md       # Markdown for reading
+├── raw.html         # Original HTML (for web pages) - REQUIRED for verification
+├── metadata.json    # With verification block and capture signature
 ```
 
-**If metadata.json doesn't exist, the source is invalid.**
+**metadata.json must contain:**
+```json
+{
+  "source_id": "S###",
+  "url": "https://...",
+  "captured_at": "2026-01-14T22:34:56.789Z",
+  "files": { ... },
+  "verification": {
+    "raw_file": "raw.html",
+    "computed_hash": "sha256:...",
+    "osint_reported_hash": "sha256:..."
+  },
+  "_capture_signature": "sig_v2_..."
+}
+```
 
-### Red Flags for Fabricated Sources
+### Hash Verification
 
-- No metadata.json in evidence folder
-- content.md starts with "Research compilation..."
-- Timestamp is round number like `T20:00:00.000Z`
-- URL is a homepage, not specific article
-- Title includes "Compilation" or "Summary"
+During `/verify`, each cited source is verified:
+1. Hash the raw file (raw.html or PDF)
+2. Compare to `verification.computed_hash`
+3. Check against `verification.osint_reported_hash`
+4. Mismatch = source is invalid or tampered
 
-### MCP Search → URL Extraction → Capture
+**Run verification:**
+```bash
+node scripts/verify-source.js --check-article cases/[case-id]
+```
+
+### Red Flags (Auto-detected)
+
+- No metadata.json → source invalid
+- No `_capture_signature` → may be manually created
+- Hash mismatch → content tampered
+- Round timestamp (`T20:00:00.000Z`) → suspicious
+- Homepage URL → should be specific article
+- content.md starts with "Research compilation..." → fabricated
+
+### Capture Workflow
 
 When MCP search tools return results:
 
-1. **Extract specific URLs** from the response (look for markdown links, citation blocks)
-2. **Capture each URL** using `osint_get`:
-   - Web pages: `osint_get target=<url>` → returns markdown with SHA256
+1. **Extract specific URLs** from the response
+2. **Capture using osint_get:**
+   - Web pages: `osint_get target=<url>` → save FULL response (including raw_html)
    - PDFs: `osint_get target=<url> output_path=evidence/S###/paper.pdf`
-3. **Save evidence** using osint-save.js or Write tool
-4. **Verify SHA256 hash** in metadata.json
+3. **Save with osint-save.js:** Preserves raw_html and creates verification block
+4. **Verify immediately:** Check that verification.verified = true
 5. **Only then cite** with [S###]
 
 ### PDF Handling
 
 For PDFs: `osint_get target=<url> output_path=evidence/S###/document.pdf`
 
-This downloads the PDF and returns SHA256 hash. Then use Gemini to extract content.
+Returns SHA256 hash. Then use Gemini to extract content to content.md.
+The PDF binary IS the raw file for verification.
 
 If PDF capture fails, note the URL but do NOT synthesize content.
 
