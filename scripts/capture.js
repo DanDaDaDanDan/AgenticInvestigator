@@ -3,7 +3,7 @@
  * capture.js - Document/PDF download for evidence capture
  *
  * Downloads documents (PDFs, files) and creates metadata.json.
- * For web pages, use mcp-osint osint_fetch + osint-save.js instead.
+ * For web pages, use mcp-osint osint_get instead.
  *
  * Usage:
  *   node scripts/capture.js --document <source_id> <url> [filename] [case_dir|case_id]
@@ -152,7 +152,7 @@ function downloadToFile(url, filePath) {
 function printUsage() {
   console.log('capture.js - Download documents/PDFs for evidence capture');
   console.log('');
-  console.log('For web pages, use: osint_fetch MCP tool + osint-save.js');
+  console.log('For web pages, use: osint_get MCP tool with output_path');
   console.log('');
   console.log('Usage:');
   console.log('  node scripts/capture.js --document <source_id> <url> [filename] [case_dir|case_id]');
@@ -219,7 +219,7 @@ async function main() {
   const isDoc = args[0] === '--document' || args[0] === '-d';
   if (!isDoc) {
     console.error('Error: This script only supports document downloads.');
-    console.error('For web pages, use: osint_fetch MCP tool + osint-save.js');
+    console.error('For web pages, use: osint_get MCP tool with output_path');
     console.error('');
     printUsage();
     process.exit(1);

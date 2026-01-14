@@ -72,19 +72,22 @@ When a search tool returns results, look for:
 
 ### Capture Each URL
 
-For each URL you want to cite:
+For each URL you want to cite, use `osint_get`:
 
-**Web pages (use osint_fetch):**
+**Web pages:**
 ```
-mcp__mcp-osint__osint_fetch
-  url: "https://example.com/specific-article"
+mcp__mcp-osint__osint_get
+  target: "https://example.com/specific-article"
 ```
-Then save with `osint-save.js`.
+Returns markdown with SHA256 hash. Save to evidence folder.
 
 **PDFs and documents:**
-```bash
-node scripts/capture.js --document S### https://example.gov/report.pdf cases/<case-id>
 ```
+mcp__mcp-osint__osint_get
+  target: "https://example.gov/report.pdf"
+  output_path: "cases/<case-id>/evidence/S###/report.pdf"
+```
+Then use Gemini to extract content to content.md.
 
 ### From OSINT Structured Sources
 
@@ -137,10 +140,10 @@ From the search results, I found these specific URLs:
 
 3. **Extract all useful URLs** from responses
 
-4. **Capture each URL** using appropriate method:
-   - Web pages: `osint_fetch` → `osint-save.js`
-   - PDFs: `capture.js --document`
-   - Structured data: `osint_get` → save to evidence
+4. **Capture each URL** using `osint_get`:
+   - Web pages: `osint_get target=<url>` → save to evidence
+   - PDFs: `osint_get target=<url> output_path=<path>` → Gemini extract
+   - Structured data: `osint_get target=<resource_id>` → save to evidence
 
 5. **Verify metadata.json exists** for each capture
 

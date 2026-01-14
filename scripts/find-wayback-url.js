@@ -135,14 +135,14 @@ async function batchProcess(inputFile, outputFile) {
   console.log(`\nResults saved to: ${outputFile}`);
   console.log(`Found: ${output.found}/${output.total}`);
 
-  // Also output as URL list format for osint_fetch capture
+  // Also output as URL list format for osint_get capture
   const urlListFile = outputFile.replace('.json', '-urls.txt');
   const urlList = results
     .filter(r => r.found)
     .map(r => `${r.sourceId}|${r.waybackUrl}|${r.title} (Wayback ${r.date})`)
     .join('\n');
 
-  fs.writeFileSync(urlListFile, `# Wayback Machine URLs - Generated ${new Date().toISOString()}\n# Use osint_fetch to capture each URL\n${urlList}\n`);
+  fs.writeFileSync(urlListFile, `# Wayback Machine URLs - Generated ${new Date().toISOString()}\n# Use osint_get to capture each URL\n${urlList}\n`);
   console.log(`URL list saved to: ${urlListFile}`);
 }
 

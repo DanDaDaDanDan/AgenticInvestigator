@@ -4,7 +4,7 @@ Utility scripts for AgenticInvestigator. No npm dependencies required - pure Nod
 
 ## Prerequisites
 
-**Required:** mcp-osint MCP server (for web capture via `osint_fetch`)
+**Required:** mcp-osint MCP server (for web capture and PDF download via `osint_get`)
 
 ---
 
@@ -12,7 +12,7 @@ Utility scripts for AgenticInvestigator. No npm dependencies required - pure Nod
 
 ### `osint-save.js`
 
-Save `osint_fetch` MCP output as evidence.
+Save `osint_get` web page output as evidence with proper metadata and capture signature.
 
 ```bash
 # From JSON file (RECOMMENDED - works on all platforms)
@@ -29,11 +29,13 @@ Creates:
 - `evidence/S001/links.json` - Extracted links (if provided)
 - `evidence/S001/metadata.json` - Timestamps, hashes, capture signature
 
+**Note:** For PDFs, use `osint_get` with `output_path` directly - it handles download and SHA256.
+
 ---
 
 ### `capture.js`
 
-Download documents/PDFs for evidence capture.
+Download documents/PDFs for evidence capture. **Legacy** - prefer `osint_get` with `output_path`.
 
 ```bash
 node scripts/capture.js -d S015 https://sec.gov/filing.pdf cases/[case-id]
@@ -44,7 +46,7 @@ Creates:
 - `evidence/S015/[filename]` - Downloaded document
 - `evidence/S015/metadata.json` - Timestamps, hash
 
-**Note:** For web pages, use `osint_fetch` MCP tool + `osint-save.js` instead.
+**Note:** `osint_get` with `output_path` is now preferred for PDF downloads.
 
 ---
 
@@ -103,15 +105,24 @@ Environment variables:
 
 ## Capture Workflow
 
-### Web Pages
+### All Content (Unified with osint_get)
 
-1. Use `osint_fetch` MCP tool to fetch URL
-2. Write response to JSON file
-3. Run `osint-save.js` to save as evidence
-4. Verify `metadata.json` exists
+```
+osint_get target=<url_or_resource_id> [output_path=<path_for_pdfs>]
+→ Returns { format, content/output_path, metadata.sha256 }
+```
 
-### Documents/PDFs
+**For web pages:**
+1. `osint_get target=<url>` returns markdown with SHA256
+2. Save content to `evidence/S###/content.md`
+3. Save metadata to `evidence/S###/metadata.json`
 
-1. Run `capture.js --document` to download
-2. Use `gemini generate_text` with file to extract content
-3. Save extracted content to `content.md`
+**For PDFs:**
+1. `osint_get target=<url> output_path=evidence/S###/doc.pdf`
+2. Use Gemini to extract content to `content.md`
+3. osint_get already created metadata with SHA256
+
+**Alternative for web pages:**
+1. `osint_get` returns JSON with content
+2. Save JSON to temp file
+3. Run `osint-save.js` to create evidence with capture signature
