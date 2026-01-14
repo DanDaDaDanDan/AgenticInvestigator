@@ -155,14 +155,15 @@ function printUsage() {
   console.log('osint-save.js - Save osint_fetch output as evidence');
   console.log('');
   console.log('Usage:');
-  console.log('  node scripts/osint-save.js <source_id> <case_dir> <json_file>');
-  console.log('  node scripts/osint-save.js <source_id> <case_dir> --stdin');
+  console.log('  node scripts/osint-save.js <source_id> <case_dir> <json_file>  (RECOMMENDED)');
   console.log('  node scripts/osint-save.js <source_id> <case_dir> --url <url> --markdown <md_file>');
+  console.log('  node scripts/osint-save.js <source_id> <case_dir> --stdin      (Unix only)');
   console.log('');
   console.log('Examples:');
   console.log('  node scripts/osint-save.js S001 cases/my-case osint-output.json');
-  console.log('  echo \'{"url":"...","markdown":"..."}\' | node scripts/osint-save.js S001 cases/my-case --stdin');
   console.log('  node scripts/osint-save.js S001 cases/my-case --url https://example.com --markdown content.md --title "Title"');
+  console.log('');
+  console.log('NOTE: On Windows, always use the JSON file method. Stdin/echo breaks JSON escaping.');
 }
 
 async function main() {

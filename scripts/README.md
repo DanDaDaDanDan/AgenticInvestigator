@@ -15,15 +15,14 @@ Utility scripts for AgenticInvestigator. No npm dependencies required - pure Nod
 Save `osint_fetch` MCP output as evidence.
 
 ```bash
-# From JSON file
+# From JSON file (RECOMMENDED - works on all platforms)
 node scripts/osint-save.js S001 cases/[case-id] osint-output.json
-
-# From stdin
-echo '{"url":"...","markdown":"..."}' | node scripts/osint-save.js S001 cases/[case-id] --stdin
 
 # From URL + markdown file
 node scripts/osint-save.js S001 cases/[case-id] --url https://example.com --markdown content.md --title "Title"
 ```
+
+**Important:** On Windows, always use the JSON file method. Do NOT use stdin/echo - JSON escaping breaks.
 
 Creates:
 - `evidence/S001/content.md` - Markdown content

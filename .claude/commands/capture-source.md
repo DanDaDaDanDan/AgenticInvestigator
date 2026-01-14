@@ -65,15 +65,24 @@ This returns:
 
 ### Step 2: Save as evidence
 
-Write the fetch result to a JSON file, then save:
+**Use the Write tool** to create a JSON file with the osint_fetch output, then run osint-save.js:
+
+```json
+// Write to: cases/<case-id>/tmp-osint.json
+{
+  "url": "https://example.com/article",
+  "title": "Article Title from osint_fetch",
+  "markdown": "# Content\n\nThe markdown content from osint_fetch..."
+}
+```
+
+Then save as evidence:
 
 ```bash
-# Write osint output to temp file
-# Then run:
-node scripts/osint-save.js S### cases/<case-id> osint-output.json
-
-# Or with inline data via stdin
+node scripts/osint-save.js S### cases/<case-id> cases/<case-id>/tmp-osint.json
 ```
+
+**Important:** Do NOT use stdin/echo with JSON on Windows - it breaks. Always use the file method.
 
 ### Step 3: Verify and register
 
