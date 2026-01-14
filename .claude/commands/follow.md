@@ -54,7 +54,7 @@ mcp__mcp-osint__osint_search
 After finding a resource:
 ```
 mcp__mcp-osint__osint_get
-  resource_id: "<from search results>"
+  target: "<resource_id from search results>"
   question: "what specific information to extract"
 ```
 
