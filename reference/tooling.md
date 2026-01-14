@@ -6,35 +6,59 @@ External AI capabilities available via MCP servers. Use judgment on when these a
 
 ## OSINT Data Sources (mcp-osint)
 
-Primary tool for structured data and web capture. Provides access to 14 authoritative data sources.
+Primary tool for data retrieval. Two main operations: **search** and **get**.
 
-### Web Capture
-
-| Tool | Purpose |
-|------|---------|
-| `osint_fetch` | Fetch URL as markdown (uses Firecrawl) |
-
-```
-mcp__mcp-osint__osint_fetch
-  url: "https://example.com/article"
-  extract_question: "What are the key facts?" (optional)
-```
-
-Returns: title, markdown content, links. Save with `osint-save.js`.
-
-### Structured Data Search
+### Core Tools
 
 | Tool | Purpose |
 |------|---------|
-| `osint_search` | Search across 14 data sources |
+| `osint_search` | Find resources across 14 data sources |
+| `osint_get` | Retrieve content (URLs, PDFs, resource_ids) |
 | `osint_preview` | Preview resource before fetching |
-| `osint_get` | Fetch data from resource |
-| `osint_list_sources` | List available sources |
+| `osint_list_sources` | List available sources and status |
+
+### Unified osint_get
+
+**One tool handles all retrieval.** Automatically detects format and retrieves appropriately.
+
+```
+mcp__mcp-osint__osint_get
+  target: "https://example.com/article"    # URL or resource_id
+  output_path: "evidence/S001/paper.pdf"   # Required for PDFs
+  question: "What are the key findings?"   # Optional extraction
+  summarize: true                          # Optional - extract only relevant content
+```
+
+**Returns consistent structure:**
+```json
+{
+  "format": "markdown|pdf|json|text|binary",
+  "content": "...",           // For text formats
+  "output_path": "...",       // For binary files
+  "metadata": {
+    "url": "...",
+    "sha256": "abc123...",    // Always computed
+    "size_bytes": 12345,
+    "captured_at": "2026-01-14T..."
+  },
+  "links": ["..."],           // For web pages
+  "provenance": { "source": "firecrawl|download|connector", "cache_hit": false }
+}
+```
+
+**Routing logic:**
+| Input | Action | Returns |
+|-------|--------|---------|
+| Web URL | Firecrawl scrape | `format: "markdown"`, `content`, `raw_html` |
+| PDF URL | Download binary | `format: "pdf"`, `output_path` |
+| resource_id | Connector extract | `format: "json"/"text"`, `content` |
+
+### Search
 
 ```
 mcp__mcp-osint__osint_search
   query: "SEC enforcement cryptocurrency 2024"
-  source: "sec_edgar" (optional - auto-routes if omitted)
+  source: "sec_edgar"   # Optional - auto-routes if omitted
   limit: 10
 ```
 
@@ -107,9 +131,48 @@ For complex judgment calls requiring deep reasoning.
 | Tool | Model | Use When |
 |------|-------|----------|
 | `mcp__mcp-openai__generate_text` | GPT 5.2 Pro | Complex analysis, nuanced judgment, contested questions |
-| `mcp__mcp-gemini__generate_text` | Gemini 3 Pro | Semantic verification, content analysis |
+| `mcp__mcp-gemini__generate_text` | Gemini 3 Pro | Semantic verification, content analysis, PDF extraction |
 
-**Good for:** Evaluating competing hypotheses, analyzing contradictions, making judgment calls on ambiguous evidence, steelmanning positions, assessing whether claims are truly supported.
+**Good for:** Evaluating competing hypotheses, analyzing contradictions, making judgment calls on ambiguous evidence, steelmanning positions, assessing whether claims are truly supported, extracting content from PDFs.
+
+---
+
+## Capture Workflow
+
+### All Content Types (Unified)
+
+```
+1. osint_get target=<url_or_resource_id> [output_path=...] [question=...]
+   → Returns { format, content/output_path, metadata.sha256 }
+
+2. Save to evidence/S###/ with metadata.json containing sha256
+
+3. For PDFs: Use Gemini to extract content to content.md
+```
+
+### Examples
+
+**Web article:**
+```
+osint_get target="https://news.example.com/article"
+→ { format: "markdown", content: "...", metadata: { sha256: "..." } }
+```
+
+**PDF document:**
+```
+osint_get target="https://pmc.ncbi.nlm.nih.gov/.../paper.pdf"
+          output_path="evidence/S001/paper.pdf"
+→ { format: "pdf", output_path: "evidence/S001/paper.pdf", metadata: { sha256: "..." } }
+```
+
+**Search result:**
+```
+osint_search query="food dyes children behavior" source="pubmed"
+→ Returns papers with resource_ids
+
+osint_get target="pubmed:paper:35484553:fulltext"
+→ Auto-follows to PDF if available
+```
 
 ---
 
@@ -122,29 +185,6 @@ For complex judgment calls requiring deep reasoning.
 | FOLLOW | XAI real-time + OSINT specific | Leads need current data + authoritative sources |
 | CURIOSITY | Extended thinking | Genuine judgment required |
 | VERIFY | Gemini generate_text + OSINT | Semantic verification against original sources |
-
----
-
-## Capture Workflow
-
-### Web Pages
-
-1. `osint_fetch` to get content
-2. `osint-save.js` to save as evidence
-3. Verify metadata.json exists
-
-### PDFs/Documents
-
-1. `capture.js --document` to download
-2. `gemini generate_text` with file to extract content
-3. Save extracted content to content.md
-
-### Structured Data
-
-1. `osint_search` to find resource
-2. `osint_preview` to check structure
-3. `osint_get` to fetch data
-4. Save to evidence with proper metadata
 
 ---
 
@@ -162,7 +202,7 @@ For complex judgment calls requiring deep reasoning.
 
 | Variable | Required For |
 |----------|--------------|
-| `FIRECRAWL_API_KEY` | `osint_fetch` (via mcp-osint) |
+| `FIRECRAWL_API_KEY` | `osint_get` web pages (via mcp-osint) |
 | `LEGISCAN_API_KEY` | `osint_search` (legiscan) |
 | `COURTLISTENER_API_KEY` | `osint_search` (courtlistener) |
 | `FRED_API_KEY` | `osint_search` (fred) |

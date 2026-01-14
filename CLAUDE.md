@@ -262,15 +262,18 @@ evidence/S###/
 When MCP search tools return results:
 
 1. **Extract specific URLs** from the response (look for markdown links, citation blocks)
-2. **Capture each URL** using:
-   - Web pages: `osint_fetch` → `osint-save.js S### cases/<case-id>`
-   - PDFs: `capture.js --document S### <url> cases/<case-id>`
-3. **Verify metadata.json exists**
-4. **Only then cite** with [S###]
+2. **Capture each URL** using `osint_get`:
+   - Web pages: `osint_get target=<url>` → returns markdown with SHA256
+   - PDFs: `osint_get target=<url> output_path=evidence/S###/paper.pdf`
+3. **Save evidence** using osint-save.js or Write tool
+4. **Verify SHA256 hash** in metadata.json
+5. **Only then cite** with [S###]
 
 ### PDF Handling
 
-For PDFs: `node scripts/capture.js --document S### <url> cases/<case-id>`
+For PDFs: `osint_get target=<url> output_path=evidence/S###/document.pdf`
+
+This downloads the PDF and returns SHA256 hash. Then use Gemini to extract content.
 
 If PDF capture fails, note the URL but do NOT synthesize content.
 
@@ -304,8 +307,8 @@ See `reference/frameworks.md` for the full list and guiding questions.
 
 | Need | Server | Tool |
 |------|--------|------|
-| **Web capture** | mcp-osint | `osint_fetch` → `osint-save.js` |
-| **Structured data** | mcp-osint | `osint_search`, `osint_get` |
+| **Find sources** | mcp-osint | `osint_search` |
+| **Get content** | mcp-osint | `osint_get` (URLs, PDFs, resource_ids) |
 | Semantic verification | mcp-gemini | `generate_text` (gemini-3-pro) |
 | Deep research (fast) | mcp-gemini | `deep_research` |
 | Deep research (max) | mcp-openai | `deep_research` |
@@ -325,22 +328,23 @@ See `reference/frameworks.md` for the full list and guiding questions.
 | `fred` | Economic data |
 | `gdelt` | Global news events |
 
-### Capture Workflow
+### Capture Workflow (Unified)
 
-**Web pages:**
-1. `osint_fetch` → get markdown
-2. `osint-save.js` → save to evidence/S###/
-3. Verify metadata.json exists
+**osint_get handles everything:**
 
-**PDFs:**
-1. `capture.js --document` → download
-2. `gemini generate_text` with file → extract
-3. Save content.md
+| Target | What happens | Returns |
+|--------|--------------|---------|
+| Web URL | Firecrawl → markdown | `format: "markdown"`, `content`, `sha256` |
+| PDF URL | Download binary | `format: "pdf"`, `output_path`, `sha256` |
+| resource_id | Connector extract | `format: "json"/"text"`, `content`, `sha256` |
 
-**Structured data:**
-1. `osint_search` → find resource
-2. `osint_get` → fetch data
-3. Save to evidence with metadata
+**Example:**
+```
+osint_get target="https://example.com/paper.pdf" output_path="evidence/S001/paper.pdf"
+→ { format: "pdf", output_path: "...", metadata: { sha256: "abc123..." } }
+```
+
+**Then for PDFs:** Use Gemini to extract content to content.md
 
 ---
 

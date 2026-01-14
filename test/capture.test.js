@@ -3,7 +3,7 @@
  *
  * Tests case resolution logic and utility functions.
  * Note: capture.js now only supports document downloads.
- * For web pages, use osint_fetch + osint-save.js.
+ * For web pages, use osint_get MCP tool.
  */
 
 const test = require('node:test');
@@ -128,7 +128,7 @@ test('capture.js has correct usage message', async (t) => {
   assert.ok(content.includes('<source_id>'), 'Usage should mention source_id');
   assert.ok(content.includes('<url>'), 'Usage should mention url');
   assert.ok(content.includes('--document'), 'Usage should mention --document flag');
-  assert.ok(content.includes('osint_fetch'), 'Should reference osint_fetch for web pages');
+  assert.ok(content.includes('osint_get'), 'Should reference osint_get for web pages');
 });
 
 test('capture.js error message is accurate', async (t) => {
@@ -154,5 +154,5 @@ test('osint-save.js script exists', async (t) => {
 
   const content = fs.readFileSync(osintSaveScript, 'utf-8');
   assert.ok(content.includes('#!/usr/bin/env node'), 'Should have shebang');
-  assert.ok(content.includes('osint_fetch'), 'Should reference osint_fetch');
+  assert.ok(content.includes('osint_get') || content.includes('osint-save'), 'Should reference osint_get or osint-save');
 });

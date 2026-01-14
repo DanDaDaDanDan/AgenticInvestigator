@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 /**
- * osint-save.js - Save osint_fetch output as evidence
+ * osint-save.js - Save osint_get web page output as evidence
  *
- * Converts mcp-osint osint_fetch response to standard evidence format.
+ * Converts mcp-osint osint_get response to standard evidence format.
  *
  * Usage:
  *   node scripts/osint-save.js <source_id> <case_dir> <json_file>
  *   node scripts/osint-save.js <source_id> <case_dir> --stdin
  *   node scripts/osint-save.js <source_id> <case_dir> --url <url> --markdown <md_file> [--title "Title"]
  *
- * Input JSON format (osint_fetch output):
+ * Input JSON format (osint_get web page output):
  *   {
  *     "url": "https://...",
  *     "title": "Page Title",
- *     "markdown": "# Content...",
+ *     "markdown": "# Content...",   // or "content" field
  *     "links": ["url1", "url2"],
  *     "metadata": { ... }
  *   }
@@ -133,7 +133,7 @@ async function saveEvidence(sourceId, caseDir, osintData) {
     description: osintData.description || osintData.metadata?.description || '',
     captured_at: capturedAt,
     capture_duration_ms: Date.now() - startTime,
-    capture_method: 'osint_fetch',
+    capture_method: 'osint_get',
     files: files,
     _capture_signature: generateCaptureSignature(sourceId, osintData.url || '', capturedAt, files)
   };
@@ -152,7 +152,7 @@ async function saveEvidence(sourceId, caseDir, osintData) {
 }
 
 function printUsage() {
-  console.log('osint-save.js - Save osint_fetch output as evidence');
+  console.log('osint-save.js - Save osint_get web page output as evidence');
   console.log('');
   console.log('Usage:');
   console.log('  node scripts/osint-save.js <source_id> <case_dir> <json_file>  (RECOMMENDED)');

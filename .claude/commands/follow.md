@@ -58,14 +58,15 @@ mcp__mcp-osint__osint_get
   question: "what specific information to extract"
 ```
 
-### Web Page Fetching
+### Web Page and PDF Fetching
 
-Use `osint_fetch` to capture web pages:
+Use `osint_get` to capture any URL (web pages or PDFs):
 
 ```
-mcp__mcp-osint__osint_fetch
-  url: "https://example.com/article"
-  extract_question: "Extract facts about [topic]" (optional)
+mcp__mcp-osint__osint_get
+  target: "https://example.com/article"
+  question: "Extract facts about [topic]" (optional)
+  output_path: "evidence/S###/doc.pdf" (required for PDFs)
 ```
 
 ### Extended Thinking
@@ -102,20 +103,16 @@ MCP tools return results with citation URLs. Look for:
 
 ### 2. Capture before citing
 
-**For web pages (use osint_fetch):**
+**For any URL (web pages or PDFs):**
 ```
-mcp__mcp-osint__osint_fetch
-  url: "https://exact-url.com/article"
+mcp__mcp-osint__osint_get
+  target: "https://exact-url.com/article"
+  output_path: "evidence/S###/doc.pdf" (for PDFs)
 ```
-Then save: `node scripts/osint-save.js S### cases/<case-id> output.json`
-
-**For PDFs:**
-```bash
-node scripts/capture.js --document S### https://example.gov/file.pdf cases/<case-id>
-```
+Returns content/path with SHA256 hash. Save to evidence folder.
 
 **For OSINT structured data:**
-Use `osint_get` and save the response with proper metadata.
+Use `osint_get` with resource_id and save the response with proper metadata.
 
 ### 3. Verify capture
 
@@ -149,9 +146,9 @@ Each source = one specific URL or resource that was actually fetched.
 3. **Execute search** using MCP tools
 
 4. **Extract and capture sources:**
-   - Web pages: `osint_fetch` → `osint-save.js`
-   - PDFs: `capture.js --document`
-   - Structured data: `osint_get` → save to evidence
+   - Web pages: `osint_get target=<url>` → save to evidence
+   - PDFs: `osint_get target=<url> output_path=<path>` → Gemini extract
+   - Structured data: `osint_get target=<resource_id>` → save to evidence
 
 5. **Verify metadata.json exists** for each capture
 

@@ -5,8 +5,7 @@ Capture a **single URL** as evidence for citations.
 ## Usage
 
 ```
-/capture-source <url>              # Web page (uses osint_fetch)
-/capture-source --document <url>   # PDF or document (direct download)
+/capture-source <url>              # Any URL (web page or PDF)
 /capture-source --osint <query>    # Structured data from OSINT sources
 ```
 
@@ -31,11 +30,11 @@ After capture, **verify these files exist**:
 ```
 evidence/S###/
 ├── content.md       # REQUIRED - actual captured content
-├── metadata.json    # REQUIRED - capture timestamp, URL, hash
-└── links.json       # Optional - extracted links
+├── metadata.json    # REQUIRED - with sha256 hash
+└── [document.pdf]   # For PDFs - the actual file
 ```
 
-**If metadata.json doesn't exist, the capture FAILED.** Do not cite.
+**If metadata.json doesn't have sha256, the capture FAILED.** Do not cite.
 
 ### 3. Never Write content.md Manually
 
@@ -46,80 +45,59 @@ The capture tools write content.md from fetched data. You must NEVER:
 
 ---
 
-## Web Page Capture (Primary Method)
+## Unified Capture with osint_get
 
-Use `osint_fetch` from mcp-osint for web pages:
+**One tool handles all URL retrieval.** It auto-detects format and retrieves appropriately.
 
-### Step 1: Fetch the page
+### Web Pages
 
 ```
-mcp__mcp-osint__osint_fetch
-  url: "https://example.com/article"
-  extract_question: "Extract key facts about [topic]" (optional)
+mcp__mcp-osint__osint_get
+  target: "https://example.com/article"
+  question: "Extract key facts about [topic]" (optional)
 ```
 
-This returns:
-- `title` - Page title
-- `markdown` - Clean markdown content
-- `links` - Links found on page
-
-### Step 2: Save as evidence
-
-**Use the Write tool** to create a JSON file with the osint_fetch output, then run osint-save.js:
-
+**Returns:**
 ```json
-// Write to: cases/<case-id>/tmp-osint.json
 {
-  "url": "https://example.com/article",
-  "title": "Article Title from osint_fetch",
-  "markdown": "# Content\n\nThe markdown content from osint_fetch..."
+  "format": "markdown",
+  "content": "# Article Title\n\nThe full markdown content...",
+  "metadata": {
+    "url": "https://example.com/article",
+    "title": "Article Title",
+    "sha256": "abc123...",
+    "size_bytes": 23456,
+    "captured_at": "2026-01-14T..."
+  },
+  "links": ["https://...", "..."]
 }
 ```
 
-Then save as evidence:
+**Save to evidence:** Use Write tool to save content to evidence/S###/content.md and metadata to metadata.json.
 
-```bash
-node scripts/osint-save.js S### cases/<case-id> cases/<case-id>/tmp-osint.json
+### PDFs
+
+```
+mcp__mcp-osint__osint_get
+  target: "https://example.gov/report.pdf"
+  output_path: "cases/<case-id>/evidence/S###/document.pdf"
 ```
 
-**Important:** Do NOT use stdin/echo with JSON on Windows - it breaks. Always use the file method.
-
-### Step 3: Verify and register
-
-```bash
-# Verify capture succeeded
-ls evidence/S###/
-# Must see: content.md AND metadata.json
-```
-
-Then register in sources.json:
+**Returns:**
 ```json
 {
-  "id": "S###",
-  "url": "https://exact-url-captured.com/article",
-  "title": "Exact title from the source",
-  "outlet": "Publication name",
-  "captured_at": "2026-01-13T...",
-  "type": "news|government|legal|academic"
+  "format": "pdf",
+  "output_path": "cases/<case-id>/evidence/S###/document.pdf",
+  "metadata": {
+    "url": "https://example.gov/report.pdf",
+    "sha256": "def456...",
+    "size_bytes": 1234567,
+    "captured_at": "2026-01-14T..."
+  }
 }
 ```
 
----
-
-## Document/PDF Capture
-
-For PDFs and downloadable documents, use direct download:
-
-```bash
-node scripts/capture.js --document S### https://example.gov/file.pdf cases/<case-id>
-```
-
-This saves the PDF to `evidence/S###/file.pdf` with metadata.json.
-
-### Extracting PDF Content
-
-After downloading, read the PDF with Gemini to create content.md:
-
+**Then extract content with Gemini:**
 ```
 mcp__mcp-gemini__generate_text
   prompt: "Extract the key provisions about [topic] from this document.
@@ -127,7 +105,20 @@ mcp__mcp-gemini__generate_text
   files: ["cases/<case-id>/evidence/S###/document.pdf"]
 ```
 
-Then save Gemini's output to `evidence/S###/content.md`.
+Save Gemini's output to `evidence/S###/content.md`.
+
+### After Capture
+
+Register in sources.json:
+```json
+{
+  "id": "S###",
+  "url": "https://exact-url-captured.com/article",
+  "title": "Exact title from the source",
+  "type": "news|government|legal|academic",
+  "captured": "2026-01-14"
+}
+```
 
 ---
 
@@ -155,11 +146,11 @@ For government databases, academic papers, court records, etc., use mcp-osint se
 1. **Search for the resource:**
    ```
    mcp__mcp-osint__osint_search
-     query: "EPA air quality data California 2024"
-     source: "data_gov" (optional - auto-routes if not specified)
+     query: "food dyes children behavior"
+     source: "pubmed" (optional - auto-routes if not specified)
    ```
 
-2. **Preview the resource:**
+2. **Preview the resource (optional):**
    ```
    mcp__mcp-osint__osint_preview
      resource_id: "<id from search results>"
@@ -168,13 +159,14 @@ For government databases, academic papers, court records, etc., use mcp-osint se
 3. **Fetch the data:**
    ```
    mcp__mcp-osint__osint_get
-     resource_id: "<id from search results>"
-     question: "all data about PM2.5 levels"
+     target: "<resource_id from search results>"
+     output_path: "cases/<case-id>/evidence/S###/paper.pdf" (if PDF)
    ```
 
 4. **Save as evidence:**
-   - Write the response to evidence/S###/content.md
-   - Create metadata.json with source information
+   - For PDFs: Use Gemini to extract content to content.md
+   - For text/json: Save content directly to content.md
+   - Create metadata.json with sha256 from response
    - Register in sources.json
 
 ---
@@ -198,12 +190,12 @@ For government databases, academic papers, court records, etc., use mcp-osint se
 If capture fails:
 
 1. **For web pages:**
-   - Try `osint_fetch` with different parameters
+   - Try `osint_get` again
    - Check Wayback Machine: `node scripts/find-wayback-url.js <url>`
-   - Fetch archived version with `osint_fetch`
+   - Fetch archived version with `osint_get`
 
 2. **For PDFs:**
-   - Try alternate URL format
+   - Ensure `output_path` is provided
    - Check if document is publicly accessible
 
 3. **For OSINT sources:**
@@ -220,10 +212,12 @@ If capture fails:
 These indicate a fabricated source that must be deleted:
 
 - No metadata.json in evidence/S###/
+- No sha256 hash in metadata.json
 - content.md starts with "Research compilation from..."
 - Timestamp is a round number like `T20:00:00.000Z`
 - URL is a homepage (e.g., `https://pubmed.ncbi.nlm.nih.gov/`) not specific article
 - Title includes "Compilation" or "Research Summary"
+- Type includes "synthesis" or "aggregation"
 
 ---
 
@@ -231,9 +225,9 @@ These indicate a fabricated source that must be deleted:
 
 | Need | Method |
 |------|--------|
-| Web article | `osint_fetch` → `osint-save.js` |
-| PDF document | `capture.js --document` |
-| Academic paper | `osint_search` (openalex/pubmed) → `osint_get` |
+| Web article | `osint_get target=<url>` |
+| PDF document | `osint_get target=<url> output_path=<path>` + Gemini extract |
+| Academic paper | `osint_search` → `osint_get target=<resource_id>` |
 | Court case | `osint_search` (courtlistener) → `osint_get` |
 | Government data | `osint_search` (data_gov/census) → `osint_get` |
 | SEC filing | `osint_search` (sec_edgar) → `osint_get` |
