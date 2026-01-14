@@ -1,7 +1,7 @@
 # 35-Framework Rigor Analysis
 
 This file is the **single source of truth** for all investigation frameworks.
-Referenced by: `rigor-exploration-agent.md`, `deep-thinking-agent.md`
+Used by the `/question` skill during the QUESTION phase.
 
 ---
 
