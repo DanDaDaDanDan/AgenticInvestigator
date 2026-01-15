@@ -102,8 +102,20 @@ function createSourcesJson() {
 
 function createLeadsJson() {
   return JSON.stringify({
+    max_depth: 3,
     leads: []
   }, null, 2);
+}
+
+function createFutureResearchMd() {
+  return `# Future Research
+
+Leads beyond max_depth that merit future investigation.
+
+---
+
+*No leads deferred yet.*
+`;
 }
 
 function createSummaryMd(topic) {
@@ -207,6 +219,13 @@ function main() {
   );
   console.log('Created: removed-points.md');
 
+  // Create future_research.md
+  fs.writeFileSync(
+    path.join(casePath, 'future_research.md'),
+    createFutureResearchMd()
+  );
+  console.log('Created: future_research.md');
+
   // Create 35 question files
   console.log('');
   console.log('Creating 35 framework question files...');
@@ -260,8 +279,9 @@ function main() {
   console.log('  ├── state.json');
   console.log('  ├── summary.md');
   console.log('  ├── sources.json');
-  console.log('  ├── leads.json');
+  console.log('  ├── leads.json         (max_depth: 3)');
   console.log('  ├── removed-points.md');
+  console.log('  ├── future_research.md');
   console.log('  ├── questions/');
   console.log('  │   └── (35 framework files)');
   console.log('  ├── evidence/');

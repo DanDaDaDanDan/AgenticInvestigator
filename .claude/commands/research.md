@@ -165,7 +165,7 @@ From the search results, I found these specific URLs:
 
 9. **Update summary.md** with findings and [S###] citations
 
-10. **Note leads** for deeper investigation
+10. **Add leads to leads.json** for deeper investigation (depth: 0, parent: null)
 
 ---
 
@@ -189,7 +189,7 @@ From the search results, I found these specific URLs:
 
 - Captured sources in `evidence/S###/` (with spidered outbound links)
 - Initial `summary.md` with [S###] citations
-- Leads for further investigation
+- Initial leads in `leads.json` (all depth: 0, parent: null)
 
 ## Next Step
 

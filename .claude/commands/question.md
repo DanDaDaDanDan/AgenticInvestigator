@@ -58,7 +58,7 @@ This is optional - use judgment on when deep reasoning adds value.
 
 5. **Capture sources before citing** - Use `/capture-source <url>` for new sources
 
-6. **Add leads to leads.json** - Any question that generates a follow-up lead
+6. **Add leads to leads.json** - Any question that generates a follow-up lead (depth: 0, parent: null)
 
 7. **Update summary.md** - Add key findings with citations
 
