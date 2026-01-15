@@ -28,12 +28,31 @@ Route to the specified command:
 - `/action research <topic>` → `/research`
 - `/action question <batch>` → `/question`
 - `/action follow <lead-id>` → `/follow`
-- `/action curiosity` → `/curiosity`
+- `/action curiosity` → `/curiosity` (**via sub-agent**)
 - `/action capture-source <url>` → `/capture-source`
-- `/action verify` → `/verify`
+- `/action verify` → `/verify` (**via sub-agent**)
 - `/action article` → `/article`
-- `/action integrity` → `/integrity`
-- `/action legal-review` → `/legal-review`
+- `/action integrity` → `/integrity` (**via sub-agent**)
+- `/action legal-review` → `/legal-review` (**via sub-agent**)
+
+### Context Isolation for Heavy Reads
+
+Commands marked **via sub-agent** read large amounts of files (~200KB+). Use Task tool to isolate:
+
+| Command | Reads | Why Sub-Agent |
+|---------|-------|---------------|
+| `/curiosity` | 35 files + leads + summary | Prevents 150KB in main context |
+| `/verify` | article + all cited evidence | Evidence files are large |
+| `/integrity` | article + summary + sources | Multi-file analysis |
+| `/legal-review` | article + sources + evidence | Legal requires full context |
+
+**Dispatch pattern:**
+```
+Task (subagent_type: "general-purpose")
+  prompt: "Execute /curiosity for case [path]. Read all files, call external models, return only verdict."
+```
+
+Sub-agent returns structured result. Main context stays clean.
 
 ### 3. Git Commit
 

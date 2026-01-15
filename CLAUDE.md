@@ -123,6 +123,26 @@ Behavioral rules for Claude Code operating in this project.
 
 ---
 
+## Context Isolation Pattern
+
+Commands that read large amounts of data should run in sub-agents to avoid polluting the main conversation context.
+
+| Command | Reads | Use Sub-Agent |
+|---------|-------|---------------|
+| `/curiosity` | 35 files + leads + summary + sources (~200KB) | Yes |
+| `/verify` | article + all cited evidence (~100KB+) | Yes |
+| `/integrity` | article + summary + sources (~50KB) | Yes |
+| `/legal-review` | article + sources + evidence (~100KB) | Yes |
+| `/research` | minimal (queries) | No |
+| `/question` | 1 framework file (~4KB) | No |
+| `/follow` | 1 lead context (~5KB) | No |
+
+**Why:** Reading 200KB into the main context makes subsequent turns expensive. Sub-agents return only structured results (verdicts, gaps), keeping main context clean.
+
+**Pattern:** The `/action` router dispatches heavy-read commands via Task tool. See `action.md` for dispatch details.
+
+---
+
 ## Case Structure
 
 **Each case is its own git repository**, created during BOOTSTRAP at `cases/[topic-slug]/`.

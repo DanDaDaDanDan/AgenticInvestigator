@@ -8,6 +8,21 @@ Determine if the investigation has been pursued thoroughly using external model 
 /curiosity
 ```
 
+## IMPORTANT: Sub-Agent Execution
+
+This command reads ~200KB of files (35 question files + leads + summary + sources). To avoid polluting the main orchestrator context:
+
+**The `/action` router MUST invoke curiosity via a Task sub-agent.**
+
+The sub-agent:
+1. Reads all files
+2. Constructs prompts and calls external models in parallel
+3. Returns only the verdict and any gaps found
+
+Main context receives only: `SATISFIED` or `NOT SATISFIED with gaps: [...]`
+
+---
+
 ## Task
 
 Feed the full investigation context to external models for genuine evaluation of completeness.
@@ -28,7 +43,7 @@ Rule #8 requires ALL leads resolved. If any pending leads exist, return NOT SATI
 
 ## Step 2: Gather Full Context
 
-**YOU MUST ACTUALLY READ EVERY FILE.** Do not summarize or skip.
+Read every file. Store content for prompt construction.
 
 ### 2a. Read leads.json
 ```
@@ -43,12 +58,6 @@ For each file in questions/*.md:
   Store the FULL content
 ```
 
-Count across all files:
-- Questions with HIGH confidence answers
-- Questions with MEDIUM confidence answers
-- Questions with LOW confidence answers
-- Questions marked not-applicable
-
 ### 2c. Read summary.md
 ```
 Read summary.md in full
@@ -58,16 +67,16 @@ Store the complete content
 ### 2d. Read sources.json
 ```
 Read sources.json in full
-Count total sources captured
+Store the complete content
 ```
 
 ---
 
-## Step 3: Construct Prompts
+## Step 3: External Model Verification (Parallel)
 
-### Gemini 3 Pro (Full Context)
+Call BOTH models with identical full context. They evaluate independently.
 
-Gemini handles massive input. Include EVERYTHING:
+### Gemini 3 Pro
 
 ```
 mcp__mcp-gemini__generate_text
@@ -77,7 +86,7 @@ mcp__mcp-gemini__generate_text
     You are reviewing an investigation for completeness. Here is the full context:
 
     === LEADS (leads.json) ===
-    [PASTE THE ENTIRE leads.json CONTENT HERE]
+    [PASTE THE ENTIRE leads.json CONTENT]
 
     === QUESTION FRAMEWORKS (35 files) ===
 
@@ -103,39 +112,42 @@ mcp__mcp-gemini__generate_text
     5. Overall verdict: SATISFIED or NOT SATISFIED with specific gaps listed.
 ```
 
-### GPT 5.2 Pro (Extended Thinking)
+### GPT 5.2 Pro
 
-Feed a structured summary for deep reasoning:
+Both models receive IDENTICAL full context for independent verification:
 
 ```
 mcp__mcp-openai__generate_text
   model: "gpt-5.2-pro"
   reasoning_effort: "high"
   prompt: |
-    Review this investigation for completeness:
+    You are reviewing an investigation for completeness. Here is the full context:
 
-    LEAD STATUS:
-    - Total leads: [count]
-    - Investigated: [count]
-    - Dead end: [count]
-    - Pending: [count] (should be 0)
+    === LEADS (leads.json) ===
+    [PASTE THE ENTIRE leads.json CONTENT]
 
-    CONFIDENCE LEVELS ACROSS 35 FRAMEWORKS:
-    - HIGH confidence: [count]
-    - MEDIUM confidence: [count]
-    - LOW confidence: [count]
-    - Not applicable: [count]
+    === QUESTION FRAMEWORKS (35 files) ===
 
-    LOW CONFIDENCE ANSWERS (list each):
-    [For each LOW confidence answer, include the question and answer text]
+    --- 01-follow-the-money.md ---
+    [PASTE ENTIRE FILE CONTENT]
 
-    MEDIUM CONFIDENCE ANSWERS (list each):
-    [For each MEDIUM confidence answer, include the question and answer text]
+    --- 02-follow-the-silence.md ---
+    [PASTE ENTIRE FILE CONTENT]
 
-    SOURCES CAPTURED: [count]
+    [... CONTINUE FOR ALL 35 FILES ...]
 
-    Is this investigation thorough? What gaps remain?
-    Verdict: SATISFIED or NOT SATISFIED with reasoning.
+    === SUMMARY (summary.md) ===
+    [PASTE ENTIRE FILE CONTENT]
+
+    === SOURCES (sources.json) ===
+    [PASTE ENTIRE FILE CONTENT]
+
+    EVALUATE:
+    1. Are all leads resolved (investigated or dead_end)?
+    2. Are there LOW/MEDIUM confidence answers that need more research?
+    3. What obvious questions would a reader ask that aren't answered?
+    4. Are there leads mentioned in question files but not in leads.json?
+    5. Overall verdict: SATISFIED or NOT SATISFIED with specific gaps listed.
 ```
 
 ---
@@ -172,11 +184,9 @@ Update `state.json`:
 }
 ```
 
-Document the evaluation:
-- Pre-check result (pending leads count)
-- Gemini verdict and key points
-- GPT verdict and key points
-- Specific gaps if NOT SATISFIED
+**Return to orchestrator** (sub-agent output):
+- Verdict: SATISFIED or NOT SATISFIED
+- If NOT SATISFIED: List of specific gaps
 
 ---
 
