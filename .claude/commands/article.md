@@ -1,6 +1,6 @@
 # /article - Generate Publication Articles
 
-Generate publication-ready articles from investigation findings.
+Generate publication-ready articles with beautiful PDF output.
 
 ## Usage
 
@@ -15,6 +15,8 @@ Create two articles from `summary.md`:
 1. **Short** (400-800 words) - Quick overview
 2. **Full** (2,000-4,000 words) - Publication-ready
 
+Then generate PDFs with professional typography.
+
 ## Instructions
 
 1. **Read source material:**
@@ -27,7 +29,66 @@ Create two articles from `summary.md`:
    - Include source key in full article
    - Include methodology note in full article
 
-3. **Update state.json:** Set `gates.article: true`
+3. **Generate PDFs:**
+   ```bash
+   node scripts/generate-pdf.js cases/<case-id>/
+   ```
+   This creates `articles/short.pdf` and `articles/full.pdf`
+
+4. **Update state.json:** Set `gates.article: true`
+
+---
+
+## Markdown Formatting for PDF
+
+The PDF uses Kindle-style typography. Structure your markdown for optimal rendering:
+
+### Document Structure
+
+```markdown
+# Title of the Article
+
+Opening paragraph becomes the italicized lead/subtitle. Make it compelling -
+one or two sentences summarizing the investigation's key finding.
+
+## First Section Heading
+
+Body text here...
+
+### Subsection (if needed)
+
+More details...
+
+---
+
+## Sources
+
+[S001]: URL - Description
+[S002]: URL - Description
+```
+
+### Typography Features
+
+| Element | Renders As |
+|---------|------------|
+| `# H1` | Large serif title |
+| First paragraph after H1 | Italicized lead paragraph with bottom border |
+| `## H2` | Section headings |
+| `### H3` | Subsections (italic style) |
+| `> Blockquote` | Left-bordered, italic, indented |
+| `---` | Centered asterisks (* * *) as section break |
+| `**bold**` | Emphasized text |
+| `[link](url)` | Underlined with subtle color |
+
+### Best Practices
+
+- **Lead paragraph matters** - First paragraph after title gets special styling
+- **Use H2 for major sections** - Creates clear visual hierarchy
+- **Blockquotes for direct quotes** - Styled distinctively
+- **Section breaks (---) between major parts** - Renders as elegant divider
+- **End with sources section** - Professional attribution
+
+---
 
 ## Writing Standards
 
@@ -68,6 +129,13 @@ Before finalizing, verify:
 - [ ] **Quotes in context** - Not misleadingly excerpted
 
 ---
+
+## Output
+
+- `articles/short.md` - Short article markdown
+- `articles/short.pdf` - Short article PDF
+- `articles/full.md` - Full article markdown
+- `articles/full.pdf` - Full article PDF (primary deliverable)
 
 ## Next Step
 
