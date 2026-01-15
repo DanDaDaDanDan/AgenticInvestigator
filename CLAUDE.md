@@ -144,6 +144,26 @@ Commands that read large amounts of data should run in sub-agents to avoid pollu
 
 ---
 
+## Two-Stage Review Pattern
+
+`/legal-review` and `/integrity` use a two-stage pattern to prevent context bias:
+
+**Stage 1: Context-Free Scan**
+- Read ONLY the article
+- Flag potential issues as a reader with no case knowledge
+- Output structured flags with "what would clear this"
+
+**Stage 2: Contextual Evaluation**
+- For each flag, search evidence to clear OR mark for fix
+- Must cite specific source (S###) with quote to clear
+- Cannot dismiss flags without evidence
+
+**Why:** An LLM that "knows" the case may not notice "the man who killed her" as problematic because it has internalized the facts. Fresh-eyes detection catches what biased review misses.
+
+**Output:** Flags that are CLEARED (with evidence), FIX REQUIRED (with specific change), or ESCALATE (needs human).
+
+---
+
 ## Case Structure
 
 **Each case is its own git repository**, created during BOOTSTRAP at `cases/[topic-slug]/`.
