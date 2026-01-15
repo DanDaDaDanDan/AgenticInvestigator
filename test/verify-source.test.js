@@ -113,7 +113,7 @@ test('verifySource fails for hash mismatch', async (t) => {
   assert.ok(result.errors.some(e => e.includes('Hash mismatch')), 'Should detect hash mismatch');
 });
 
-test('verifySource fails for missing capture signature', async (t) => {
+test('verifySource warns for missing capture signature', async (t) => {
   const caseDir = createTempCase();
   t.after(() => fs.rmSync(caseDir, { recursive: true, force: true }));
 
@@ -122,20 +122,26 @@ test('verifySource fails for missing capture signature', async (t) => {
 
   const content = '# Test';
   fs.writeFileSync(path.join(evidenceDir, 'content.md'), content);
+  fs.writeFileSync(path.join(evidenceDir, 'raw.html'), '<html>Test</html>');
+  const rawHash = hashContent('<html>Test</html>');
 
-  // Metadata without capture signature
+  // Metadata without capture signature (mcp-osint format)
   const metadata = {
-    source_id: 'S001',
     url: 'https://example.com',
     captured_at: new Date().toISOString(),
-    files: {}
+    sha256: rawHash.replace('sha256:', ''),
+    files: {
+      raw_html: 'raw.html',
+      content: 'content.md'
+    }
   };
   fs.writeFileSync(path.join(evidenceDir, 'metadata.json'), JSON.stringify(metadata));
 
   const result = verifySource('S001', caseDir);
 
-  assert.equal(result.valid, false, 'Should be invalid');
-  assert.ok(result.errors.some(e => e.includes('_capture_signature')), 'Should detect missing signature');
+  // Source should be valid (hash verification passes) but have a warning
+  assert.equal(result.valid, true, 'Should be valid with hash verification');
+  assert.ok(result.warnings.some(w => w.includes('_capture_signature') || w.includes('mcp-osint')), 'Should warn about missing signature');
 });
 
 test('verifySource warns on round timestamp', async (t) => {

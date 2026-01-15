@@ -72,75 +72,104 @@ function verifySource(sourceId, caseDir) {
   }
   result.checks.push('metadata_valid_json');
 
-  // Check 4: Required fields
-  const requiredFields = ['source_id', 'url', 'captured_at', 'files'];
-  for (const field of requiredFields) {
-    if (!metadata[field]) {
-      result.errors.push(`Required field missing: ${field}`);
-    }
-  }
+  // Check 4: Required fields (flexible - source_id can come from directory)
+  // mcp-osint format: url, captured_at, files (or sha256 + files.raw_html)
+  // osint-save format: source_id, url, captured_at, files, verification
+  const hasUrl = !!metadata.url;
+  const hasCapturedAt = !!metadata.captured_at;
+  const hasFiles = !!metadata.files;
+  const hasSha256 = !!metadata.sha256;
+
+  if (!hasUrl) result.errors.push('Required field missing: url');
+  if (!hasCapturedAt) result.errors.push('Required field missing: captured_at');
+  if (!hasFiles && !hasSha256) result.errors.push('Required field missing: files or sha256');
+
   if (result.errors.length > 0) return result;
   result.checks.push('required_fields');
 
-  // Check 5: Capture signature
-  if (!metadata._capture_signature) {
-    result.errors.push('_capture_signature missing - source may be manually created');
-  } else if (!metadata._capture_signature.startsWith('sig_v2_')) {
-    result.errors.push('Invalid capture signature format');
-  } else {
-    result.checks.push('capture_signature');
-  }
-
-  // Check 6: Verification block (new format)
-  if (metadata.verification) {
-    const v = metadata.verification;
-
-    if (v.raw_file && v.computed_hash) {
-      const rawPath = path.join(evidenceDir, v.raw_file);
-
-      if (fs.existsSync(rawPath)) {
-        const actualHash = hashFile(rawPath);
-
-        if (actualHash === v.computed_hash) {
-          result.checks.push('hash_self_consistent');
-        } else {
-          result.errors.push(`Hash mismatch: file=${actualHash}, stored=${v.computed_hash}`);
-        }
-
-        // Check against osint_get reported hash
-        if (v.osint_reported_hash) {
-          if (actualHash === v.osint_reported_hash) {
-            result.checks.push('hash_matches_osint');
-          } else {
-            result.warnings.push(`Hash differs from osint_get: ${actualHash} vs ${v.osint_reported_hash}`);
-          }
-        }
-      } else {
-        result.errors.push(`Verification file missing: ${v.raw_file}`);
-      }
+  // Check 5: Capture signature (optional for direct mcp-osint captures)
+  if (metadata._capture_signature) {
+    if (metadata._capture_signature.startsWith('sig_v2_')) {
+      result.checks.push('capture_signature');
+    } else {
+      result.warnings.push('Invalid capture signature format');
     }
   } else {
-    // Legacy format - check files block for hashes
-    if (metadata.files) {
-      let hasVerifiableFile = false;
+    // Not an error for direct mcp-osint captures
+    result.warnings.push('No _capture_signature (direct mcp-osint capture)');
+  }
 
-      for (const [key, fileInfo] of Object.entries(metadata.files)) {
-        if (fileInfo.path && fileInfo.hash) {
-          const filePath = path.join(evidenceDir, fileInfo.path);
-          if (fs.existsSync(filePath)) {
-            const actualHash = hashFile(filePath);
-            if (actualHash === fileInfo.hash) {
-              hasVerifiableFile = true;
-            } else {
-              result.errors.push(`Hash mismatch for ${fileInfo.path}: actual=${actualHash}, stored=${fileInfo.hash}`);
-            }
+  // Check 6: Hash verification - supports both formats
+  // Format A (osint-save): verification.raw_file + verification.computed_hash
+  // Format B (mcp-osint): files.raw_html + sha256
+  let verificationPassed = false;
+
+  if (metadata.verification && metadata.verification.raw_file) {
+    // Format A: osint-save verification block
+    const v = metadata.verification;
+    const rawPath = path.join(evidenceDir, v.raw_file);
+
+    if (fs.existsSync(rawPath)) {
+      const actualHash = hashFile(rawPath);
+
+      if (v.computed_hash && actualHash === v.computed_hash) {
+        result.checks.push('hash_self_consistent');
+        verificationPassed = true;
+      } else if (v.computed_hash) {
+        result.errors.push(`Hash mismatch: file=${actualHash}, stored=${v.computed_hash}`);
+      }
+
+      // Check against osint_get reported hash
+      if (v.osint_reported_hash) {
+        if (actualHash === v.osint_reported_hash) {
+          result.checks.push('hash_matches_osint');
+        } else {
+          result.warnings.push(`Hash differs from osint_get: ${actualHash} vs ${v.osint_reported_hash}`);
+        }
+      }
+    } else {
+      result.errors.push(`Verification file missing: ${v.raw_file}`);
+    }
+  } else if (metadata.files && metadata.sha256) {
+    // Format B: mcp-osint direct format (files.raw_html + sha256)
+    const rawHtmlFile = metadata.files.raw_html;
+    if (rawHtmlFile) {
+      const rawPath = path.join(evidenceDir, rawHtmlFile);
+      if (fs.existsSync(rawPath)) {
+        const actualHash = hashFile(rawPath);
+        const expectedHash = metadata.sha256.startsWith('sha256:') ? metadata.sha256 : `sha256:${metadata.sha256}`;
+
+        if (actualHash === expectedHash) {
+          result.checks.push('hash_verified_mcp_osint');
+          verificationPassed = true;
+        } else {
+          result.errors.push(`Hash mismatch: file=${actualHash}, metadata=${expectedHash}`);
+        }
+      } else {
+        result.errors.push(`Raw HTML file missing: ${rawHtmlFile}`);
+      }
+    }
+  } else if (metadata.files) {
+    // Legacy format - check files block for hashes (osint-save.js format)
+    let hasVerifiableFile = false;
+
+    for (const [key, fileInfo] of Object.entries(metadata.files)) {
+      if (typeof fileInfo === 'object' && fileInfo.path && fileInfo.hash) {
+        const filePath = path.join(evidenceDir, fileInfo.path);
+        if (fs.existsSync(filePath)) {
+          const actualHash = hashFile(filePath);
+          if (actualHash === fileInfo.hash) {
+            hasVerifiableFile = true;
+            verificationPassed = true;
+          } else {
+            result.errors.push(`Hash mismatch for ${fileInfo.path}: actual=${actualHash}, stored=${fileInfo.hash}`);
           }
         }
       }
+    }
 
-      if (hasVerifiableFile) {
-        result.checks.push('legacy_hash_verified');
-      }
+    if (hasVerifiableFile) {
+      result.checks.push('legacy_hash_verified');
     }
   }
 
