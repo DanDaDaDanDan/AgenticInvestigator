@@ -163,7 +163,9 @@ From the search results, I found these specific URLs:
 
 ### Phase 3: Synthesis
 
-9. **Update summary.md** with findings and [S###] citations
+9. **Update summary.md** with findings using `[S###](url)` citation format
+   - Example: `The report found X [S001](https://example.com/report)`
+   - URL comes from the source's metadata.json
 
 10. **Add leads to leads.json** for deeper investigation (depth: 0, parent: null)
 
@@ -188,7 +190,7 @@ From the search results, I found these specific URLs:
 ## Output
 
 - Captured sources in `evidence/S###/` (with spidered outbound links)
-- Initial `summary.md` with [S###] citations
+- Initial `summary.md` with `[S###](url)` citations (clickable markdown links)
 - Initial leads in `leads.json` (all depth: 0, parent: null)
 
 ## Next Step

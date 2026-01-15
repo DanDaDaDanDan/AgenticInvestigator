@@ -41,7 +41,7 @@ Create two articles from `summary.md`:
 ## Rules
 
 - NEVER introduce facts not in summary.md
-- ALWAYS preserve [S###] citations inline
+- ALWAYS preserve `[S###](url)` citation format (clickable markdown links)
 - Present contested claims as contested
 - Neutral, professional tone
 - All perspectives balanced

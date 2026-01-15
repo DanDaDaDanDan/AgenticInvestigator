@@ -48,7 +48,7 @@ This is optional - use judgment on when deep reasoning adds value.
 1. **Read the framework** from `reference/frameworks.md`
 
 2. **For each question in the framework:**
-   - Write answer with inline [S###] citations
+   - Write answer with inline `[S###](url)` citations (clickable markdown links)
    - Note confidence level (HIGH/MEDIUM/LOW)
    - Flag if it generates a lead for further investigation
 
@@ -60,7 +60,7 @@ This is optional - use judgment on when deep reasoning adds value.
 
 6. **Add leads to leads.json** - Any question that generates a follow-up lead (depth: 0, parent: null)
 
-7. **Update summary.md** - Add key findings with citations
+7. **Update summary.md** - Add key findings with `[S###](url)` citations
 
 ## Question Status
 
