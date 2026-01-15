@@ -88,10 +88,41 @@ Investigation rigor ensured through 35 analytical frameworks:
 
 See `reference/frameworks.md` for full details.
 
+## Prerequisites
+
+### MCP Server Installation
+
+AgenticInvestigator requires four MCP servers to be installed and configured in Claude Code. All servers are available at:
+
+**https://github.com/DanDaDaDanDan/mcp-***
+
+Install each server:
+
+```bash
+# Clone and install each MCP server
+git clone https://github.com/DanDaDaDanDan/mcp-osint
+git clone https://github.com/DanDaDaDanDan/mcp-gemini
+git clone https://github.com/DanDaDaDanDan/mcp-openai
+git clone https://github.com/DanDaDaDanDan/mcp-xai
+
+# Follow installation instructions in each repository's README
+```
+
+Configure each server in your Claude Code MCP settings (`.claude/settings.json` or global settings).
+
+### Required API Keys
+
+Each MCP server requires its respective API key:
+- `mcp-osint`: Various (see repo for supported sources)
+- `mcp-gemini`: Google AI API key
+- `mcp-openai`: OpenAI API key
+- `mcp-xai`: xAI API key
+
 ## MCP Servers
 
 | Server | Purpose |
 |--------|---------|
+| `mcp-osint` | OSINT data sources, web capture, evidence collection |
 | `mcp-gemini` | Deep research, semantic verification |
 | `mcp-openai` | Deep research (max depth) |
 | `mcp-xai` | Real-time search (X, web, news) |
