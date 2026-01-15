@@ -252,13 +252,14 @@ All subsequent `/action` commits happen within the case repository.
 ## Core Rules
 
 1. **CAPTURE BEFORE CITE** - No `[S###]` without `evidence/S###/`
-2. **EVERY FACT NEEDS A SOURCE** - Every factual statement needs `[S###]` citation
-3. **Git commits per action** - Every `/action` auto-commits (within the case repo)
-4. **Steelman ALL positions** - Strongest version of EVERY side
-5. **Document uncertainty** - "We don't know" is valid
-6. **Detect circular reporting** - Multiple outlets citing same source = 1 source
-7. **One case = one repo** - Never mix case data across repositories
-8. **ALL LEADS RESOLVED** - Every lead must be `investigated` or `dead_end`. No `pending` at completion.
+2. **EVERY FACT NEEDS A SOURCE** - Every factual statement needs citation
+3. **CITATION FORMAT** - Use `[S###](url)` markdown links, e.g., `[S001](https://example.com/article)`
+4. **Git commits per action** - Every `/action` auto-commits (within the case repo)
+5. **Steelman ALL positions** - Strongest version of EVERY side
+6. **Document uncertainty** - "We don't know" is valid
+7. **Detect circular reporting** - Multiple outlets citing same source = 1 source
+8. **One case = one repo** - Never mix case data across repositories
+9. **ALL LEADS RESOLVED** - Every lead must be `investigated` or `dead_end`. No `pending` at completion.
 
 ---
 

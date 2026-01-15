@@ -162,7 +162,7 @@ Leads about a person/org need their primary source (actual interview, statement,
 
 7. **Update the framework document** - Add findings to `questions/*.md`
 
-8. **Update summary.md** - Add significant findings with [S###] citations
+8. **Update summary.md** - Add significant findings with `[S###](url)` citations
 
 9. **Generate new leads** if discovered:
    - Set `depth` = parent lead's depth + 1
