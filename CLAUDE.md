@@ -130,8 +130,9 @@ Commands that read large amounts of data should run in sub-agents to avoid pollu
 | Command | Reads | Use Sub-Agent |
 |---------|-------|---------------|
 | `/curiosity` | 35 files + leads + summary + sources (~200KB) | Yes |
+| `/article` | summary + 35 question files (~166KB) | Yes |
 | `/verify` | article + all cited evidence (~100KB+) | Yes |
-| `/integrity` | article + summary + sources (~50KB) | Yes |
+| `/integrity` | article + summary + 35 questions + sources (~200KB) | Yes |
 | `/legal-review` | article + sources + evidence (~100KB) | Yes |
 | `/research` | minimal (queries) | No |
 | `/question` | 1 framework file (~4KB) | No |

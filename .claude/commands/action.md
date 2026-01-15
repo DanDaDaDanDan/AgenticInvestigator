@@ -31,7 +31,7 @@ Route to the specified command:
 - `/action curiosity` → `/curiosity` (**via sub-agent**)
 - `/action capture-source <url>` → `/capture-source`
 - `/action verify` → `/verify` (**via sub-agent**)
-- `/action article` → `/article`
+- `/action article` → `/article` (**via sub-agent**)
 - `/action integrity` → `/integrity` (**via sub-agent**)
 - `/action legal-review` → `/legal-review` (**via sub-agent**)
 
@@ -41,10 +41,11 @@ Commands marked **via sub-agent** read large amounts of files (~200KB+). Use Tas
 
 | Command | Reads | Why Sub-Agent |
 |---------|-------|---------------|
-| `/curiosity` | 35 files + leads + summary | Prevents 150KB in main context |
-| `/verify` | article + all cited evidence | Evidence files are large |
-| `/integrity` | article + summary + sources | Multi-file analysis |
-| `/legal-review` | article + sources + evidence | Legal requires full context |
+| `/curiosity` | 35 files + leads + summary + sources (~200KB) | Full investigation context |
+| `/article` | summary + 35 question files (~166KB) | Needs framework context |
+| `/verify` | article + all cited evidence (~100KB+) | Evidence files are large |
+| `/integrity` | article + summary + 35 questions + sources (~200KB) | Perspective coverage |
+| `/legal-review` | article + sources + evidence (~100KB) | Legal requires full context |
 
 **Dispatch pattern:**
 ```

@@ -9,6 +9,14 @@ Assess legal risks before publication.
 /legal-review [case-id]    # Review specific case
 ```
 
+## IMPORTANT: Sub-Agent Execution
+
+This command reads article + sources + evidence metadata (~100KB). To avoid polluting the main orchestrator context:
+
+**The `/action` router MUST invoke legal-review via a Task sub-agent.**
+
+The sub-agent reads files, performs review, returns only READY/NOT READY status.
+
 ## Task
 
 Evaluate `summary.md` and `articles/full.md` for defamation and legal risks.
