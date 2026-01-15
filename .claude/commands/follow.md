@@ -130,6 +130,10 @@ ls evidence/S###/
 
 Each source = one specific URL or resource that was actually fetched.
 
+### 5. Primary vs Secondary Sources
+
+Leads about a person/org need their primary source (actual interview, statement, filing), not articles that quote them. If an article quotes someone with a hyperlink, that link is likely the primary source - capture it.
+
 ---
 
 ## Instructions
