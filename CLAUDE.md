@@ -65,7 +65,7 @@ Behavioral rules for Claude Code operating in this project.
 |---|------|-------|---------------|
 | 1 | Questions | All `questions/*.md` | Status: investigated |
 | 2 | Curiosity | `/curiosity` judgment | Verdict: SATISFIED |
-| 3 | Article | `articles/full.md` | Exists with [S###] citations |
+| 3 | Article | `articles/full.md` + PDF | Exists with [S###] citations + PDF generated |
 | 4 | Sources | Evidence verification | All [S###] verified or auto-removed |
 | 5 | Integrity | `/integrity` review | Status: READY |
 | 6 | Legal | `/legal-review` | Status: READY |
@@ -191,7 +191,9 @@ cases/[topic-slug]/           # ← Standalone git repo (git init here)
 │
 └── articles/
     ├── short.md             # 400-800 words
-    └── full.md              # 2000-4000 words
+    ├── short.pdf            # PDF with Kindle-style typography
+    ├── full.md              # 2000-4000 words
+    └── full.pdf             # Primary deliverable - publication-ready PDF
 ```
 
 ### Bootstrap Creates Repository

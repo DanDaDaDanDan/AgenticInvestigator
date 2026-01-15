@@ -15,7 +15,7 @@ Verify investigation readiness for publication.
 |---|------|---------------|
 | 1 | Questions | All `questions/*.md` have Status: investigated (or not-applicable) |
 | 2 | Curiosity | `/curiosity` returns SATISFIED |
-| 3 | Article | `articles/full.md` exists with [S###] citations |
+| 3 | Article | `articles/full.md` + `full.pdf` exist with [S###] citations |
 | 4 | Sources | All [S###] citations have evidence and support the claim |
 | 5 | Integrity | `/integrity` returns READY |
 | 6 | Legal | `/legal-review` returns READY |
@@ -38,7 +38,10 @@ Check each `questions/*.md` file has Status: investigated or not-applicable.
 Invoke `/curiosity` if not already run this iteration.
 
 ### Gate 3: Article
-Verify `articles/full.md` exists and contains [S###] citations.
+Verify:
+- `articles/full.md` exists and contains [S###] citations
+- `articles/full.pdf` exists (generated via `node scripts/generate-pdf.js`)
+- `articles/short.md` and `short.pdf` exist (optional but expected)
 
 ### Gate 4: Sources
 
