@@ -1,6 +1,6 @@
 # /curiosity - Evaluate Lead Exhaustion
 
-Determine if the investigation has been pursued thoroughly.
+Determine if the investigation has been pursued thoroughly using external model verification.
 
 ## Usage
 
@@ -10,108 +10,135 @@ Determine if the investigation has been pursued thoroughly.
 
 ## Task
 
-Make a genuine judgment call: Have we followed the interesting threads to their conclusions?
+Feed the full investigation context to external models for genuine evaluation of completeness.
 
-This is NOT a checklist. It requires honest evaluation of investigation completeness.
+---
 
-## This Requires Genuine Judgment
+## Step 1: Gather Context
 
-Consider using **extended thinking** for this evaluation:
+Read and compile into a single context document:
 
-- `mcp__mcp-openai__generate_text` (GPT 5.2 Pro) for deep reasoning about completeness
+1. **leads.json** - Note pending vs investigated, especially MEDIUM+ priority pending
+2. **All 35 question files** (`questions/*.md`) - Note confidence levels (LOW/MEDIUM need attention)
+3. **summary.md** - Current state of findings
+4. **sources.json** - What sources were captured
 
-This is a judgment call, not a mechanical check. Extended thinking can help ensure you're being honest with yourself about whether the investigation is truly complete.
+Count:
+- Pending leads by priority (HIGH/MEDIUM/LOW)
+- Confidence levels across all question answers
+- Sources captured
 
-## Evaluation Criteria
+---
 
-### 1. Lead Coverage
+## Step 2: External Model Verification
 
-- Have HIGH priority leads been pursued to conclusion?
-- Have MEDIUM priority leads been genuinely investigated?
-- Were dead_end determinations based on real investigation attempts?
-- Leads about specific people/orgs: do we have their primary source (interview, statement) or just articles quoting them?
+### Gemini 3 Pro (Full Context)
 
-### 2. Thread Completion
+Feed the entire context to Gemini 3 Pro which handles massive input:
 
-For each interesting discovery:
-- Did we follow it until we hit a dead end? OR
-- Did we find the answer? OR
-- Did we document why we stopped?
+```
+mcp__mcp-gemini__generate_text
+  model: "gemini-3-pro"
+  thinking_level: "high"
+  prompt: |
+    You are reviewing an investigation for completeness. Here is the full context:
 
-### 3. Reader Questions
+    [LEADS]
+    {leads.json content}
 
-- What questions would a curious reader ask that we haven't addressed?
-- Are there obvious "nagging questions" left unanswered?
-- Is there anything we're avoiding because it's hard to research?
+    [QUESTION FRAMEWORKS - All 35]
+    {all question file contents}
 
-### 4. Counterfactual Search
+    [SUMMARY]
+    {summary.md content}
 
-- Did we look for what we DIDN'T want to find?
-- Did we seek out contradicting evidence?
-- Did we steelman opposing viewpoints?
+    [SOURCES]
+    {sources.json content}
 
-### 5. Expert Perspective
+    EVALUATE:
+    1. Are there MEDIUM+ priority leads still pending that should be investigated?
+    2. Are there LOW/MEDIUM confidence answers that need more research?
+    3. What obvious questions would a reader ask that aren't answered?
+    4. Are there leads generated in the question files that weren't added to leads.json?
+    5. Overall verdict: SATISFIED or NOT SATISFIED with specific gaps listed.
+```
 
-- Would a domain expert consider our research thorough?
-- Are there obvious expert-level questions we missed?
-- Did we consult scientific/academic sources?
+### GPT 5.2 Pro (Extended Thinking)
 
-### 6. Novel Angles
+Feed a summary to GPT 5.2 Pro for deep reasoning:
 
-- Did we discover case-specific questions beyond the 35 frameworks?
-- Did we pursue those novel questions?
-- Are there unique aspects of this topic we haven't explored?
+```
+mcp__mcp-openai__generate_text
+  model: "gpt-5.2-pro"
+  reasoning_effort: "high"
+  prompt: |
+    Review this investigation summary for completeness:
+
+    LEAD STATUS:
+    - HIGH pending: [count]
+    - MEDIUM pending: [count]
+    - LOW pending: [count]
+    - Investigated: [count]
+    - Dead end: [count]
+
+    CONFIDENCE LEVELS ACROSS 35 FRAMEWORKS:
+    - HIGH confidence: [count]
+    - MEDIUM confidence: [count]
+    - LOW confidence: [count]
+
+    TOP 10 PENDING MEDIUM+ LEADS:
+    [list them]
+
+    LOW CONFIDENCE ANSWERS:
+    [list the questions with LOW confidence]
+
+    Is this investigation thorough? What gaps remain?
+    Verdict: SATISFIED or NOT SATISFIED with reasoning.
+```
+
+---
+
+## Step 3: Evaluate Results
+
+Both models must agree on SATISFIED, or the investigation continues.
+
+If either model identifies gaps:
+- List specific leads to pursue
+- List specific questions needing higher confidence
+- Return NOT SATISFIED
+
+---
 
 ## Red Flags (Automatic NOT SATISFIED)
 
-- HIGH priority leads still pending
-- Lead marked "dead_end" without genuine investigation attempt
-- Contradiction identified but not explored
-- Expert disagrees with conclusion but we didn't investigate why
-- "Low confidence" answers without attempt to improve
-- Novel question identified but not pursued
-- Lead about a person/org satisfied with quotes instead of their actual interview
-- Outbound links to related articles not followed
+- Any HIGH priority leads pending
+- More than 10 MEDIUM priority leads pending
+- Any LOW confidence answers not acknowledged as limitations
+- Leads generated in question files but never added to leads.json
+- Either external model returns NOT SATISFIED
+
+---
 
 ## Output
 
-Update `state.json` with curiosity verdict:
+Update `state.json`:
 
 ```json
 {
   "gates": {
-    "curiosity": true  // or false
+    "curiosity": true  // only if BOTH models agree
   }
 }
 ```
 
-If NOT SATISFIED, also document:
-- Which leads need more work
-- What questions remain unanswered
-- What the orchestrator should do next
+Document the evaluation:
+- Gemini verdict and key points
+- GPT verdict and key points
+- Specific gaps if NOT SATISFIED
 
-## Verdicts
-
-### SATISFIED
-
-All criteria met. No significant unexplored threads.
-Return: "Gate 2 (Curiosity): PASS"
-
-### NOT SATISFIED
-
-Outstanding issues remain.
-Return: "Gate 2 (Curiosity): FAIL - [specific issues]"
-
-Example:
-```
-Gate 2 (Curiosity): FAIL
-- L012 (HIGH) still pending: "What do ethologists say about stress indicators?"
-- Framework 24 (Subject Experience) has low-confidence answers
-- No scientific sources for welfare claims
-- Novel question about regulatory enforcement not pursued
-```
+---
 
 ## Next Step
 
 - If SATISFIED: Orchestrator invokes `/article`
-- If NOT SATISFIED: Orchestrator invokes `/follow` for outstanding leads
+- If NOT SATISFIED: Orchestrator invokes `/follow` for identified gaps
