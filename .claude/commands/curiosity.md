@@ -8,21 +8,6 @@ Determine if the investigation has been pursued thoroughly using external model 
 /curiosity
 ```
 
-## IMPORTANT: Sub-Agent Execution
-
-This command reads ~200KB of files (35 question files + leads + summary + sources). To avoid polluting the main orchestrator context:
-
-**The `/action` router MUST invoke curiosity via a Task sub-agent.**
-
-The sub-agent:
-1. Reads all files
-2. Constructs prompts and calls external models in parallel
-3. Returns only the verdict and any gaps found
-
-Main context receives only: `SATISFIED` or `NOT SATISFIED with gaps: [...]`
-
----
-
 ## Task
 
 Feed the full investigation context to external models for genuine evaluation of completeness.
