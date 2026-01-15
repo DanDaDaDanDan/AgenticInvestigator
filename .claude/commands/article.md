@@ -9,6 +9,14 @@ Generate publication-ready articles from investigation findings.
 /article [case-id]    # Generate for specific case
 ```
 
+## IMPORTANT: Sub-Agent Execution
+
+This command reads summary + 35 question files (~166KB). To avoid polluting the main orchestrator context:
+
+**The `/action` router MUST invoke article via a Task sub-agent.**
+
+The sub-agent reads files, writes articles to `articles/`, returns only completion status.
+
 ## Task
 
 Create two articles from `summary.md`:

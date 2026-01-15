@@ -9,6 +9,14 @@ Verify investigation readiness for publication.
 /verify [case-id]    # Verify specific case
 ```
 
+## IMPORTANT: Sub-Agent Execution
+
+This command reads article + all cited evidence (~100KB+). To avoid polluting the main orchestrator context:
+
+**The `/action` router MUST invoke verify via a Task sub-agent.**
+
+The sub-agent reads files, performs verification, returns only gate pass/fail status.
+
 ## The 6 Gates
 
 | # | Gate | Pass Criteria |

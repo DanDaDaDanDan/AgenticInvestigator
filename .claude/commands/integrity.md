@@ -9,6 +9,14 @@ Verify journalistic standards before publication.
 /integrity [case-id]    # Check specific case
 ```
 
+## IMPORTANT: Sub-Agent Execution
+
+This command reads article + summary + 35 question files + sources (~200KB). To avoid polluting the main orchestrator context:
+
+**The `/action` router MUST invoke integrity via a Task sub-agent.**
+
+The sub-agent reads files, performs review, returns only READY/NOT READY status.
+
 ## Task
 
 Evaluate `summary.md` and `articles/full.md` against journalistic ethics standards.
