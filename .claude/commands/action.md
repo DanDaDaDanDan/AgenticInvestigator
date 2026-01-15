@@ -25,7 +25,7 @@ Find the active case directory (most recent in `cases/`).
 ### 2. Execute Command
 
 Route to the specified command:
-- `/action research <topic>` → `/research`
+- `/action research <topic>` → `/research` (**via sub-agent**)
 - `/action question <batch>` → `/question`
 - `/action follow <lead-id>` → `/follow`
 - `/action curiosity` → `/curiosity` (**via sub-agent**)
@@ -41,6 +41,7 @@ Commands marked **via sub-agent** read large amounts of files (~200KB+). Use Tas
 
 | Command | Reads | Why Sub-Agent |
 |---------|-------|---------------|
+| `/research` | deep_research results + captured sources (~100-200KB) | Heavy MCP calls, source capture |
 | `/curiosity` | 35 files + leads + summary + sources (~200KB) | Full investigation context |
 | `/article` | summary + 35 question files (~166KB) | Needs framework context |
 | `/verify` | article + all cited evidence (~100KB+) | Evidence files are large |
