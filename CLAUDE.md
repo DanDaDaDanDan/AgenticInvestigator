@@ -132,9 +132,10 @@ cases/[topic-slug]/           # ← Standalone git repo (git init here)
 ├── .git/                    # Case-specific git history
 ├── state.json               # Minimal (phase, iteration, gates)
 ├── summary.md               # Living document, always current
-├── leads.json               # Leads: pending, investigated, dead_end
+├── leads.json               # Leads with depth tracking (max_depth: 3)
 ├── sources.json             # Source registry
 ├── removed-points.md        # Auto-removed points (human review)
+├── future_research.md       # Leads beyond max_depth
 │
 ├── questions/               # 35 framework documents
 │   ├── 01-follow-the-money.md
@@ -157,7 +158,7 @@ cases/[topic-slug]/           # ← Standalone git repo (git init here)
 During BOOTSTRAP phase:
 1. Run `node scripts/init-case.js "[topic]"` which:
    - Creates `cases/[topic-slug]/` directory
-   - Creates initial files (state.json, sources.json, leads.json, 35 question files)
+   - Creates initial files (state.json, sources.json, leads.json, future_research.md, 35 question files)
    - Runs `git init` inside the case directory
    - Makes initial commit: "Initialize investigation: [topic]"
 2. Then dispatch `/action research` to begin research
@@ -192,12 +193,15 @@ All subsequent `/action` commits happen within the case repository.
 
 ```json
 {
+  "max_depth": 3,
   "leads": [
     {
       "id": "L001",
       "lead": "SEC filings for company X",
       "from": "01-follow-the-money",
       "priority": "HIGH",
+      "depth": 0,
+      "parent": null,
       "status": "investigated",
       "result": "Found in S045",
       "sources": ["S045"]
@@ -205,14 +209,22 @@ All subsequent `/action` commits happen within the case repository.
     {
       "id": "L002",
       "lead": "CDC data by housing type",
-      "from": "27-causation-correlation",
+      "from": "L001",
       "priority": "MEDIUM",
+      "depth": 1,
+      "parent": "L001",
       "status": "dead_end",
       "result": "Data not disaggregated"
     }
   ]
 }
 ```
+
+**Depth tracking:**
+- `depth: 0` - Original leads from research/questions
+- `depth: 1+` - Generated while investigating parent lead
+- `parent` - ID of lead that spawned this one (null for depth 0)
+- Leads beyond `max_depth` go to `future_research.md` instead
 
 ---
 
@@ -225,6 +237,7 @@ All subsequent `/action` commits happen within the case repository.
 5. **Document uncertainty** - "We don't know" is valid
 6. **Detect circular reporting** - Multiple outlets citing same source = 1 source
 7. **One case = one repo** - Never mix case data across repositories
+8. **ALL LEADS RESOLVED** - Every lead must be `investigated` or `dead_end`. No `pending` at completion.
 
 ---
 

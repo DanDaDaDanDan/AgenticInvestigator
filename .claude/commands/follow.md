@@ -164,7 +164,43 @@ Leads about a person/org need their primary source (actual interview, statement,
 
 8. **Update summary.md** - Add significant findings with [S###] citations
 
-9. **Generate new leads** if discovered
+9. **Generate new leads** if discovered:
+   - Set `depth` = parent lead's depth + 1
+   - Set `parent` = parent lead's ID
+   - If new depth > `max_depth` → add to `future_research.md` instead
+
+---
+
+## Depth Tracking
+
+When investigating a lead spawns new leads:
+
+```json
+// Parent lead being investigated
+{ "id": "L005", "depth": 1, ... }
+
+// New lead generated while investigating L005
+{
+  "id": "L042",
+  "lead": "Interview transcript from news article",
+  "from": "L005",
+  "depth": 2,
+  "parent": "L005",
+  "status": "pending"
+}
+```
+
+If `depth` would exceed `max_depth`:
+1. Do NOT add to leads.json
+2. Add to `future_research.md`:
+
+```markdown
+## L005 → Interview transcript
+- **Parent:** L005 (depth 2)
+- **Would be depth:** 3 (exceeds max_depth)
+- **Lead:** Interview transcript from news article
+- **Why relevant:** Contains primary source quotes
+```
 
 ---
 
