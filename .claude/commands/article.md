@@ -18,7 +18,7 @@ Create two articles from `summary.md`:
 ## Instructions
 
 1. **Read source material:**
-   - `summary.md` (PRIMARY - contains all findings with [S###] citations)
+   - `summary.md` (PRIMARY - contains all findings with [S###](url) citations)
    - `questions/*.md` (framework answers for context)
 
 2. **Generate both articles:**
@@ -41,41 +41,31 @@ Create two articles from `summary.md`:
 ## Rules
 
 - NEVER introduce facts not in summary.md
-- ALWAYS preserve `[S###](url)` citation format (clickable markdown links)
+- ALWAYS preserve `[S###](url)` citation format
 - Present contested claims as contested
 - Neutral, professional tone
 - All perspectives balanced
 
 ---
 
-## Criminal Allegations: Presumption of Innocence
+## Pre-Flight Checklist
 
-**Critical:** When writing about accused persons who have not been convicted:
+Before finalizing, verify:
 
-### Language Requirements
+### Legal Safety
+- [ ] **Presumption of innocence** - "Charged with" not "committed" for unconvicted
+- [ ] **Attribution** - Damaging claims attributed to sources, not stated as fact
+- [ ] **Opinion vs fact** - Clearly distinguished
 
-| Status | Use | Never Use |
-|--------|-----|-----------|
-| Arrested | "arrested in connection with" | "committed" / "did" |
-| Charged | "charged with" / "accused of" | "guilty of" |
-| On trial | "defendant" / "accused" | "the killer" / "the perpetrator" |
-| Alleged | "allegedly" / "according to [source]" | Stating as fact |
+### Fairness
+- [ ] **Right of reply** - Subject's response included (or "declined to comment")
+- [ ] **Legal status** - Clear whether alleged, charged, convicted
+- [ ] **Balance** - All significant viewpoints represented
 
-### Required Elements
-
-Every article involving criminal accusations MUST include:
-1. **Legal status** - "has been charged with" / "is under investigation for"
-2. **Source of allegations** - "according to the indictment" / "prosecutors allege"
-3. **Defendant's position** - plea, denial, or "could not be reached for comment"
-4. **Trial status** - "awaits trial" / "trial is scheduled for"
-
-### Example
-
-**WRONG:**
-> Ryan killed his teacher Zoe Walsh on January 5, 2026.
-
-**CORRECT:**
-> Ryan has been charged with the murder of his teacher Zoe Walsh on January 5, 2026 [S001](url). According to the indictment, [details] [S002](url). Through his attorney, Ryan has pleaded not guilty and maintains his innocence [S003](url). Trial is scheduled for [date].
+### Accuracy
+- [ ] **Every fact cited** - No uncited factual claims
+- [ ] **Sources verified** - All [S###] actually exist in evidence/
+- [ ] **Quotes in context** - Not misleadingly excerpted
 
 ---
 
