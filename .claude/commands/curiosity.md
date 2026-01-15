@@ -29,6 +29,7 @@ This is a judgment call, not a mechanical check. Extended thinking can help ensu
 - Have HIGH priority leads been pursued to conclusion?
 - Have MEDIUM priority leads been genuinely investigated?
 - Were dead_end determinations based on real investigation attempts?
+- Leads about specific people/orgs: do we have their primary source (interview, statement) or just articles quoting them?
 
 ### 2. Thread Completion
 
@@ -69,6 +70,8 @@ For each interesting discovery:
 - Expert disagrees with conclusion but we didn't investigate why
 - "Low confidence" answers without attempt to improve
 - Novel question identified but not pursued
+- Lead about a person/org satisfied with quotes instead of their actual interview
+- Outbound links to related articles not followed
 
 ## Output
 

@@ -70,6 +70,10 @@ When a search tool returns results, look for:
 - Citation blocks with source URLs
 - "Sources:" sections at the end of responses
 
+### From Captured Source Content
+
+After capturing a source, read its `content.md` and `links.json` for additional URLs to capture. Inline hyperlinks often point to related interviews or detailed coverage.
+
 ### Capture Each URL
 
 For each URL you want to cite, use `osint_get`:
@@ -130,6 +134,8 @@ From the search results, I found these specific URLs:
 
 ## Instructions
 
+### Phase 1: Initial Source Discovery
+
 1. **Run deep research** to build comprehensive understanding
 
 2. **Run OSINT searches** for structured data:
@@ -147,9 +153,19 @@ From the search results, I found these specific URLs:
 
 5. **Verify metadata.json exists** for each capture
 
-6. **Update summary.md** with findings and [S###] citations
+### Phase 2: Spider Outbound Links
 
-7. **Note leads** for deeper investigation
+6. **Read each source's `content.md` and `links.json`** for relevant outbound links
+
+7. **Capture relevant links** - interviews, related coverage, anything substantive
+
+8. **Repeat for new sources** (max 2 iterations)
+
+### Phase 3: Synthesis
+
+9. **Update summary.md** with findings and [S###] citations
+
+10. **Note leads** for deeper investigation
 
 ---
 
@@ -171,9 +187,9 @@ From the search results, I found these specific URLs:
 
 ## Output
 
-- Captured sources in `evidence/S###/` (each with metadata.json)
-- Initial `summary.md` with key findings and [S###] citations
-- Leads identified for further investigation
+- Captured sources in `evidence/S###/` (with spidered outbound links)
+- Initial `summary.md` with [S###] citations
+- Leads for further investigation
 
 ## Next Step
 
