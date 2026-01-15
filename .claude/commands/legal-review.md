@@ -1,6 +1,6 @@
 # /legal-review - Legal Risk Assessment
 
-Assess legal risks before publication.
+Two-stage review: context-free detection, then contextual evaluation with evidence.
 
 ## Usage
 
@@ -9,71 +9,210 @@ Assess legal risks before publication.
 /legal-review [case-id]    # Review specific case
 ```
 
-## Task
+---
 
-Evaluate `summary.md` and `articles/full.md` for legal risks.
+## Stage 1: Context-Free Scan
 
-## Instructions
+**CRITICAL: Read ONLY `articles/full.md` first. Do NOT read summary.md, sources.json, or evidence files until Stage 2.**
 
-1. **Read source material:**
-   - `summary.md` - Main findings with citations
-   - `articles/full.md` - Article to review
-   - `sources.json` - Source registry
-   - `evidence/S###/metadata.json` - Evidence strength
+You are a reader with NO knowledge of this case. Scan the article for potential legal issues.
 
-2. **Classify each subject** (public official/figure vs private) - determines standard
+### Patterns to Flag
 
-3. **Evaluate evidence strength** for each claim:
-   - Tier 1 STRONG: Primary docs, official records → publish confidently
-   - Tier 2 MEDIUM: Two independent sources → publish with hedging
-   - Tier 3 WEAK: Single/anonymous source → needs more work
-   - Tier 4 INSUFFICIENT: Speculation → don't publish
+**Guilt Assertions (Pre-Conviction)**
+- `[Name] + [crime verb]` — "Ryan killed", "John murdered", "she stole"
+- `the + [criminal noun]` — "the killer", "the murderer", "the rapist"
+- `who + [crime verb]` — "who killed", "who assaulted", "who defrauded"
+- Definite guilt descriptions — "the man who killed her"
 
-4. **Run the Legal Checklist** (below)
+**Unattributed Damaging Claims**
+- Criminal conduct without "alleged/charged/accused"
+- Professional incompetence stated as fact
+- Sexual misconduct without attribution
+- Financial fraud without source
 
-5. **Write output to `legal-review.md`**
+**Editorial/Loaded Language**
+- Adjectives: "disgraced", "corrupt", "failed", "notorious", "controversial"
+- Motive assertions: "to avoid prosecution", "to cover up", "to hide"
+- Mind-reading: "knew it was wrong", "intended to deceive"
 
-6. **Update state.json:** Set `gates.legal` based on result
+**Privacy Red Flags**
+- Medical information
+- Minor's identity
+- Sealed/expunged records
+- Private financial details
+
+### Stage 1 Output Format
+
+For each potential issue:
+
+```
+FLAG-001:
+  Quote: "[exact text from article]"
+  Location: [paragraph/section]
+  Issue: [legal concern]
+  To clear: [what evidence would make this acceptable]
+```
+
+**List ALL flags before proceeding to Stage 2.**
 
 ---
 
-## Legal Checklist
+## Stage 2: Contextual Evaluation
 
-Review each area. The LLM knows the details - this is a reminder to consider each:
+Now read the full case materials:
+- `sources.json` — Source registry
+- `evidence/S###/metadata.json` — Source details
+- `evidence/S###/content.md` — Source content (as needed)
 
-### Defamation Risks
-- [ ] **Presumption of innocence** - Pre-conviction language uses "alleged/charged/accused"?
-- [ ] **Per se categories** - Criminal conduct, sexual misconduct, professional incompetence, loathsome disease, business fraud
-- [ ] **Opinion vs fact** - Opinions clearly labeled? Facts verifiable?
-- [ ] **Public vs private figure** - Correct standard applied?
-- [ ] **Fair comment** - Opinion based on disclosed true facts?
-- [ ] **Attribution** - Defamatory statements attributed to sources, not asserted as our conclusion?
+For EACH flag, determine resolution:
 
-### Privacy Risks
-- [ ] **Private facts** - Disclosing non-newsworthy private information?
-- [ ] **Intrusion** - How was information obtained?
-- [ ] **False light** - Misleading implications from true facts?
-- [ ] **Right of publicity** - Commercial use of name/likeness?
+### Resolution: CLEARED
 
-### Source & Procedure Risks
-- [ ] **Confidential sources** - Promises made? Legal exposure?
-- [ ] **Sealed records** - Court-sealed or expunged records used?
-- [ ] **Juvenile information** - Protected status considered?
-- [ ] **Ongoing proceedings** - Sub judice concerns? Gag orders?
-- [ ] **Copyright/fair use** - Quotation length appropriate?
+The statement is legally defensible. **Must provide:**
+1. Source ID (S###)
+2. What the source proves
+3. Direct quote from source
 
-### Subject Response
-- [ ] **Right of reply** - Subject given opportunity to respond?
-- [ ] **Response included** - Their denial/explanation in article?
-- [ ] **Contact attempts documented** - If no response, did we try?
+```
+FLAG-001: CLEARED
+  Evidence: S###
+  Shows: [what it proves]
+  Quote: "[relevant text from source]"
+```
+
+### Resolution: FIX REQUIRED
+
+No clearing evidence exists. **Must provide:**
+1. What you searched for
+2. Why it wasn't found
+3. Specific replacement text
+
+```
+FLAG-001: FIX REQUIRED
+  Searched: [what you looked for, which sources]
+  Not found: [what's missing]
+  Fix: Change "[original]" → "[replacement]"
+```
+
+### Resolution: ESCALATE
+
+Genuinely ambiguous, needs human judgment.
+
+```
+FLAG-001: ESCALATE
+  Reason: [why ambiguous]
+  Options: [possible resolutions]
+```
+
+### What CANNOT Clear a Flag
+
+- Asserting "it's fine" without citing evidence
+- Pointing to summary.md (may contain same error)
+- General knowledge ("everyone knows he did it")
+- Your memory of the case
+
+**Only captured sources (S###) with specific quotes can clear flags.**
 
 ---
 
-## Status Values
+## Stage 3: Output
 
-- **READY:** Pass Gate 6
-- **READY WITH CHANGES:** Specific fixes needed, list them
-- **NOT READY:** Major issues, back to FOLLOW phase
+Write `legal-review.md` containing:
+
+### 1. Scan Summary
+```
+Flags identified: X
+```
+
+### 2. Resolution Table
+
+| Flag | Quote | Resolution | Evidence/Fix |
+|------|-------|------------|--------------|
+| 001 | "the man who killed her" | FIX REQUIRED | → "charged with killing" |
+| 002 | "fled to avoid prosecution" | CLEARED | S015: prosecutor statement |
+
+### 3. Required Changes
+
+List each text change needed:
+```
+1. Para 3: "the man who killed her" → "who has been charged with killing"
+2. Para 1: "disgraced former teacher" → "former teacher"
+```
+
+### 4. Status
+
+- **READY**: All flags cleared with evidence
+- **READY WITH CHANGES**: Fixes needed (list above), then ready
+- **NOT READY**: Major issues requiring re-investigation
+
+Update `gates.legal` in state.json.
 
 ---
+
+## Example Walkthrough
+
+### Stage 1 (article only)
+```
+FLAG-001:
+  Quote: "The man who killed her, Ryan Camacho, was arrested three days later."
+  Location: Paragraph 3
+  Issue: "killed" states guilt as fact
+  To clear: Source showing conviction for this crime
+
+FLAG-002:
+  Quote: "fled to Mexico to avoid prosecution"
+  Location: Paragraph 7
+  Issue: Motive ("to avoid prosecution") asserted without attribution
+  To clear: Source attributing this motive to official/prosecutor
+
+FLAG-003:
+  Quote: "the disgraced former principal"
+  Location: Paragraph 1
+  Issue: "disgraced" is editorial judgment
+  To clear: Source using this term
+```
+
+### Stage 2 (with sources)
+```
+FLAG-001: FIX REQUIRED
+  Searched: S001-S024 for conviction records
+  Not found: S012 shows charges filed; no conviction source exists
+  Fix: "The man who killed her" → "Ryan Camacho, who has been charged with her murder,"
+
+FLAG-002: CLEARED
+  Evidence: S015 (DA press conference transcript)
+  Shows: Prosecutor stated motive
+  Quote: "The defendant fled to Mexico specifically to avoid facing these charges"
+  Note: Add attribution in article → "fled to Mexico to avoid prosecution, prosecutors said [S015]"
+
+FLAG-003: FIX REQUIRED
+  Searched: All sources for "disgraced"
+  Not found: No source uses this term
+  Fix: "the disgraced former principal" → "the former principal"
+```
+
+### Stage 3 Output
+```
+## Legal Review
+
+Flags identified: 3
+
+| Flag | Issue | Resolution |
+|------|-------|------------|
+| 001 | Guilt as fact | FIX: "charged with her murder" |
+| 002 | Unattributed motive | CLEARED: Add attribution to S015 |
+| 003 | Editorial language | FIX: Remove "disgraced" |
+
+### Required Changes
+1. Para 3: "The man who killed her, Ryan Camacho" → "Ryan Camacho, who has been charged with her murder"
+2. Para 7: Add "[S015]" attribution after "to avoid prosecution"
+3. Para 1: "disgraced former principal" → "former principal"
+
+### Status: READY WITH CHANGES
+Apply the 3 changes above before publication.
+```
+
+---
+
 *This is AI-generated analysis, not legal advice.*
