@@ -4,7 +4,7 @@
  *
  * Usage: node scripts/generate-pdf.js <case-path>
  *
- * Converts articles/short.md and articles/full.md to PDFs using md2pdf.
+ * Converts articles/short.md, articles/medium.md, and articles/full.md to PDFs using md2pdf.
  * The PDFs use Kindle-style typography for comfortable reading.
  */
 
@@ -52,6 +52,26 @@ async function generatePDF(casePath) {
     }
   } else {
     console.log('  - short.md not found, skipping');
+  }
+
+  // Convert medium.md if it exists
+  const mediumMd = path.join(articlesDir, 'medium.md');
+  if (fs.existsSync(mediumMd)) {
+    console.log('Converting medium.md to PDF...');
+    try {
+      const mediumPdf = path.join(articlesDir, 'medium.pdf');
+      execSync(`node "${MD2PDF_PATH}" "${mediumMd}" "${mediumPdf}" --quiet`, {
+        stdio: 'inherit',
+        cwd: resolvedPath
+      });
+      results.push({ file: 'medium.pdf', success: true });
+      console.log(`  ✓ Created: ${mediumPdf}`);
+    } catch (error) {
+      results.push({ file: 'medium.pdf', success: false, error: error.message });
+      console.error(`  ✗ Failed to convert medium.md: ${error.message}`);
+    }
+  } else {
+    console.log('  - medium.md not found, skipping');
   }
 
   // Convert full.md if it exists

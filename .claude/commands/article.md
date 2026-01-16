@@ -11,9 +11,10 @@ Generate publication-ready articles with beautiful PDF output.
 
 ## Task
 
-Create two articles from `summary.md`:
-1. **Short** (400-800 words) - Quick overview
-2. **Full** (2,000-4,000 words) - Publication-ready
+Create three articles from `summary.md`:
+1. **Short** (400-800 words) - Quick overview, key findings only
+2. **Medium** (2,000-4,000 words) - Balanced coverage, main points
+3. **Full** (no length limit) - Comprehensive coverage, all findings and conclusions
 
 Then generate PDFs with professional typography.
 
@@ -21,21 +22,29 @@ Then generate PDFs with professional typography.
 
 1. **Read source material:**
    - `summary.md` (PRIMARY - contains all findings with [S###](url) citations)
-   - `questions/*.md` (framework answers for context)
+   - `questions/*.md` (framework answers - include ALL relevant findings)
 
-2. **Generate both articles:**
-   - Write to `articles/short.md`
-   - Write to `articles/full.md`
-   - Include source key in full article
-   - Include methodology note in full article
+2. **Generate all three articles:**
+   - Write to `articles/short.md` (400-800 words)
+   - Write to `articles/medium.md` (2,000-4,000 words)
+   - Write to `articles/full.md` (no length limit - be comprehensive)
+   - Include source key in medium and full articles
+   - Include methodology note in medium and full articles
 
-3. **Generate PDFs:**
+3. **Full article guidelines:**
+   - Cover ALL findings from summary.md and questions/*.md
+   - Err on the side of inclusion - if it's in the research, include it
+   - Draw clear conclusions from the evidence
+   - Connect findings across frameworks
+   - Don't compress or summarize when full detail serves the reader
+
+4. **Generate PDFs:**
    ```bash
    node scripts/generate-pdf.js cases/<case-id>/
    ```
-   This creates `articles/short.pdf` and `articles/full.pdf`
+   This creates `articles/short.pdf`, `articles/medium.pdf`, and `articles/full.pdf`
 
-4. **Update state.json:** Set `gates.article: true`
+5. **Update state.json:** Set `gates.article: true`
 
 ---
 
@@ -132,9 +141,11 @@ Before finalizing, verify:
 
 ## Output
 
-- `articles/short.md` - Short article markdown
+- `articles/short.md` - Short article markdown (400-800 words)
 - `articles/short.pdf` - Short article PDF
-- `articles/full.md` - Full article markdown
+- `articles/medium.md` - Medium article markdown (2,000-4,000 words)
+- `articles/medium.pdf` - Medium article PDF
+- `articles/full.md` - Full article markdown (comprehensive, no length limit)
 - `articles/full.pdf` - Full article PDF (primary deliverable)
 
 ## Next Step

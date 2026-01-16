@@ -53,14 +53,21 @@ This is optional - use judgment on when deep reasoning adds value.
    - Flag if it generates a lead for further investigation
 
 3. **Add novel questions** that the case suggests but frameworks don't cover
+   - Mark with `<!-- LEAD: description -->` for tracking
+   - These MUST become leads in `leads.json` (see step 6)
 
 4. **Use extended thinking** for genuinely complex or contested questions
 
 5. **Capture sources before citing** - Use `/capture-source <url>` for new sources
 
-6. **Add leads to leads.json** - Any question that generates a follow-up lead (depth: 0, parent: null)
+6. **Add leads to leads.json** - This includes:
+   - Any question that generates a follow-up lead (depth: 0, parent: null)
+   - **All novel questions** added in step 3 (depth: 0, parent: null, from: framework-file)
 
-7. **Update summary.md** - Add key findings with `[S###](url)` citations
+7. **Update summary.md** - Add ALL findings with `[S###](url)` citations
+   - Low bar for inclusion: anything of interest, unique insight, or noteworthy
+   - Filtering happens later during article generation
+   - When in doubt, include it
 
 ## Question Status
 
@@ -83,9 +90,9 @@ These case-specific questions go in the most relevant framework document.
 ## Output
 
 - Updated `questions/NN-framework-name.md` files for each framework in batch
-- Novel questions added where appropriate
-- New leads added to `leads.json`
-- Key findings added to `summary.md`
+- Novel questions added where appropriate (with `<!-- LEAD: ... -->` markers)
+- New leads added to `leads.json` (including all novel questions)
+- ALL findings added to `summary.md` (low bar - include everything noteworthy)
 
 ## Next Step
 
