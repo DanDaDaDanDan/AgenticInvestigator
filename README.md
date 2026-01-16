@@ -29,16 +29,16 @@ PLAN → BOOTSTRAP → QUESTION → FOLLOW → WRITE → VERIFY → COMPLETE
 
 ## The 8 Gates
 
-| Gate | Pass Criteria |
-|------|---------------|
-| Planning | Investigation strategy designed |
-| Questions | All 35 frameworks + custom questions investigated |
-| Curiosity | All leads pursued to conclusion |
-| Article | Publication-ready article exists |
-| Sources | All citations have captured evidence |
-| Integrity | Journalistic standards met |
-| Legal | Legal risk assessment passed |
-| Reconciliation | Lead results sync with summary |
+| # | Gate | Pass Criteria |
+|---|------|---------------|
+| 0 | Planning | Investigation strategy designed |
+| 1 | Questions | All 35 frameworks + custom questions investigated |
+| 2 | Curiosity | All leads pursued to conclusion |
+| 3 | Reconciliation | Lead results sync with summary |
+| 4 | Article | Publication-ready article exists |
+| 5 | Sources | All citations have captured evidence |
+| 6 | Integrity | Journalistic standards met |
+| 7 | Legal | Legal risk assessment passed |
 
 ## Output
 

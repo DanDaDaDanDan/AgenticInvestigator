@@ -51,15 +51,21 @@ PLAN → BOOTSTRAP → QUESTION → FOLLOW → WRITE → VERIFY → COMPLETE
    - Step 1: Prompt refinement (what are we REALLY asking?)
    - Step 2: Strategic research (landscape understanding)
    - Step 3: Investigation design (GPT 5.2 Pro with xhigh reasoning)
-2. Outputs created: `refined_prompt.md`, `strategic_context.md`, `investigation_plan.md`, `custom_questions.md`
-3. After planning completes, update state.json phase to BOOTSTRAP
+2. Outputs created in working directory: `refined_prompt.md`, `strategic_context.md`, `investigation_plan.md`, `custom_questions.md`
+3. **CRITICAL:** Planning files are committed to the MAIN repo (not a case repo - case doesn't exist yet)
+4. After planning completes, proceed to BOOTSTRAP
+
+**Cross-session note:** If another session/instance continues, it must have the planning files. Either:
+- Same session continues immediately, OR
+- Files are committed to git and other session pulls them
 
 ### BOOTSTRAP
 
-1. Run `node scripts/init-case.js "[topic]"` - creates case structure, git repo, and initial commit
-2. Planning outputs are copied into the case directory
-3. Dispatch `/action research "[topic]"` (guided by investigation_plan.md)
-4. After research, update state.json phase to QUESTION
+1. Run `node scripts/init-case.js "[topic]"` - creates case structure, copies planning files, initializes git repo
+2. If planning files found in working directory → `phase: BOOTSTRAP`, `gates.planning: true`
+3. If planning files NOT found → `phase: PLAN`, `gates.planning: false` (must complete planning first)
+4. Dispatch `/action research "[topic]"` (guided by investigation_plan.md)
+5. After research, update state.json phase to QUESTION
 
 ### QUESTION
 
@@ -70,9 +76,10 @@ When all questions answered (including custom), update state.json: phase=FOLLOW,
 
 1. Read `leads.json` for pending leads
 2. Dispatch `/action follow L###` for leads (HIGH priority first, then MEDIUM)
-3. When leads are investigated: dispatch `/action curiosity` to evaluate completeness
-4. If NOT SATISFIED: continue investigating, follow new leads
-5. If SATISFIED: update state.json: phase=WRITE, gates.curiosity=true
+3. When all leads are terminal (investigated or dead_end): dispatch `/action reconcile`
+4. After reconciliation: dispatch `/action curiosity` to evaluate completeness
+5. If NOT SATISFIED: continue investigating, follow new leads
+6. If SATISFIED: update state.json: phase=WRITE, gates.curiosity=true, gates.reconciliation=true
 
 ### WRITE
 

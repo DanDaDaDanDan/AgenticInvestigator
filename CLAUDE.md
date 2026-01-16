@@ -73,7 +73,7 @@ Behavioral rules for Claude Code operating in this project.
          │
          ▼
 ┌─────────────────┐
-│ VERIFY          │  /action verify (7 gates)
+│ VERIFY          │  /action verify (8 gates)
 │                 │  /action integrity, /action legal-review
 │     ◄───────────┤  Fails → back to FOLLOW or RECONCILE
 └────────┬────────┘

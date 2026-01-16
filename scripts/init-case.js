@@ -80,7 +80,7 @@ function createStateJson(caseSlug, topic, planningComplete = false) {
   return JSON.stringify({
     case: caseSlug,
     topic: topic,
-    phase: 'BOOTSTRAP',
+    phase: planningComplete ? 'BOOTSTRAP' : 'PLAN',
     iteration: 1,
     next_source: 1,
     planning: {

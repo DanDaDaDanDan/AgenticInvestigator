@@ -15,10 +15,26 @@ Apply the 35 analytical frameworks via structured Q&A.
 - Batch 3: Frameworks 15-20
 - Batch 4: Frameworks 21-25
 - Batch 5: Frameworks 26-35
+- Batch 6: Custom questions from planning (if `custom_questions.md` exists)
 
 ## Task
 
 For each framework in the batch, answer the guiding questions from `reference/frameworks.md`.
+
+## Custom Questions (Batch 6)
+
+If the investigation used the planning phase, a `custom_questions.md` file may exist with topic-specific questions identified during investigation design. Process these as Batch 6:
+
+1. **Read `custom_questions.md`** from the case directory
+2. **For each custom question:**
+   - Answer with the same rigor as framework questions
+   - Use `[S###](url)` citations
+   - Note confidence level
+   - Generate leads as needed
+3. **Create `questions/36-custom-questions.md`** with all answers
+4. **Add to summary.md** like other framework findings
+
+Custom questions represent gaps the 35 frameworks don't cover for this specific topic. They are identified by GPT 5.2 Pro during planning and are critical to a complete investigation.
 
 ## The 35 Frameworks Are a Starting Point
 

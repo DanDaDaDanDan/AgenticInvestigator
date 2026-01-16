@@ -1,4 +1,4 @@
-# /verify - Check 7 Gates
+# /verify - Check 8 Gates
 
 Verify investigation readiness for publication.
 
@@ -9,10 +9,11 @@ Verify investigation readiness for publication.
 /verify [case-id]    # Verify specific case
 ```
 
-## The 7 Gates
+## The 8 Gates
 
 | # | Gate | Pass Criteria |
 |---|------|---------------|
+| 0 | Planning | Investigation strategy designed (`state.json.gates.planning === true`) |
 | 1 | Questions | All `questions/*.md` have Status: investigated (or not-applicable) |
 | 2 | Curiosity | `/curiosity` returns SATISFIED |
 | 3 | Reconciliation | All lead results reconciled with summary.md |
@@ -31,6 +32,14 @@ Gate 5 (Sources) requires **semantic verification** - checking that evidence act
 This is about verifying that citations actually support what they're cited for, not just that they exist.
 
 ## Gate Details
+
+### Gate 0: Planning
+Verify investigation planning was completed:
+- Check `state.json.gates.planning === true`
+- Verify planning outputs exist in case directory: `refined_prompt.md`, `investigation_plan.md`
+- If `custom_questions.md` exists, verify it was processed during QUESTION phase
+
+**Note:** This gate is typically already passed by the time we reach VERIFY. It's checked for completeness.
 
 ### Gate 1: Questions
 Check each `questions/*.md` file has Status: investigated or not-applicable.

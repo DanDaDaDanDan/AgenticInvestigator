@@ -17,6 +17,18 @@ The 35 frameworks are comprehensive but generic. This command surfaces **topic-s
 3. Investigation approaches suited to this specific topic
 4. Critical verification points
 
+## Output Directory
+
+**Before starting, determine where to save planning files:**
+
+1. **Check if case exists:** Look for `cases/[topic-slug]/state.json`
+2. **If case exists:** Save files directly to `cases/[topic-slug]/`
+3. **If no case:** Save files to working directory (init-case.js will copy them)
+
+This handles cross-session scenarios where a case was created but planning wasn't complete.
+
+---
+
 ## Three-Step Process
 
 ```
@@ -118,7 +130,7 @@ This investigation succeeds if we can:
 
 ### Save Output
 
-Save the sub-agent's response to `refined_prompt.md` in the working directory (will be copied to case later).
+Save the sub-agent's response to `refined_prompt.md` in the output directory (see "Output Directory" section above).
 
 ---
 
@@ -215,7 +227,7 @@ OUTPUT FORMAT:
 
 ### Save Output
 
-Save the sub-agent's response to `strategic_context.md` in the working directory.
+Save the sub-agent's response to `strategic_context.md` in the output directory (see "Output Directory" section above).
 
 ---
 
@@ -405,10 +417,21 @@ The model will output three sections. Parse and save:
 
 After all three steps complete:
 
-1. Create/update `state.json`:
+**If case already exists (cross-session scenario):**
+- Update the case's `state.json`:
+  - Set `gates.planning: true`
+  - Set `planning.step: 3`, all planning flags to true
+  - Add `planning_todos` from Step 3
+- Planning files were saved directly to the case directory
+
+**If no case exists (fresh start):**
+- Planning files are in the working directory
+- `state.json` will be created by `init-case.js` during BOOTSTRAP
+- init-case.js will copy planning files and set `gates.planning: true`
+
+Example state.json update (for existing case):
 ```json
 {
-  "phase": "PLAN",
   "planning": {
     "step": 3,
     "refined_prompt": true,
@@ -422,14 +445,22 @@ After all three steps complete:
 }
 ```
 
-2. The planning outputs (`refined_prompt.md`, `strategic_context.md`, `investigation_plan.md`, `custom_questions.md`) will be copied into the case directory during BOOTSTRAP.
-
 ### Commit
 
+**If case exists:** Commit within the case repository:
 ```bash
+cd cases/<case-id>/
 git add .
 git commit -m "/plan-investigation: Investigation design complete"
 ```
+
+**If no case:** Commit to MAIN repository (planning files in working dir):
+```bash
+git add refined_prompt.md strategic_context.md investigation_plan.md custom_questions.md
+git commit -m "/plan-investigation: Investigation design complete"
+```
+
+This ensures cross-session continuity - planning files are persisted to git.
 
 ---
 

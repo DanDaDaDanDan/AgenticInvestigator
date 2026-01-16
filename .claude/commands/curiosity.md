@@ -16,7 +16,7 @@ Feed the full investigation context to external models for genuine evaluation of
 
 ## Step 1: Pre-Check (Automatic NOT SATISFIED)
 
-Before external verification, perform FIVE checks. ALL must pass.
+Before external verification, perform SEVEN checks. Checks 1a-1e must pass; 1f-1g are informational.
 
 ### 1a. Check for pending HIGH priority leads (HARD BLOCK)
 
@@ -69,7 +69,17 @@ If result contains specific numbers/statistics AND sources: [] is empty → FLAG
 
 If any investigated leads have detailed results but no source captures, flag this for the external model evaluation (it should factor into SATISFIED/NOT determination).
 
-Do not proceed to external verification until checks 1a-1e pass. Check 1f is informational for external models.
+### 1g. Check planning_todos completion
+
+If `state.json.planning_todos` exists and is non-empty:
+```
+For each todo in planning_todos:
+  If todo.status !== "completed" → FLAG for external model evaluation
+```
+
+Planning todos represent investigation priorities identified during the planning phase. Incomplete planning todos indicate the investigation strategy wasn't fully executed.
+
+Do not proceed to external verification until checks 1a-1e pass. Checks 1f and 1g are informational for external models.
 
 ---
 
@@ -204,6 +214,7 @@ If either model identifies gaps:
 - Any LOW confidence answers not acknowledged as known limitations
 - Any `<!-- LEAD:` markers in question files without corresponding leads.json entry
 - Investigated leads with specific claims but empty `sources[]`
+- Incomplete planning_todos (if planning phase was used)
 - Either external model returns NOT SATISFIED
 
 ---
