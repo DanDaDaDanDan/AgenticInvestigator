@@ -21,10 +21,10 @@ PLAN → BOOTSTRAP → QUESTION → FOLLOW → WRITE → VERIFY → COMPLETE
 ```
 
 1. **PLAN**: Design investigation strategy with custom questions (GPT 5.2 Pro)
-2. **BOOTSTRAP**: Initial research, capture sources, draft summary
+2. **BOOTSTRAP**: Create case, initial research, capture sources, draft summary
 3. **QUESTION**: Apply 35 analytical frameworks + custom questions
-4. **FOLLOW**: Pursue all leads generated from questions
-5. **WRITE**: Generate publication articles
+4. **FOLLOW**: Pursue all leads → reconcile with summary → check curiosity
+5. **WRITE**: Generate publication articles (short/medium/full + PDFs)
 6. **VERIFY**: Check all 8 gates before completion
 
 ## The 8 Gates
@@ -47,12 +47,21 @@ Each case creates `cases/[topic-slug]/` with:
 | File | Purpose |
 |------|---------|
 | `summary.md` | Investigation record with all findings |
-| `articles/short.md` | Quick read (400-800 words) |
-| `articles/full.md` | Full publication (2,000-4,000 words) |
-| `questions/` | 35 framework Q&A documents |
-| `evidence/` | Captured screenshots, PDFs, HTML |
-| `leads.json` | Lead tracking |
-| `sources.json` | Source registry |
+| `articles/short.md` + `short.pdf` | Quick read (400-800 words) |
+| `articles/medium.md` + `medium.pdf` | Balanced coverage (2,000-4,000 words) |
+| `articles/full.md` + `full.pdf` | Comprehensive (no limit) - primary deliverable |
+| `questions/` | 35 framework Q&A documents + custom questions |
+| `evidence/S###/` | Captured sources with metadata, content, raw HTML |
+| `leads.json` | Lead tracking with depth and parent relationships |
+| `sources.json` | Source registry with capture status |
+| `removed-points.md` | Auto-removed unverifiable claims (for review) |
+| `future_research.md` | Leads beyond max depth (for future work) |
+
+Planning phase also creates (in working directory, copied to case):
+- `refined_prompt.md` - Clarified investigation question
+- `strategic_context.md` - Landscape understanding
+- `investigation_plan.md` - Strategy and approach
+- `custom_questions.md` - Topic-specific questions beyond 35 frameworks
 
 ## Commands
 
