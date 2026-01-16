@@ -56,16 +56,24 @@ Task (subagent_type: "general-purpose")
 
 Sub-agent returns structured result. Main context stays clean.
 
-### 3. Git Commit
+### 3. Post-Processing
 
-After action completes, commit within the **case repository**:
+**After `/article` completes**, generate PDFs:
+```bash
+node scripts/generate-pdf.js cases/<case-id>/
+```
+This creates `articles/short.pdf` and `articles/full.pdf` with publication-ready typography.
+
+### 4. Git Commit
+
+After action (and post-processing) completes, commit within the **case repository**:
 ```bash
 cd cases/<case-id>/
 git add .
 git commit -m "/<command>: <summary>"
 ```
 
-### 4. Output Continuation Signal
+### 5. Output Continuation Signal
 
 **CRITICAL:** After every action, run the gate checker and output its result:
 
