@@ -16,13 +16,27 @@ Feed the full investigation context to external models for genuine evaluation of
 
 ## Step 1: Pre-Check (Automatic NOT SATISFIED)
 
-Before external verification, check leads.json:
+Before external verification, perform two checks:
+
+### 1a. Check for pending leads
 
 ```
 Any lead with status: "pending" → NOT SATISFIED
 ```
 
-Rule #8 requires ALL leads resolved. If any pending leads exist, return NOT SATISFIED immediately with the list of pending leads. Do not proceed to external verification.
+Rule #8 requires ALL leads resolved. If any pending leads exist, return NOT SATISFIED immediately with the list of pending leads.
+
+### 1b. Check for untracked lead markers
+
+Scan all `questions/*.md` files for `<!-- LEAD:` markers and verify each has a corresponding entry in `leads.json`:
+
+```bash
+grep -r "<!-- LEAD:" questions/*.md
+```
+
+For each marker found, check that leads.json contains a lead with matching description. If any markers are untracked, return NOT SATISFIED with the list of missing leads.
+
+Do not proceed to external verification until both checks pass.
 
 ---
 
@@ -93,7 +107,7 @@ mcp__mcp-gemini__generate_text
     1. Are all leads resolved (investigated or dead_end)?
     2. Are there LOW/MEDIUM confidence answers that need more research?
     3. What obvious questions would a reader ask that aren't answered?
-    4. Are there leads mentioned in question files but not in leads.json?
+    4. Search for `<!-- LEAD:` markers in question files - each MUST have a corresponding entry in leads.json
     5. Overall verdict: SATISFIED or NOT SATISFIED with specific gaps listed.
 ```
 
@@ -131,7 +145,7 @@ mcp__mcp-openai__generate_text
     1. Are all leads resolved (investigated or dead_end)?
     2. Are there LOW/MEDIUM confidence answers that need more research?
     3. What obvious questions would a reader ask that aren't answered?
-    4. Are there leads mentioned in question files but not in leads.json?
+    4. Search for `<!-- LEAD:` markers in question files - each MUST have a corresponding entry in leads.json
     5. Overall verdict: SATISFIED or NOT SATISFIED with specific gaps listed.
 ```
 
@@ -152,7 +166,7 @@ If either model identifies gaps:
 
 - Any leads with status "pending"
 - Any LOW confidence answers not acknowledged as known limitations
-- Leads mentioned in question files but not in leads.json
+- Any `<!-- LEAD:` markers in question files without corresponding leads.json entry
 - Either external model returns NOT SATISFIED
 
 ---

@@ -161,8 +161,13 @@ Leads about a person/org need their primary source (actual interview, statement,
    - `dead_end` with explanation
 
 7. **Update the framework document** - Add findings to `questions/*.md`
+   - Add under a `## Findings from Leads` section
+   - Format: `### L### Result\n[Finding with [S###] citation]`
 
-8. **Update summary.md** - Add significant findings with `[S###](url)` citations
+8. **Update summary.md** - Add ALL findings with `[S###](url)` citations
+   - Low bar for inclusion: anything of interest, unique insight, or noteworthy
+   - Filtering happens later during article generation
+   - When in doubt, include it
 
 9. **Generate new leads** if discovered:
    - Set `depth` = parent lead's depth + 1
@@ -251,8 +256,8 @@ A lead is NOT a dead end if:
 
 - Updated `leads.json` with result
 - Sources captured to `evidence/S###/` (each with metadata.json)
-- Updated `questions/*.md` with findings
-- Updated `summary.md` with key points
+- Updated `questions/*.md` with findings (under `## Findings from Leads` section)
+- Updated `summary.md` with ALL findings (low bar - include everything noteworthy)
 
 ## Next Step
 
