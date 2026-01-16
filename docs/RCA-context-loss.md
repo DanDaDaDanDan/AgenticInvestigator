@@ -3,6 +3,7 @@
 **Date:** 2026-01-16
 **Investigator:** Claude Opus 4.5
 **Scope:** Analysis of data flow and potential information loss between investigation phases
+**Status:** ADDRESSED - Fixes implemented on 2026-01-16
 
 ---
 
@@ -13,6 +14,15 @@ Analysis of the AgenticInvestigator system reveals **10 confirmed context loss p
 1. **future_research.md is write-only** - Leads beyond max_depth are captured but never read
 2. **Question files are secondary to article generation** - Rich analysis gets compressed
 3. **No gate verifies content inclusion** - Article can omit important findings without detection
+
+### Fixes Implemented
+
+The following changes address the critical issues:
+
+1. **`/question` and `/follow` now add ALL findings to summary.md** - Low bar for inclusion, filtering happens later
+2. **Novel questions now generate leads.json entries** - With `<!-- LEAD: description -->` markers for tracking
+3. **`/curiosity` has structured lead detection** - Pre-check scans for `<!-- LEAD:` markers and validates against leads.json
+4. **Article generation now produces 3 outputs** - short (400-800), medium (2,000-4,000), full (no limit, comprehensive)
 
 ---
 
