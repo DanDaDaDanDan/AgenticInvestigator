@@ -42,19 +42,29 @@ Read ONLY `state.json`. All work is done by sub-agents via `/action` router.
 ## Workflow Phases
 
 ```
-BOOTSTRAP → QUESTION → FOLLOW → WRITE → VERIFY → COMPLETE
+PLAN → BOOTSTRAP → QUESTION → FOLLOW → WRITE → VERIFY → COMPLETE
 ```
 
-### BOOTSTRAP (New Cases Only)
+### PLAN (New Cases Only)
+
+1. Dispatch `/action plan-investigation "[topic]"` - runs 3 planning steps via sub-agents
+   - Step 1: Prompt refinement (what are we REALLY asking?)
+   - Step 2: Strategic research (landscape understanding)
+   - Step 3: Investigation design (GPT 5.2 Pro with xhigh reasoning)
+2. Outputs created: `refined_prompt.md`, `strategic_context.md`, `investigation_plan.md`, `custom_questions.md`
+3. After planning completes, update state.json phase to BOOTSTRAP
+
+### BOOTSTRAP
 
 1. Run `node scripts/init-case.js "[topic]"` - creates case structure, git repo, and initial commit
-2. Dispatch `/action research "[topic]"`
-3. After research, update state.json phase to QUESTION
+2. Planning outputs are copied into the case directory
+3. Dispatch `/action research "[topic]"` (guided by investigation_plan.md)
+4. After research, update state.json phase to QUESTION
 
 ### QUESTION
 
-Dispatch `/action question` for batches 1-5 (all 35 frameworks).
-When all questions answered, update state.json: phase=FOLLOW, gates.questions=true
+Dispatch `/action question` for batches 1-5 (all 35 frameworks) + custom_questions.md from planning.
+When all questions answered (including custom), update state.json: phase=FOLLOW, gates.questions=true
 
 ### FOLLOW
 
@@ -71,7 +81,7 @@ Update state.json: phase=VERIFY, gates.article=true
 
 ### VERIFY
 
-Dispatch `/action verify` to check all 6 gates.
+Dispatch `/action verify` to check all 8 gates.
 - If ANY fail: fix issues, loop back
 - If ALL pass: phase=COMPLETE
 

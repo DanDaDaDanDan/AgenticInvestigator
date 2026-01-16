@@ -14,7 +14,7 @@
  * Status: CONTINUE | COMPLETE
  * Phase: <current phase>
  * Next: <next action to take>
- * Gates: X/6 passing
+ * Gates: X/8 passing
  * ═══════════════════════════════════════════════════════
  */
 
@@ -92,7 +92,7 @@ function determineNextAction(state, casePath) {
   // Check if all gates pass
   const allGatesPass = Object.values(gates).every(Boolean);
   if (allGatesPass) {
-    return { status: 'COMPLETE', next: null, reason: 'All 6 gates passing', leadInfo: null };
+    return { status: 'COMPLETE', next: null, reason: 'All 8 gates passing', leadInfo: null };
   }
 
   // Load leads for FOLLOW phase decisions
@@ -102,6 +102,22 @@ function determineNextAction(state, casePath) {
 
   // Determine next action based on phase
   switch (phase) {
+    case 'PLAN':
+      if (!gates.planning) {
+        return {
+          status: 'CONTINUE',
+          next: '/action plan-investigation',
+          reason: 'Plan phase - design investigation strategy',
+          leadInfo: null
+        };
+      }
+      return {
+        status: 'CONTINUE',
+        next: 'Update phase to BOOTSTRAP',
+        reason: 'Planning complete, move to BOOTSTRAP phase',
+        leadInfo: null
+      };
+
     case 'BOOTSTRAP':
       return {
         status: 'CONTINUE',
@@ -127,7 +143,7 @@ function determineNextAction(state, casePath) {
       };
 
     case 'FOLLOW':
-      // Check for pending leads - MUST pursue ALL before curiosity
+      // Check for pending leads - MUST pursue ALL before reconcile/curiosity
       const nextLead = getNextPendingLead(leads);
 
       if (nextLead) {
@@ -146,12 +162,27 @@ function determineNextAction(state, casePath) {
         };
       }
 
-      // All leads are terminal - now check curiosity
+      // All leads are terminal - first reconcile lead results with summary
+      if (!gates.reconciliation) {
+        return {
+          status: 'CONTINUE',
+          next: '/action reconcile',
+          reason: 'All leads terminal - reconcile results with summary',
+          leadInfo: {
+            pending: 0,
+            investigated: leadCounts.investigated,
+            dead_end: leadCounts.dead_end,
+            total: leadCounts.total
+          }
+        };
+      }
+
+      // After reconciliation - check curiosity
       if (!gates.curiosity) {
         return {
           status: 'CONTINUE',
           next: '/action curiosity',
-          reason: 'All leads terminal - evaluate completeness',
+          reason: 'Reconciled - evaluate completeness',
           leadInfo: {
             pending: 0,
             investigated: leadCounts.investigated,
@@ -241,7 +272,7 @@ function main() {
   console.log(`Case: ${state.case}`);
   console.log(`Phase: ${state.phase}`);
   console.log(`Iteration: ${state.iteration}`);
-  console.log(`Gates: ${passingGates}/6 passing`);
+  console.log(`Gates: ${passingGates}/8 passing`);
 
   // Show lead status in FOLLOW phase
   if (result.leadInfo) {
@@ -255,7 +286,7 @@ function main() {
     console.log('Status: ✓ COMPLETE');
     console.log(`Reason: ${result.reason}`);
     console.log('');
-    console.log('Investigation finished. All 6 gates pass.');
+    console.log('Investigation finished. All 8 gates pass.');
   } else {
     console.log('Status: → CONTINUE');
     console.log(`Reason: ${result.reason}`);

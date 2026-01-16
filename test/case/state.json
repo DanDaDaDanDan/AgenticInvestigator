@@ -5,8 +5,10 @@
   "iteration": 1,
   "next_source": 1,
   "gates": {
+    "planning": false,
     "questions": false,
     "curiosity": false,
+    "reconciliation": false,
     "article": false,
     "sources": false,
     "integrity": false,

@@ -17,8 +17,8 @@ const FIXTURES_DIR = path.join(__dirname, 'case');
 const V2_SCHEMA = {
   state: {
     required: ['case', 'topic', 'phase', 'iteration', 'next_source', 'gates'],
-    phases: ['BOOTSTRAP', 'QUESTION', 'FOLLOW', 'WRITE', 'VERIFY', 'COMPLETE'],
-    gates: ['questions', 'curiosity', 'article', 'sources', 'integrity', 'legal'],
+    phases: ['PLAN', 'BOOTSTRAP', 'QUESTION', 'FOLLOW', 'WRITE', 'VERIFY', 'COMPLETE'],
+    gates: ['planning', 'questions', 'curiosity', 'reconciliation', 'article', 'sources', 'integrity', 'legal'],
   },
   sources: {
     required: ['sources'],
@@ -62,8 +62,8 @@ function validateState(state) {
   // Validate gates
   if (state.gates) {
     const gateKeys = Object.keys(state.gates);
-    if (gateKeys.length !== 6) {
-      errors.push(`Invalid gate count: ${gateKeys.length}. Must have exactly 6 gates`);
+    if (gateKeys.length !== 8) {
+      errors.push(`Invalid gate count: ${gateKeys.length}. Must have exactly 8 gates`);
     }
     for (const gate of V2_SCHEMA.state.gates) {
       if (!(gate in state.gates)) {
@@ -222,13 +222,13 @@ test('validateLeads detects invalid priority', async (t) => {
 
 test('v2 schema constants are correct', async (t) => {
   // Verify schema constants match CLAUDE.md documentation
-  assert.equal(V2_SCHEMA.state.gates.length, 6, 'Should have 6 gates');
-  assert.equal(V2_SCHEMA.state.phases.length, 6, 'Should have 6 phases');
+  assert.equal(V2_SCHEMA.state.gates.length, 8, 'Should have 8 gates');
+  assert.equal(V2_SCHEMA.state.phases.length, 7, 'Should have 7 phases');
 
-  const expectedGates = ['questions', 'curiosity', 'article', 'sources', 'integrity', 'legal'];
+  const expectedGates = ['planning', 'questions', 'curiosity', 'reconciliation', 'article', 'sources', 'integrity', 'legal'];
   assert.deepEqual(V2_SCHEMA.state.gates, expectedGates, 'Gates should match v2 spec');
 
-  const expectedPhases = ['BOOTSTRAP', 'QUESTION', 'FOLLOW', 'WRITE', 'VERIFY', 'COMPLETE'];
+  const expectedPhases = ['PLAN', 'BOOTSTRAP', 'QUESTION', 'FOLLOW', 'WRITE', 'VERIFY', 'COMPLETE'];
   assert.deepEqual(V2_SCHEMA.state.phases, expectedPhases, 'Phases should match v2 spec');
 });
 

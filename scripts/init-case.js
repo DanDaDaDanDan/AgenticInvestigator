@@ -76,16 +76,25 @@ function createQuestionFile(framework) {
 `;
 }
 
-function createStateJson(caseSlug, topic) {
+function createStateJson(caseSlug, topic, planningComplete = false) {
   return JSON.stringify({
     case: caseSlug,
     topic: topic,
     phase: 'BOOTSTRAP',
     iteration: 1,
     next_source: 1,
+    planning: {
+      step: planningComplete ? 3 : 0,
+      refined_prompt: planningComplete,
+      strategic_context: planningComplete,
+      investigation_plan: planningComplete
+    },
+    planning_todos: [],
     gates: {
+      planning: planningComplete,
       questions: false,
       curiosity: false,
+      reconciliation: false,
       article: false,
       sources: false,
       integrity: false,
@@ -240,6 +249,49 @@ function main() {
 
   console.log(`Created: questions/ (35 files)`);
 
+  // Copy planning files if they exist (from PLAN phase)
+  const planningFiles = [
+    'refined_prompt.md',
+    'strategic_context.md',
+    'investigation_plan.md',
+    'custom_questions.md'
+  ];
+
+  let planningComplete = false;
+  const existingPlanFiles = planningFiles.filter(f => fs.existsSync(path.join(process.cwd(), f)));
+
+  if (existingPlanFiles.length > 0) {
+    console.log('');
+    console.log('Copying planning files...');
+
+    existingPlanFiles.forEach(filename => {
+      const srcPath = path.join(process.cwd(), filename);
+      const destPath = path.join(casePath, filename);
+      fs.copyFileSync(srcPath, destPath);
+      console.log(`Copied: ${filename}`);
+    });
+
+    // Check if all planning files exist
+    planningComplete = existingPlanFiles.length === planningFiles.length;
+
+    if (planningComplete) {
+      console.log('All planning files present - marking planning gate complete');
+
+      // Re-create state.json with planning complete
+      fs.writeFileSync(
+        path.join(casePath, 'state.json'),
+        createStateJson(caseSlug, topic, true)
+      );
+
+      // Try to load planning_todos from investigation_plan.md or separate file
+      const planPath = path.join(casePath, 'investigation_plan.md');
+      if (fs.existsSync(planPath)) {
+        // Planning todos would be added by the orchestrator after parsing
+        console.log('Planning todos will be loaded from investigation_plan.md');
+      }
+    }
+  }
+
   // Initialize git repository
   console.log('');
   console.log('Initializing git repository...');
@@ -282,6 +334,12 @@ function main() {
   console.log('  ├── leads.json         (max_depth: 3)');
   console.log('  ├── removed-points.md');
   console.log('  ├── future_research.md');
+  if (planningComplete) {
+    console.log('  ├── refined_prompt.md        (from planning)');
+    console.log('  ├── strategic_context.md     (from planning)');
+    console.log('  ├── investigation_plan.md    (from planning)');
+    console.log('  ├── custom_questions.md      (from planning)');
+  }
   console.log('  ├── questions/');
   console.log('  │   └── (35 framework files)');
   console.log('  ├── evidence/');

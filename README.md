@@ -17,25 +17,28 @@ This is not a debunking tool. It's a **reporting framework** that traces chains 
 ## How It Works
 
 ```
-BOOTSTRAP → QUESTION → FOLLOW → WRITE → VERIFY → COMPLETE
+PLAN → BOOTSTRAP → QUESTION → FOLLOW → WRITE → VERIFY → COMPLETE
 ```
 
-1. **BOOTSTRAP**: Initial research, capture sources, draft summary
-2. **QUESTION**: Apply 35 analytical frameworks via structured Q&A
-3. **FOLLOW**: Pursue all leads generated from questions
-4. **WRITE**: Generate publication articles
-5. **VERIFY**: Check all 6 gates before completion
+1. **PLAN**: Design investigation strategy with custom questions (GPT 5.2 Pro)
+2. **BOOTSTRAP**: Initial research, capture sources, draft summary
+3. **QUESTION**: Apply 35 analytical frameworks + custom questions
+4. **FOLLOW**: Pursue all leads generated from questions
+5. **WRITE**: Generate publication articles
+6. **VERIFY**: Check all 8 gates before completion
 
-## The 6 Gates
+## The 8 Gates
 
 | Gate | Pass Criteria |
 |------|---------------|
-| Questions | All 35 frameworks investigated |
+| Planning | Investigation strategy designed |
+| Questions | All 35 frameworks + custom questions investigated |
 | Curiosity | All leads pursued to conclusion |
 | Article | Publication-ready article exists |
 | Sources | All citations have captured evidence |
 | Integrity | Journalistic standards met |
 | Legal | Legal risk assessment passed |
+| Reconciliation | Lead results sync with summary |
 
 ## Output
 
@@ -57,13 +60,15 @@ Each case creates `cases/[topic-slug]/` with:
 |---------|---------|
 | `/investigate` | Start/resume investigation |
 | `/action` | Router for all operations (auto git commits) |
+| `/plan-investigation` | Design investigation strategy (3-step planning) |
 | `/research` | Broad topic research |
 | `/question` | Answer framework questions |
 | `/follow` | Pursue a lead |
+| `/reconcile` | Sync lead results with summary |
 | `/curiosity` | Check if leads exhausted |
 | `/capture-source` | Capture web evidence |
 | `/article` | Generate articles |
-| `/verify` | Check 6 gates |
+| `/verify` | Check 8 gates |
 | `/integrity` | Journalistic standards check |
 | `/legal-review` | Legal risk assessment |
 

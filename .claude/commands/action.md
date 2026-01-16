@@ -25,6 +25,7 @@ Find the active case directory (most recent in `cases/`).
 ### 2. Execute Command
 
 Route to the specified command:
+- `/action plan-investigation <topic>` → `/plan-investigation` (**via sub-agents** - 3 sequential steps)
 - `/action research <topic>` → `/research` (**via sub-agent**)
 - `/action question <batch>` → `/question`
 - `/action follow <lead-id>` → `/follow`
@@ -42,6 +43,7 @@ Commands marked **via sub-agent** read large amounts of files (~200KB+). Use Tas
 
 | Command | Reads | Why Sub-Agent |
 |---------|-------|---------------|
+| `/plan-investigation` | deep_research + 35 frameworks (~15KB for Step 3) | 3 sequential sub-agents, GPT 5.2 Pro for design |
 | `/research` | deep_research results + captured sources (~100-200KB) | Heavy MCP calls, source capture |
 | `/reconcile` | summary + leads + sources (~50KB) | Cross-reference all findings |
 | `/curiosity` | 35 files + leads + summary + sources (~200KB) | Full investigation context |

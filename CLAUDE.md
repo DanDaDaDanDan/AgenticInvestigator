@@ -22,14 +22,25 @@ Behavioral rules for Claude Code operating in this project.
       │
       ▼
 ┌─────────────────┐
-│ BOOTSTRAP       │  /action research
+│ PLAN            │  /action plan-investigation (3 steps via sub-agents)
+│                 │  1. Prompt refinement - what are we REALLY asking?
+│                 │  2. Strategic research - landscape understanding
+│                 │  3. Investigation design (GPT 5.2 Pro xhigh)
+│                 │  Output: refined_prompt.md, strategic_context.md,
+│                 │          investigation_plan.md, custom_questions.md
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ BOOTSTRAP       │  Create case repo, copy plan outputs
+│                 │  /action research (guided by investigation_plan.md)
 │                 │  Capture sources, draft summary.md
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│ QUESTION        │  /action question (5 batches)
-│                 │  Answer all 35 frameworks
+│ QUESTION        │  /action question (5 batches + custom_questions.md)
+│                 │  Answer all 35 frameworks + custom questions
 │                 │  Generate leads in leads.json
 └────────┬────────┘
          │
@@ -73,19 +84,20 @@ Behavioral rules for Claude Code operating in this project.
 
 ---
 
-## The 7 Gates
+## The 8 Gates
 
 | # | Gate | Check | Pass Criteria |
 |---|------|-------|---------------|
-| 1 | Questions | All `questions/*.md` | Status: investigated |
-| 2 | Curiosity | `/curiosity` judgment | ALL leads resolved + HIGH priority complete + `<!-- LEAD:` markers tracked |
+| 0 | Planning | `/plan-investigation` complete | refined_prompt.md, strategic_context.md, investigation_plan.md, custom_questions.md exist |
+| 1 | Questions | All `questions/*.md` | Status: investigated (includes custom_questions.md) |
+| 2 | Curiosity | `/curiosity` judgment | ALL leads resolved + HIGH priority complete + `<!-- LEAD:` markers tracked + planning_todos addressed |
 | 3 | Reconciliation | `/reconcile` | Lead results reconciled with summary.md, contradictions resolved |
 | 4 | Article | `articles/*.md` + PDFs | short/medium/full.md exist with [S###] citations + PDFs generated |
 | 5 | Sources | Evidence verification | All [S###] captured + semantically verified + lead results have sources |
 | 6 | Integrity | `/integrity` review | Status: READY |
 | 7 | Legal | `/legal-review` | Status: READY |
 
-**Termination:** All 7 gates pass.
+**Termination:** All 8 gates pass.
 
 ### Gate 2 (Curiosity) Hard Blocks
 
@@ -110,13 +122,14 @@ The sources gate performs multiple verification layers:
 |---------|---------|------------|
 | `/investigate` | Start/resume investigation | User |
 | `/action` | Router (git + dispatch) | Orchestrator |
+| `/plan-investigation` | Design investigation strategy (3 steps) | Orchestrator |
 | `/research` | Broad topic research | Orchestrator |
 | `/question` | Answer framework batch | Orchestrator |
 | `/follow` | Pursue single lead | Orchestrator |
 | `/reconcile` | Sync lead results with summary.md | Orchestrator |
 | `/curiosity` | Check lead exhaustion | Orchestrator |
 | `/capture-source` | Capture evidence | Any agent |
-| `/verify` | Check 7 gates | Orchestrator |
+| `/verify` | Check 8 gates | Orchestrator |
 | `/article` | Write publication | Orchestrator |
 | `/integrity` | Journalistic check | Orchestrator |
 | `/legal-review` | Legal risk check | Orchestrator |
@@ -143,7 +156,7 @@ The sources gate performs multiple verification layers:
 1. Read `state.json` to determine current phase
 2. Dispatch appropriate `/action` command
 3. Track progress via TodoWrite
-4. Loop until all 6 gates pass
+4. Loop until all 8 gates pass
 
 ### Orchestrator MUST NOT
 
@@ -160,6 +173,7 @@ Commands that read large amounts of data should run in sub-agents to avoid pollu
 
 | Command | Reads | Use Sub-Agent |
 |---------|-------|---------------|
+| `/plan-investigation` | deep_research + 35 frameworks (~15KB for Step 3) | Yes (3 sub-agents) |
 | `/research` | deep_research results + captured sources (~100-200KB) | Yes |
 | `/reconcile` | summary + leads + sources (~50KB) | Yes |
 | `/curiosity` | 35 files + leads + summary + sources (~200KB) | Yes |
@@ -253,7 +267,24 @@ All subsequent `/action` commits happen within the case repository.
   "phase": "QUESTION",
   "iteration": 2,
   "next_source": 48,
+  "planning": {
+    "step": 3,
+    "refined_prompt": true,
+    "strategic_context": true,
+    "investigation_plan": true
+  },
+  "planning_todos": [
+    {
+      "id": "P001",
+      "task": "Check specific data source X",
+      "rationale": "Critical for domain",
+      "phase": "RESEARCH",
+      "priority": "HIGH",
+      "status": "completed"
+    }
+  ],
   "gates": {
+    "planning": true,
     "questions": false,
     "curiosity": false,
     "reconciliation": false,
@@ -494,7 +525,7 @@ osint_get target="https://example.com/paper.pdf" output_path="evidence/S001/pape
 
 ## Autonomous Continuation
 
-**Continue until ALL 6 gates pass.**
+**Continue until ALL 8 gates pass.**
 
 ### Continuation Signal
 
@@ -521,7 +552,7 @@ DO NOT STOP. Execute the next action immediately.
 
 - "Would you like me to continue?"
 - "Should I fix this?"
-- "5/6 gates passing, what next?"
+- "7/8 gates passing, what next?"
 
 ### Do
 
