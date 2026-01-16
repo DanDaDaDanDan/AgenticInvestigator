@@ -107,7 +107,7 @@ test('init-case.js creates valid state.json with v2 schema', async (t) => {
   // Check required fields
   assert.equal(state.case, 'schema-test', 'case field should match slug');
   assert.equal(state.topic, 'Schema Test', 'topic field should match input');
-  assert.equal(state.phase, 'PLAN', 'phase should be PLAN when no planning files exist');
+  assert.equal(state.phase, 'PLAN', 'phase should always start as PLAN');
   assert.equal(state.iteration, 1, 'iteration should be 1');
   assert.equal(state.next_source, 1, 'next_source should be 1');
 

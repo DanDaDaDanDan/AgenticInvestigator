@@ -42,30 +42,29 @@ Read ONLY `state.json`. All work is done by sub-agents via `/action` router.
 ## Workflow Phases
 
 ```
-PLAN → BOOTSTRAP → QUESTION → FOLLOW → WRITE → VERIFY → COMPLETE
+CREATE CASE → PLAN → BOOTSTRAP → QUESTION → FOLLOW → WRITE → VERIFY → COMPLETE
 ```
 
-### PLAN (New Cases Only)
+### CREATE CASE (New Cases Only)
+
+1. Run `node scripts/init-case.js "[topic]"` - creates case structure with `phase: PLAN`
+2. Case folder now exists at `cases/[topic-slug]/`
+3. All subsequent work happens inside the case folder
+
+### PLAN
 
 1. Dispatch `/action plan-investigation "[topic]"` - runs 3 planning steps via sub-agents
    - Step 1: Prompt refinement (what are we REALLY asking?)
    - Step 2: Strategic research (landscape understanding)
    - Step 3: Investigation design (GPT 5.2 Pro with xhigh reasoning)
-2. Outputs created in working directory: `refined_prompt.md`, `strategic_context.md`, `investigation_plan.md`, `custom_questions.md`
-3. **CRITICAL:** Planning files are committed to the MAIN repo (not a case repo - case doesn't exist yet)
-4. After planning completes, proceed to BOOTSTRAP
-
-**Cross-session note:** If another session/instance continues, it must have the planning files. Either:
-- Same session continues immediately, OR
-- Files are committed to git and other session pulls them
+2. Outputs created directly in case folder: `refined_prompt.md`, `strategic_context.md`, `investigation_plan.md`, `custom_questions.md`
+3. All commits go to the case repo
+4. After planning completes, update state.json: `phase: BOOTSTRAP`, `gates.planning: true`
 
 ### BOOTSTRAP
 
-1. Run `node scripts/init-case.js "[topic]"` - creates case structure, copies planning files, initializes git repo
-2. If planning files found in working directory → `phase: BOOTSTRAP`, `gates.planning: true`
-3. If planning files NOT found → `phase: PLAN`, `gates.planning: false` (must complete planning first)
-4. Dispatch `/action research "[topic]"` (guided by investigation_plan.md)
-5. After research, update state.json phase to QUESTION
+1. Dispatch `/action research "[topic]"` (guided by investigation_plan.md)
+2. After research, update state.json phase to QUESTION
 
 ### QUESTION
 

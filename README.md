@@ -17,15 +17,16 @@ This is not a debunking tool. It's a **reporting framework** that traces chains 
 ## How It Works
 
 ```
-PLAN → BOOTSTRAP → QUESTION → FOLLOW → WRITE → VERIFY → COMPLETE
+CREATE CASE → PLAN → BOOTSTRAP → QUESTION → FOLLOW → WRITE → VERIFY → COMPLETE
 ```
 
-1. **PLAN**: Design investigation strategy with custom questions (GPT 5.2 Pro)
-2. **BOOTSTRAP**: Create case, initial research, capture sources, draft summary
-3. **QUESTION**: Apply 35 analytical frameworks + custom questions
-4. **FOLLOW**: Pursue all leads → reconcile with summary → check curiosity
-5. **WRITE**: Generate publication articles (short/medium/full + PDFs)
-6. **VERIFY**: Check all 8 gates before completion
+1. **CREATE CASE**: Initialize case folder and git repository
+2. **PLAN**: Design investigation strategy with custom questions (GPT 5.2 Pro)
+3. **BOOTSTRAP**: Initial research, capture sources, draft summary
+4. **QUESTION**: Apply 35 analytical frameworks + custom questions
+5. **FOLLOW**: Pursue all leads → reconcile with summary → check curiosity
+6. **WRITE**: Generate publication articles (short/medium/full + PDFs)
+7. **VERIFY**: Check all 8 gates before completion
 
 ## The 8 Gates
 
@@ -57,7 +58,7 @@ Each case creates `cases/[topic-slug]/` with:
 | `removed-points.md` | Auto-removed unverifiable claims (for review) |
 | `future_research.md` | Leads beyond max depth (for future work) |
 
-Planning phase also creates (in working directory, copied to case):
+Planning phase creates (directly in case folder):
 - `refined_prompt.md` - Clarified investigation question
 - `strategic_context.md` - Landscape understanding
 - `investigation_plan.md` - Strategy and approach

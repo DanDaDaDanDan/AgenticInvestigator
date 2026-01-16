@@ -11,7 +11,7 @@ Behavioral rules for Claude Code operating in this project.
 - Orchestrator reads ONLY `state.json`
 - All research, analysis, and writing done by sub-agents via `/action` router
 - Git history IS the ledger (no separate ledger file)
-- **Each case = separate git repository** (created during BOOTSTRAP)
+- **Each case = separate git repository** (created first, before PLAN phase)
 
 ---
 
@@ -22,18 +22,25 @@ Behavioral rules for Claude Code operating in this project.
       │
       ▼
 ┌─────────────────┐
-│ PLAN            │  /action plan-investigation (3 steps via sub-agents)
-│                 │  1. Prompt refinement - what are we REALLY asking?
-│                 │  2. Strategic research - landscape understanding
-│                 │  3. Investigation design (GPT 5.2 Pro xhigh)
-│                 │  Output: refined_prompt.md, strategic_context.md,
-│                 │          investigation_plan.md, custom_questions.md
+│ CREATE CASE     │  node scripts/init-case.js "[topic]"
+│                 │  Creates case repo at cases/[topic-slug]/
+│                 │  All subsequent work happens in the case folder
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│ BOOTSTRAP       │  Create case repo, copy plan outputs
-│                 │  /action research (guided by investigation_plan.md)
+│ PLAN            │  /action plan-investigation (3 steps via sub-agents)
+│                 │  1. Prompt refinement - what are we REALLY asking?
+│                 │  2. Strategic research - landscape understanding
+│                 │  3. Investigation design (GPT 5.2 Pro xhigh)
+│                 │  Output (in case folder): refined_prompt.md,
+│                 │          strategic_context.md, investigation_plan.md,
+│                 │          custom_questions.md
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ BOOTSTRAP       │  /action research (guided by investigation_plan.md)
 │                 │  Capture sources, draft summary.md
 └────────┬────────┘
          │
@@ -244,17 +251,20 @@ cases/[topic-slug]/           # ← Standalone git repo (git init here)
     └── full.pdf             # Primary deliverable - all findings and conclusions
 ```
 
-### Bootstrap Creates Repository
+### Case Creation (Before PLAN)
 
-During BOOTSTRAP phase:
+The case repository is created FIRST, before the PLAN phase:
+
 1. Run `node scripts/init-case.js "[topic]"` which:
    - Creates `cases/[topic-slug]/` directory
-   - Creates initial files (state.json, sources.json, leads.json, future_research.md, 35 question files)
+   - Creates initial files (state.json with `phase: PLAN`, sources.json, leads.json, future_research.md, 35 question files)
    - Runs `git init` inside the case directory
    - Makes initial commit: "Initialize investigation: [topic]"
-2. Then dispatch `/action research` to begin research
 
-All subsequent `/action` commits happen within the case repository.
+2. PLAN phase then creates planning files directly in the case folder
+3. BOOTSTRAP phase runs research (no file copying needed)
+
+All `/action` commits happen within the case repository.
 
 ---
 

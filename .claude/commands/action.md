@@ -70,23 +70,15 @@ This creates `articles/short.pdf` and `articles/full.pdf` with publication-ready
 
 ### 4. Git Commit
 
-After action (and post-processing) completes, commit changes.
+After action (and post-processing) completes, commit changes to the case repository:
 
-**For PLAN phase (before case exists):**
-```bash
-# Commit planning files to MAIN repo (AgenticInvestigator)
-git add refined_prompt.md strategic_context.md investigation_plan.md custom_questions.md
-git commit -m "/plan-investigation: <summary>"
-```
-
-**For all other phases (case exists):**
 ```bash
 cd cases/<case-id>/
 git add .
 git commit -m "/<command>: <summary>"
 ```
 
-**IMPORTANT:** Planning files MUST be committed to the main repo before BOOTSTRAP. This ensures cross-session continuity - another session/instance can find the planning files by pulling from the repo.
+All phases (including PLAN) commit to the case repo since the case is created first.
 
 ### 5. Output Continuation Signal
 
