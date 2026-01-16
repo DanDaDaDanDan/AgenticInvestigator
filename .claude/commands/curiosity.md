@@ -16,17 +16,41 @@ Feed the full investigation context to external models for genuine evaluation of
 
 ## Step 1: Pre-Check (Automatic NOT SATISFIED)
 
-Before external verification, perform two checks:
+Before external verification, perform FIVE checks. ALL must pass.
 
-### 1a. Check for pending leads
+### 1a. Check for pending HIGH priority leads (HARD BLOCK)
+
+```
+Any lead with priority: "HIGH" AND status: "pending" → NOT SATISFIED
+```
+
+HIGH priority leads MUST be resolved. Return NOT SATISFIED immediately with the list of pending HIGH leads.
+
+### 1b. Check for pending verification leads (HARD BLOCK)
+
+```
+Any lead where "verify" or "Verify" appears in lead text AND status: "pending" → NOT SATISFIED
+```
+
+Verification leads (e.g., "Verify $380B claim") are critical for accuracy. These MUST be resolved before completion.
+
+### 1c. Check overall pending percentage
+
+```
+Count pending leads / Total leads > 40% → NOT SATISFIED
+```
+
+If more than 40% of leads are pending, the investigation is insufficiently thorough. Return the percentage and list of pending leads by priority.
+
+### 1d. Check for pending leads (ALL)
 
 ```
 Any lead with status: "pending" → NOT SATISFIED
 ```
 
-Rule #8 requires ALL leads resolved. If any pending leads exist, return NOT SATISFIED immediately with the list of pending leads.
+Rule #9 requires ALL leads resolved. If any pending leads exist after checks 1a-1c, return NOT SATISFIED with the full list.
 
-### 1b. Check for untracked lead markers
+### 1e. Check for untracked lead markers
 
 Scan all `questions/*.md` files for `<!-- LEAD:` markers and verify each has a corresponding entry in `leads.json`:
 
@@ -36,7 +60,16 @@ grep -r "<!-- LEAD:" questions/*.md
 
 For each marker found, check that leads.json contains a lead with matching description. If any markers are untracked, return NOT SATISFIED with the list of missing leads.
 
-Do not proceed to external verification until both checks pass.
+### 1f. Check lead results have sources
+
+For each lead with status "investigated":
+```
+If result contains specific numbers/statistics AND sources: [] is empty → FLAG
+```
+
+If any investigated leads have detailed results but no source captures, flag this for the external model evaluation (it should factor into SATISFIED/NOT determination).
+
+Do not proceed to external verification until checks 1a-1e pass. Check 1f is informational for external models.
 
 ---
 
@@ -164,9 +197,13 @@ If either model identifies gaps:
 
 ## Red Flags (Automatic NOT SATISFIED)
 
-- Any leads with status "pending"
+- **Any HIGH priority leads with status "pending"** (HARD BLOCK)
+- **Any verification leads ("Verify X") with status "pending"** (HARD BLOCK)
+- **More than 40% of leads pending** (HARD BLOCK)
+- Any leads with status "pending" (after above checks)
 - Any LOW confidence answers not acknowledged as known limitations
 - Any `<!-- LEAD:` markers in question files without corresponding leads.json entry
+- Investigated leads with specific claims but empty `sources[]`
 - Either external model returns NOT SATISFIED
 
 ---

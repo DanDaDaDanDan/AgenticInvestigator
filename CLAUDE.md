@@ -39,18 +39,32 @@ Behavioral rules for Claude Code operating in this project.
 │                 │  Pursue each lead to conclusion
 │     ◄───────────┤  /action curiosity → NOT SATISFIED
 └────────┬────────┘
-         │ /action curiosity → SATISFIED
+         │
          ▼
 ┌─────────────────┐
-│ WRITE           │  /action article
-│                 │  Generate short.md and full.md
+│ RECONCILE       │  /action reconcile
+│                 │  Update summary.md with lead results
+│                 │  Caveat unverified claims
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│ VERIFY          │  /action verify (6 gates)
+│ CURIOSITY       │  /action curiosity
+│                 │  Check ALL leads resolved
+│     ◄───────────┤  NOT SATISFIED → back to FOLLOW
+└────────┬────────┘
+         │ SATISFIED
+         ▼
+┌─────────────────┐
+│ WRITE           │  /action article
+│                 │  Generate short/medium/full.md
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ VERIFY          │  /action verify (7 gates)
 │                 │  /action integrity, /action legal-review
-│     ◄───────────┤  Fails → back to FOLLOW
+│     ◄───────────┤  Fails → back to FOLLOW or RECONCILE
 └────────┬────────┘
          │ All pass
          ▼
@@ -59,18 +73,34 @@ Behavioral rules for Claude Code operating in this project.
 
 ---
 
-## The 6 Gates
+## The 7 Gates
 
 | # | Gate | Check | Pass Criteria |
 |---|------|-------|---------------|
 | 1 | Questions | All `questions/*.md` | Status: investigated |
-| 2 | Curiosity | `/curiosity` judgment | Verdict: SATISFIED + all `<!-- LEAD:` markers tracked |
-| 3 | Article | `articles/*.md` + PDFs | short/medium/full.md exist with [S###] citations + PDFs generated |
-| 4 | Sources | Evidence verification | All [S###] verified or auto-removed |
-| 5 | Integrity | `/integrity` review | Status: READY |
-| 6 | Legal | `/legal-review` | Status: READY |
+| 2 | Curiosity | `/curiosity` judgment | ALL leads resolved + HIGH priority complete + `<!-- LEAD:` markers tracked |
+| 3 | Reconciliation | `/reconcile` | Lead results reconciled with summary.md, contradictions resolved |
+| 4 | Article | `articles/*.md` + PDFs | short/medium/full.md exist with [S###] citations + PDFs generated |
+| 5 | Sources | Evidence verification | All [S###] captured + semantically verified + lead results have sources |
+| 6 | Integrity | `/integrity` review | Status: READY |
+| 7 | Legal | `/legal-review` | Status: READY |
 
-**Termination:** All 6 gates pass.
+**Termination:** All 7 gates pass.
+
+### Gate 2 (Curiosity) Hard Blocks
+
+The curiosity gate has automatic failures that cannot be overridden:
+- **Any HIGH priority leads pending** - Must be resolved
+- **Any verification leads pending** - Leads with "Verify" in description must be resolved
+- **More than 40% of leads pending** - Insufficient investigation coverage
+
+### Gate 5 (Sources) Sub-Checks
+
+The sources gate performs multiple verification layers:
+- **5a. Capture verification** - All cited sources must have `captured: true`
+- **5b. Fabrication check** - No synthesized/compiled sources
+- **5c. Semantic verification** - Citations must actually support the claims made
+- **5d. Lead source coverage** - Investigated leads with specific findings must have captured sources
 
 ---
 
@@ -83,9 +113,10 @@ Behavioral rules for Claude Code operating in this project.
 | `/research` | Broad topic research | Orchestrator |
 | `/question` | Answer framework batch | Orchestrator |
 | `/follow` | Pursue single lead | Orchestrator |
+| `/reconcile` | Sync lead results with summary.md | Orchestrator |
 | `/curiosity` | Check lead exhaustion | Orchestrator |
 | `/capture-source` | Capture evidence | Any agent |
-| `/verify` | Check 6 gates | Orchestrator |
+| `/verify` | Check 7 gates | Orchestrator |
 | `/article` | Write publication | Orchestrator |
 | `/integrity` | Journalistic check | Orchestrator |
 | `/legal-review` | Legal risk check | Orchestrator |
@@ -130,6 +161,7 @@ Commands that read large amounts of data should run in sub-agents to avoid pollu
 | Command | Reads | Use Sub-Agent |
 |---------|-------|---------------|
 | `/research` | deep_research results + captured sources (~100-200KB) | Yes |
+| `/reconcile` | summary + leads + sources (~50KB) | Yes |
 | `/curiosity` | 35 files + leads + summary + sources (~200KB) | Yes |
 | `/article` | summary + 35 question files (~166KB) | Yes |
 | `/verify` | article + all cited evidence (~100KB+) | Yes |
@@ -224,6 +256,7 @@ All subsequent `/action` commits happen within the case repository.
   "gates": {
     "questions": false,
     "curiosity": false,
+    "reconciliation": false,
     "article": false,
     "sources": false,
     "integrity": false,
@@ -275,7 +308,7 @@ All subsequent `/action` commits happen within the case repository.
 
 ## Core Rules
 
-1. **CAPTURE BEFORE CITE** - No `[S###]` without `evidence/S###/`
+1. **CAPTURE BEFORE CITE** - No `[S###]` without `evidence/S###/` AND `captured: true`
 2. **EVERY FACT NEEDS A SOURCE** - Every factual statement needs citation
 3. **CITATION FORMAT** - Use `[S###](url)` markdown links, e.g., `[S001](https://example.com/article)`
 4. **Git commits per action** - Every `/action` auto-commits (within the case repo)
@@ -284,6 +317,10 @@ All subsequent `/action` commits happen within the case repository.
 7. **Detect circular reporting** - Multiple outlets citing same source = 1 source
 8. **One case = one repo** - Never mix case data across repositories
 9. **ALL LEADS RESOLVED** - Every lead must be `investigated` or `dead_end`. No `pending` at completion.
+10. **CITATION MUST SUPPORT CLAIM** - The cited source must actually contain the claimed fact (no citation laundering)
+11. **LEAD RESULTS NEED SOURCES** - If a lead result contains specific numbers/statistics, `sources[]` must be populated
+12. **RECONCILE BEFORE COMPLETE** - Lead results that contradict summary claims must update the summary
+13. **TEMPORAL CONTEXT** - Dated evidence must include dates: `[S###, Month Year]` for statistics/polls
 
 ---
 
@@ -447,6 +484,11 @@ osint_get target="https://example.com/paper.pdf" output_path="evidence/S001/pape
 - Do NOT "document gaps" instead of fixing them
 - Do NOT cite without captured evidence
 - Do NOT self-report gate passage
+- Do NOT cite a source for a claim it doesn't contain (citation laundering)
+- Do NOT leave HIGH priority leads pending and claim curiosity satisfied
+- Do NOT skip reconciliation when lead results contradict summary
+- Do NOT store lead results with statistics but empty sources[]
+- Do NOT omit temporal context for dated evidence
 
 ---
 

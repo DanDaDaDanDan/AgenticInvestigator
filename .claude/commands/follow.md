@@ -160,6 +160,12 @@ Leads about a person/org need their primary source (actual interview, statement,
    - `investigated` with result and source IDs
    - `dead_end` with explanation
 
+   **CRITICAL: Source capture requirement**
+   - If your result contains specific numbers, statistics, dates, or factual claims, you MUST have captured sources
+   - `sources: []` is only acceptable for dead_end leads or leads with purely qualitative findings
+   - Example of INVALID result: `"result": "Found $200B in spending"` with `"sources": []`
+   - Example of VALID result: `"result": "Data not publicly available"` with `"sources": []`
+
 7. **Update the framework document** - Add findings to `questions/*.md`
    - Add under a `## Findings from Leads` section
    - Format: `### L### Result\n[Finding with [S###] citation]`

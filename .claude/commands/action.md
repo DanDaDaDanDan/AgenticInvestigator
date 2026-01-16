@@ -28,6 +28,7 @@ Route to the specified command:
 - `/action research <topic>` → `/research` (**via sub-agent**)
 - `/action question <batch>` → `/question`
 - `/action follow <lead-id>` → `/follow`
+- `/action reconcile` → `/reconcile` (**via sub-agent**)
 - `/action curiosity` → `/curiosity` (**via sub-agent**)
 - `/action capture-source <url>` → `/capture-source`
 - `/action verify` → `/verify` (**via sub-agent**)
@@ -42,6 +43,7 @@ Commands marked **via sub-agent** read large amounts of files (~200KB+). Use Tas
 | Command | Reads | Why Sub-Agent |
 |---------|-------|---------------|
 | `/research` | deep_research results + captured sources (~100-200KB) | Heavy MCP calls, source capture |
+| `/reconcile` | summary + leads + sources (~50KB) | Cross-reference all findings |
 | `/curiosity` | 35 files + leads + summary + sources (~200KB) | Full investigation context |
 | `/article` | summary + 35 question files (~166KB) | Needs framework context |
 | `/verify` | article + all cited evidence (~100KB+) | Evidence files are large |
@@ -103,7 +105,7 @@ ORCHESTRATOR SIGNAL
 Case: topic-slug
 Phase: QUESTION
 Iteration: 1
-Gates: 0/6 passing
+Gates: 0/7 passing
 ───────────────────────────────────────────────────────
 Status: → CONTINUE
 Reason: Questions phase - answer framework questions
