@@ -89,6 +89,12 @@ For each issue found:
 
 ### Step 4: Update Summary.md
 
+**Writing style:**
+- Write updates as **standalone facts**, not corrections
+- NEVER use: "CORRECTION:", "UPDATE:", "REVISION:", "Initial finding was wrong"
+- Simply replace incorrect information with correct information
+- Articles must be self-contained - readers shouldn't see editorial process
+
 For each issue:
 
 **Example A (Direct Contradiction):**

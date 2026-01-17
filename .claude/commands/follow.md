@@ -175,6 +175,14 @@ Leads about a person/org need their primary source (actual interview, statement,
    - Filtering happens later during article generation
    - When in doubt, include it
 
+   **Writing style for summary.md:**
+   - Write findings as **standalone facts**, not corrections/revisions
+   - NEVER use: "CORRECTION:", "UPDATE:", "REVISION:", "Initial assumption was wrong"
+   - NEVER reference previous iterations or drafts
+   - Simply state the correct information with citation
+   - Bad: "CORRECTION: Study was actually published in 2023, not 2022"
+   - Good: "The study was published in 2023 [S045]"
+
 9. **Generate new leads** if discovered:
    - Set `depth` = parent lead's depth + 1
    - Set `parent` = parent lead's ID
