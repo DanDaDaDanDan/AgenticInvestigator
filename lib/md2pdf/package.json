@@ -1,0 +1,26 @@
+{
+  "name": "md2pdf",
+  "version": "1.0.0",
+  "description": "Convert markdown files to beautiful pageless PDFs",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "md2pdf": "./src/cli.js"
+  },
+  "scripts": {
+    "start": "node src/cli.js",
+    "convert": "node src/cli.js"
+  },
+  "keywords": ["markdown", "pdf", "converter", "pageless"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "highlight.js": "^11.10.0",
+    "markdown-it": "^14.1.0",
+    "markdown-it-anchor": "^9.2.0",
+    "markdown-it-task-lists": "^2.1.1",
+    "puppeteer": "^23.6.0"
+  }
+}

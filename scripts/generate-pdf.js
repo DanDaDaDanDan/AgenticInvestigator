@@ -12,8 +12,8 @@ const fs = require('fs');
 const path = require('path');
 const { execSync, spawn } = require('child_process');
 
-// Path to md2pdf
-const MD2PDF_PATH = path.resolve(__dirname, '../../md2pdf/src/cli.js');
+// Path to md2pdf (local copy in lib/)
+const MD2PDF_PATH = path.resolve(__dirname, '../lib/md2pdf/src/cli.js');
 
 async function generatePDF(casePath) {
   const resolvedPath = path.resolve(casePath);
@@ -28,7 +28,7 @@ async function generatePDF(casePath) {
   // Check if md2pdf exists
   if (!fs.existsSync(MD2PDF_PATH)) {
     console.error(`Error: md2pdf not found at: ${MD2PDF_PATH}`);
-    console.error('Please ensure md2pdf is installed at ../md2pdf');
+    console.error('Please run: cd lib/md2pdf && npm install');
     process.exit(1);
   }
 
