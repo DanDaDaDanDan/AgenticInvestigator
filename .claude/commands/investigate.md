@@ -18,26 +18,14 @@ Read ONLY `state.json`. All work is done by sub-agents via `/action` router.
 
 ## The Orchestrator Loop
 
-**THIS IS A LOOP. DO NOT STOP AFTER ONE ACTION.**
-
 ```
-┌─────────────────────────────────────────────────────┐
-│  ORCHESTRATOR LOOP                                  │
-├─────────────────────────────────────────────────────┤
-│                                                     │
-│  1. Read state.json                                 │
-│  2. Dispatch /action based on phase                 │
-│  3. /action outputs ORCHESTRATOR SIGNAL             │
-│  4. Read the signal:                                │
-│     - If CONTINUE → Go to step 1                    │
-│     - If COMPLETE → Stop                            │
-│                                                     │
-│  REPEAT UNTIL COMPLETE                              │
-│                                                     │
-└─────────────────────────────────────────────────────┘
+1. Read state.json
+2. Dispatch /action based on phase
+3. /action self-loops until COMPLETE or error
+4. Only intervene if /action returns with an error
 ```
 
-**When you see "Status: → CONTINUE" in the output, you MUST immediately execute the next action. Do not wait for user input.**
+The `/action` skill handles continuation internally - you just start it.
 
 ## Workflow Phases
 
@@ -91,58 +79,9 @@ Dispatch `/action verify` to check all 8 gates.
 - If ANY fail: fix issues, loop back
 - If ALL pass: phase=COMPLETE
 
-## Continuation Protocol
-
-### How /action Handles Continuation (Self-Loop)
-
-When you call `/action <command>`, the action skill now handles continuation **internally**:
-
-1. The action executes (follow, research, question, etc.)
-2. Git commit is made
-3. `check-continue.js` outputs the ORCHESTRATOR SIGNAL
-4. `/action` reads the signal and:
-   - **If CONTINUE**: `/action` internally invokes the next action (loops)
-   - **If COMPLETE**: `/action` returns "Investigation complete"
-
-**You do NOT need to manually parse the signal.** The `/action` skill handles the loop.
-
-Your job as orchestrator:
-1. Start the investigation with the first `/action` call
-2. Let it run autonomously
-3. Only intervene on errors or exceptions
-
-### The Signal (For Reference)
-
-After EVERY action, the signal looks like:
-
-```
-═══════════════════════════════════════════════════════
-ORCHESTRATOR SIGNAL
-═══════════════════════════════════════════════════════
-Status: → CONTINUE
-Next: /action question
-DO NOT STOP. Execute the next action immediately.
-═══════════════════════════════════════════════════════
-```
-
-| Signal | What /action Does |
-|--------|-------------------|
-| `Status: → CONTINUE` | Immediately dispatches the next action (no user prompt) |
-| `Status: ✓ COMPLETE` | Returns to user: "Investigation complete" |
-
 ## Orchestrator Rules
 
-1. **ONLY read** `state.json` and `leads.json`
-2. **NEVER** read content files (summary.md, questions/*, evidence/*)
-3. **ALWAYS** use `/action` router for all work
-4. **ALWAYS** continue when signal says CONTINUE
-5. **ONLY STOP** when signal says COMPLETE
-
-## When to Pause (Exceptions Only)
-
-- External API failures (retry first)
-- Irreconcilable contradictions needing human judgment
-- Scope expansion requiring approval
-- Legal/ethical concerns
-
-**DO NOT pause to ask "should I continue?" - the signal tells you.**
+1. Read only `state.json` and `leads.json`
+2. Use `/action` router for all work
+3. Let `/action` handle continuation (it self-loops)
+4. Intervene only on errors or exceptions (API failures, contradictions, scope expansion, legal concerns)

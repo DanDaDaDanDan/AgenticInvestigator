@@ -82,103 +82,25 @@ All phases (including PLAN) commit to the case repo since the case is created fi
 
 ### 5. Output Continuation Signal
 
-**CRITICAL:** After every action, run the gate checker and output its result:
+After every action, run:
 
 ```bash
 node scripts/check-continue.js cases/<case-id>/
 ```
 
-This outputs the ORCHESTRATOR SIGNAL that tells the orchestrator what to do next.
+This outputs the ORCHESTRATOR SIGNAL with `Status:` and `Next:` fields.
 
 ## Error Handling
 
-- If action fails: DO NOT commit, return error with continuation signal
-- If git commit fails: Log warning, continue (non-blocking)
+- Action fails → return error (no commit)
+- Git commit fails → log warning, continue
 
-## Example Output
+### 6. Self-Continue Loop
 
-After successful action:
+After the signal outputs, check `Status:` and act:
 
-```
-Action: /research completed
-Commit: abc123
-Files: summary.md, evidence/S001/*, sources.json
+- **CONTINUE** → Invoke the `Next:` command immediately, then repeat from step 5
+- **COMPLETE** → Return "Investigation complete" to user
+- **Error** → Return error to user for guidance
 
-═══════════════════════════════════════════════════════
-ORCHESTRATOR SIGNAL
-═══════════════════════════════════════════════════════
-Case: topic-slug
-Phase: QUESTION
-Iteration: 1
-Gates: 0/8 passing
-───────────────────────────────────────────────────────
-Status: → CONTINUE
-Reason: Questions phase - answer framework questions
-Next: /action question
-
-DO NOT STOP. Execute the next action immediately.
-═══════════════════════════════════════════════════════
-```
-
-The orchestrator MUST read this signal and execute the next action.
-
-### 6. Self-Continue Loop (CRITICAL)
-
-**This section defines the autonomous continuation behavior that makes investigation work without manual intervention.**
-
-After running `check-continue.js` and seeing the signal, you MUST process it:
-
-#### 6a. Parse the Signal
-
-Look for these fields in the output:
-- `Status:` - Either `→ CONTINUE` or `✓ COMPLETE`
-- `Next:` - The next command to execute (e.g., `/action follow L002`)
-
-#### 6b. Act on the Signal
-
-**If Status: → CONTINUE:**
-1. Extract the command from `Next:` field
-2. **IMMEDIATELY** invoke that command (call the skill directly)
-3. DO NOT return to user
-4. DO NOT ask for confirmation
-5. DO NOT output "should I continue?"
-6. This creates a self-sustaining loop
-
-**If Status: ✓ COMPLETE:**
-1. Output: "Investigation complete. All 8 gates pass."
-2. Return to user
-3. The investigation is finished
-
-#### 6c. Exception Handling
-
-Stop the loop and return to user ONLY for:
-- **Error**: Action failed (report error, ask for guidance)
-- **API Failure**: After 1 retry, if still failing
-- **Timeout**: Single action taking >30 minutes
-- **Legal/Ethical**: Concerns requiring human judgment
-
-#### 6d. Progress Logging
-
-Every 10 actions, output a brief status line:
-```
-Progress: [X] leads investigated, [Y] pending, [Z] dead_end (Gates: N/8)
-```
-
-This gives users visibility during long autonomous runs.
-
-#### Example Flow
-
-```
-1. User calls: /action follow L001
-2. L001 investigated, git commit made
-3. check-continue.js outputs: "Next: /action follow L002"
-4. /action IMMEDIATELY invokes /follow L002 (no user prompt)
-5. L002 investigated, git commit made
-6. check-continue.js outputs: "Next: /action follow L003"
-7. Loop continues...
-...
-99. check-continue.js outputs: "Status: ✓ COMPLETE"
-100. /action returns to user: "Investigation complete."
-```
-
-**This loop is NOT optional. It is what makes autonomous investigation work. Without it, users must manually type `/investigate continue` after every single action.**
+Every 10 actions, output: `Progress: X investigated, Y pending (Gates: N/8)`
