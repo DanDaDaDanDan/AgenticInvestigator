@@ -537,9 +537,24 @@ osint_get target="https://example.com/paper.pdf" output_path="evidence/S001/pape
 
 **Continue until ALL 8 gates pass.**
 
-### Continuation Signal
+### Self-Loop Behavior (CRITICAL)
 
-After every `/action`, the router outputs an **ORCHESTRATOR SIGNAL**:
+The `/action` command now handles continuation **internally**:
+
+1. When you invoke `/action <command>`, it executes the command
+2. After completion, it checks the ORCHESTRATOR SIGNAL
+3. **If CONTINUE**: `/action` automatically invokes the next action (loop)
+4. **If COMPLETE**: `/action` returns "Investigation complete"
+
+**You do NOT need to manually parse signals or invoke subsequent actions.**
+The loop happens within the `/action` skill. Your job is to:
+1. Start with the first `/action` call
+2. Let it run autonomously
+3. Only intervene on errors
+
+### The Signal (Reference)
+
+After every action, the signal looks like:
 
 ```
 ═══════════════════════════════════════════════════════
@@ -551,12 +566,10 @@ DO NOT STOP. Execute the next action immediately.
 ═══════════════════════════════════════════════════════
 ```
 
-**React to the signal:**
-
-| Signal | Action |
-|--------|--------|
-| `Status: → CONTINUE` | Execute the next `/action` immediately |
-| `Status: ✓ COMPLETE` | Report completion to user |
+| Signal | What /action Does |
+|--------|-------------------|
+| `Status: → CONTINUE` | Automatically invokes next action (no user prompt) |
+| `Status: ✓ COMPLETE` | Returns to user: "Investigation complete" |
 
 ### Do NOT Ask
 
@@ -564,14 +577,16 @@ DO NOT STOP. Execute the next action immediately.
 - "Should I fix this?"
 - "7/8 gates passing, what next?"
 
+The `/action` loop handles this automatically.
+
 ### Do
 
-- Read the ORCHESTRATOR SIGNAL after each `/action`
-- Execute the suggested next action
-- Loop until signal says COMPLETE
+- Invoke `/action` to start the loop
+- Trust the loop to continue until COMPLETE
+- Only intervene when `/action` returns with an error or exception
 
 **Only pause for:**
-- External API failures
+- External API failures (after retry)
 - Irreconcilable contradictions needing human judgment
 - Scope expansion requiring approval
 - Legal/ethical concerns

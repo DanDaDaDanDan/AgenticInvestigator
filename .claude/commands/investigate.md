@@ -93,7 +93,27 @@ Dispatch `/action verify` to check all 8 gates.
 
 ## Continuation Protocol
 
-After EVERY `/action` call, you will see an ORCHESTRATOR SIGNAL like:
+### How /action Handles Continuation (Self-Loop)
+
+When you call `/action <command>`, the action skill now handles continuation **internally**:
+
+1. The action executes (follow, research, question, etc.)
+2. Git commit is made
+3. `check-continue.js` outputs the ORCHESTRATOR SIGNAL
+4. `/action` reads the signal and:
+   - **If CONTINUE**: `/action` internally invokes the next action (loops)
+   - **If COMPLETE**: `/action` returns "Investigation complete"
+
+**You do NOT need to manually parse the signal.** The `/action` skill handles the loop.
+
+Your job as orchestrator:
+1. Start the investigation with the first `/action` call
+2. Let it run autonomously
+3. Only intervene on errors or exceptions
+
+### The Signal (For Reference)
+
+After EVERY action, the signal looks like:
 
 ```
 ═══════════════════════════════════════════════════════
@@ -105,12 +125,10 @@ DO NOT STOP. Execute the next action immediately.
 ═══════════════════════════════════════════════════════
 ```
 
-**Your response to this signal:**
-
-| Signal | Your Action |
-|--------|-------------|
-| `Status: → CONTINUE` | Immediately dispatch the next `/action` |
-| `Status: ✓ COMPLETE` | Report completion to user |
+| Signal | What /action Does |
+|--------|-------------------|
+| `Status: → CONTINUE` | Immediately dispatches the next action (no user prompt) |
+| `Status: ✓ COMPLETE` | Returns to user: "Investigation complete" |
 
 ## Orchestrator Rules
 
