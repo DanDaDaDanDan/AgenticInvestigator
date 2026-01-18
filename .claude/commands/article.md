@@ -1,6 +1,6 @@
 # /article - Generate Publication Articles
 
-Generate publication-ready articles with beautiful PDF output.
+Generate three publication-ready articles from investigation findings.
 
 ## Usage
 
@@ -11,143 +11,190 @@ Generate publication-ready articles with beautiful PDF output.
 
 ## Task
 
-Create three articles from `summary.md`:
-1. **Short** (400-800 words) - Quick overview, key findings only
-2. **Medium** (2,000-4,000 words + sources) - Balanced coverage, main points, with source list
-3. **Full** (no limit) - Comprehensive coverage with methodology and sources
-
-**Word counts exclude the Sources section** - sources are free.
-
-Then generate PDFs with professional typography.
-
-## Instructions
-
-1. **Read source material:**
-   - `summary.md` (PRIMARY - contains all findings with [S###](url) citations)
-   - `questions/*.md` (framework answers - include ALL relevant findings)
-
-2. **Generate all three articles:**
-   - `articles/short.md` (400-800 words) - No sources section
-   - `articles/medium.md` (2,000-4,000 words) - Include Sources section, skip methodology
-   - `articles/full.md` (no limit) - Include both Methodology and Sources sections
-   - Word counts exclude Sources section
-
-3. **Full article guidelines:**
-   - Cover ALL findings from summary.md and questions/*.md
-   - Err on the side of inclusion - if it's in the research, include it
-   - Draw clear conclusions from the evidence
-   - Connect findings across frameworks
-   - Don't compress or summarize when full detail serves the reader
-
-4. **Generate PDFs:**
-   ```bash
-   node scripts/generate-pdf.js cases/<case-id>/
-   ```
-   This creates `articles/short.pdf`, `articles/medium.pdf`, and `articles/full.pdf`
-
-5. **Update state.json:** Set `gates.article: true`
+Generate three publication-ready articles with **top-tier narrative clarity**, **rigorous sourcing**, and **high readability**. The output should read like **finished journalism**, not a policy memo.
 
 ---
 
-## Markdown Formatting for PDF
+## Source Material
 
-The PDF uses Kindle-style typography. Structure your markdown for optimal rendering:
+Read (in order of authority):
 
-### Document Structure
+1. `summary.md` — **single source of truth** for findings and `[S###](url)` citations
+2. `questions/*.md` — additional context **only if consistent with summary.md**
+
+If a claim appears in `questions/*.md` but not in `summary.md`, **do not include it**.
+
+Do not use outside knowledge. Do not invent anecdotes, quotes, stakeholders, or timelines.
+
+---
+
+## Editorial Goal
+
+Write with a clear story spine:
+
+- **Lede** that captures the central tension in concrete terms (no hype, no moralizing)
+- **Nut graf** early: what the investigation examined, what it found, why it matters
+- A structured arc: *what's happening → what the evidence says → what breaks in reality → honest implications*
+- End with a conclusion **earned** by the evidence, explicitly noting **uncertainties and limits**
+
+Avoid "report voice" (Part I/Part II, CRITICAL FINDING, excessive bullets). If something is important, make it feel important through framing and placement.
+
+---
+
+## Outputs
+
+### 1. Short Article (`articles/short.md`)
+
+- **Length:** 500-900 words
+- **Purpose:** Fast, compelling overview for a busy reader
+- **Tone:** Newspaper-style lede + clean explanatory writing
+- **Include:** 2-4 defining facts/figures, central tension, what's most supported vs oversold
+- **Exclude:** Sources section, methodology, deep program catalogs, long study lists
+
+### 2. Medium Article (`articles/medium.md`)
+
+- **Length:** 2,200-3,800 words (excluding Sources)
+- **Purpose:** Article of record — balanced, verifiable, readable
+- **Tone:** Magazine feature with strong narrative spine
+- **Include:**
+  - Clear structure with informative subheads
+  - Section on what works / what doesn't / what we don't know
+  - Section on implementation constraints (fidelity, staffing, funding)
+  - **Sources** section at end
+- **Exclude:** Methodology section, exhaustive tables/enumerations
+
+### 3. Full Article (`articles/full.md`)
+
+- **Length:** No limit, but prioritize readability (do not bloat)
+- **Purpose:** Complete, transparent record that remains readable
+- **Tone:** Long-form investigative/explanatory journalism
+- **Include:**
+  - Everything needed to understand and verify the investigation
+  - Brief **Methodology** section: what was reviewed, how claims were selected, limitations
+  - Complete **Sources** section
+- **Appendices preferred** for heavy detail:
+  - `## Appendix: Study Notes / Evidence Map`
+  - `## Appendix: Implementation Details`
+  - `## Appendix: Definitions / Acronyms`
+
+---
+
+## Structure Template
+
+Adapt subheads as needed. Keep paragraphs short. Make the piece skimmable.
 
 ```markdown
-# Title of the Article
+# [Compelling Title]
 
-Opening paragraph becomes the italicized lead/subtitle. Make it compelling -
-one or two sentences summarizing the investigation's key finding.
+*[Lede: 1-2 sentences. Concrete tension, not vague trend language.]*
 
-## First Section Heading
+[Nut graf: 3-6 sentences. What was examined, key findings, why it matters.]
 
-Body text here...
+## [The Core Dynamic]
+[Why this matters, what creates the tension]
 
-### Subsection (if needed)
+## What the Evidence Supports
+[Strongest areas; distinguish effect sizes vs expectations; name best-supported approaches]
 
-More details...
+## Where Things Break in the Real World
+[Implementation gaps, staffing, funding, replication failures]
+
+## The Hard Questions
+[Potential harms, trade-offs, controversies—carefully attributed]
+
+## What's Still Uncertain
+[Long-term effects, subgroup differences, causal claims, thresholds]
+
+## The Honest Bottom Line
+[High-integrity conclusion. No advocacy masquerading as fact.]
 
 ---
 
 ## Sources
 
-[S001]: URL - Description
-[S002]: URL - Description
+- **[S001]** [Title](url) — Brief description
+- **[S002]** [Title](url) — Brief description
 ```
 
-### Typography Features
+---
 
-| Element | Renders As |
-|---------|------------|
-| `# H1` | Large serif title |
-| First paragraph after H1 | Italicized lead paragraph with bottom border |
-| `## H2` | Section headings |
-| `### H3` | Subsections (italic style) |
-| `> Blockquote` | Left-bordered, italic, indented |
-| `---` | Centered asterisks (* * *) as section break |
-| `**bold**` | Emphasized text |
-| `[link](url)` | Underlined with subtle color |
+## Writing Rules
 
-### Best Practices
+### Voice & Tone
 
-- **Lead paragraph matters** - First paragraph after title gets special styling
-- **Use H2 for major sections** - Creates clear visual hierarchy
-- **Blockquotes for direct quotes** - Styled distinctively
-- **Section breaks (---) between major parts** - Renders as elegant divider
-- **End with sources section** - Professional attribution
+- Third person, neutral: "The investigation found..."
+- No cheerleading; no cynicism
+- When evidence is mixed, say so. When evidence is strong, say how you know
+- Translate jargon. Define acronyms on first use
+
+### Evidence Handling
+
+- **Do not imply causation** unless evidence is causal (RCTs)
+- State limitations for observational results (confounding, selection)
+- Distinguish: efficacy vs effectiveness, universal vs targeted, short-term vs long-term
+
+### Citations
+
+- Preserve `[S###](url)` format exactly
+- Cite every key factual claim (numbers, findings, policy facts)
+- **Do not cite every sentence** — prefer 1-3 citations per paragraph at end of claim
+- When multiple claims use same source, cite once at paragraph end
+
+### Readability
+
+- Paragraphs: 2-5 sentences
+- Prefer prose over lists. Bullets only for short enumerations (max 6-8)
+- No ALL CAPS emphasis. Use narrative emphasis
+- No "thesis dump" intros. Earn complexity step by step
+- Avoid vague phrases ("many," "experts say") unless you specify who and cite it
+
+### Prohibited
+
+- Facts not in summary.md
+- Invented anecdotes, scenes, or quotes
+- "Declined to comment" unless summary.md documents outreach
+- "Clearly," "obviously," "it's clear that"
+- Single study presented as definitive when evidence is mixed
+- CORRECTION, UPDATE, REVISION, or any revision language
 
 ---
 
-## Writing Standards
+## Safety Checklists
 
-| Do | Don't |
-|----|-------|
-| "According to [source]..." | "It's obvious that..." |
-| "The investigation found..." | "We discovered..." |
-| "Critics argue..." | "The truth is..." |
-| "Records show..." | "Clearly..." |
+### Evidence Accuracy
 
-## Rules
+- [ ] Causality language matches evidence type (RCT vs observational vs opinion)
+- [ ] Uncertainty stated where evidence is limited or contested
+- [ ] Numbers match across short/medium/full (no drift)
+- [ ] All `[S###](url)` citations present and correct
 
-- NEVER introduce facts not in summary.md
-- ALWAYS preserve `[S###](url)` citation format
-- Present contested claims as contested
-- Neutral, professional tone
-- All perspectives balanced
+### Legal Safety (for investigations involving named individuals)
 
----
-
-## Pre-Flight Checklist
-
-Before finalizing, verify:
-
-### Legal Safety
-- [ ] **Presumption of innocence** - "Charged with" not "committed" for unconvicted
-- [ ] **Attribution** - Damaging claims attributed to sources, not stated as fact
-- [ ] **Opinion vs fact** - Clearly distinguished
-
-### Fairness
-- [ ] **Right of reply** - Subject's response included (or "declined to comment")
-- [ ] **Legal status** - Clear whether alleged, charged, convicted
-- [ ] **Balance** - All significant viewpoints represented
-
-### Accuracy
-- [ ] **Every fact cited** - No uncited factual claims
-- [ ] **Sources verified** - All [S###] actually exist in evidence/
-- [ ] **Quotes in context** - Not misleadingly excerpted
+- [ ] Unconvicted persons: "charged with" not "committed"
+- [ ] Damaging claims attributed to sources, not stated as fact
+- [ ] Alleged vs charged vs convicted clearly distinguished
+- [ ] No stigmatizing or deterministic language about individuals
 
 ---
 
-## Output
+## Quality Bar
 
-- `articles/short.md` - Short article markdown (400-800 words)
-- `articles/short.pdf` - Short article PDF
-- `articles/medium.md` - Medium article markdown (2,000-4,000 words)
-- `articles/medium.pdf` - Medium article PDF
-- `articles/full.md` - Full article markdown (comprehensive, no length limit)
-- `articles/full.pdf` - Full article PDF (primary deliverable)
+**Short:** Would a reader understand the core tension and defensible takeaways in 2-3 minutes without feeling oversold?
+
+**Medium:** Would a skeptical editor accept this as a magazine feature—clear, fair, fact-checkable—without rewriting?
+
+**Full:** Would a professional peer say "comprehensive *and* readable"? Are appendices keeping the narrative flowing?
+
+---
+
+## After Writing
+
+Generate PDFs:
+```bash
+node scripts/generate-pdf.js cases/<case-id>/
+```
+
+Update `state.json`: Set `gates.article: true`
 
 ## Next Step
 
