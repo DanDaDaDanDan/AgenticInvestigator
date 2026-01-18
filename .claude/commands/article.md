@@ -37,7 +37,7 @@ For each, pass:
 - `system_prompt`: The writing rules and safety checklists from this document
 - `prompt`: The source material + that article's specific requirements (length, inclusions, exclusions)
 
-**Note:** With `xhigh` reasoning, each call may take 10-30 minutes. Run via Task tool with sufficient timeout.
+**Note:** With `xhigh` reasoning, each call may take up to 60 minutes.
 
 ### Step 3: Write and Generate PDFs
 
