@@ -4,12 +4,11 @@
  *
  * Usage: node scripts/init-case.js "topic description"
  *
- * Creates a new case directory with its own git repository.
+ * Creates a new case directory within the main repository.
  */
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 
 // 35 frameworks from reference/frameworks.md
 const FRAMEWORKS = [
@@ -249,34 +248,6 @@ function main() {
 
   console.log(`Created: questions/ (35 files)`);
 
-  // Initialize git repository
-  console.log('');
-  console.log('Initializing git repository...');
-
-  try {
-    execSync('git init', { cwd: casePath, stdio: 'pipe' });
-    console.log('Created: .git/');
-
-    // Create .gitignore for case-specific ignores
-    const gitignore = `# Case-specific ignores
-*.tmp
-*.log
-`;
-    fs.writeFileSync(path.join(casePath, '.gitignore'), gitignore);
-    console.log('Created: .gitignore');
-
-    // Stage all files and make initial commit
-    execSync('git add .', { cwd: casePath, stdio: 'pipe' });
-    execSync(`git commit -m "Initialize investigation: ${topic}"`, {
-      cwd: casePath,
-      stdio: 'pipe'
-    });
-    console.log('Committed: Initialize investigation');
-  } catch (err) {
-    console.error('Warning: Git initialization failed:', err.message);
-    console.error('You may need to initialize git manually.');
-  }
-
   // Summary
   console.log('');
   console.log('='.repeat(50));
@@ -284,15 +255,13 @@ function main() {
   console.log('');
   console.log('Structure:');
   console.log(`  cases/${caseSlug}/`);
-  console.log('  ├── .git/              (case repository)');
   console.log('  ├── state.json         (phase: PLAN)');
   console.log('  ├── summary.md');
   console.log('  ├── sources.json');
   console.log('  ├── leads.json         (max_depth: 3)');
   console.log('  ├── removed-points.md');
   console.log('  ├── future_research.md');
-  console.log('  ├── questions/');
-  console.log('  │   └── (35 framework files)');
+  console.log('  ├── questions/         (35 framework files)');
   console.log('  ├── evidence/');
   console.log('  └── articles/');
   console.log('');

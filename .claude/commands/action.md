@@ -70,15 +70,12 @@ This creates `articles/short.pdf`, `articles/medium.pdf`, and `articles/full.pdf
 
 ### 4. Git Commit
 
-After action (and post-processing) completes, commit changes to the case repository:
+After action (and post-processing) completes, commit changes to the main repository:
 
 ```bash
-cd cases/<case-id>/
-git add .
-git commit -m "/<command>: <summary>"
+git add cases/<case-id>/
+git commit -m "[<case-id>] /<command>: <summary>"
 ```
-
-All phases (including PLAN) commit to the case repo since the case is created first.
 
 ### 5. Output Continuation Signal
 

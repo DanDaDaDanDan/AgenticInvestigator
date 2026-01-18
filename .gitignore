@@ -5,9 +5,6 @@ logs/
 # MCP cache (mcp-osint)
 cache/
 
-# Investigation cases (contain research data)
-cases/
-
 # OS files
 .DS_Store
 Thumbs.db
