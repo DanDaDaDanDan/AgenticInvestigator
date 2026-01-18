@@ -16,11 +16,28 @@ Every investigation action flows through `/action` to ensure:
 3. Clean orchestrator pattern
 4. **Continuation signal for autonomous operation**
 
+## ⚠️ CRITICAL: Two-Repository System
+
+This project has **TWO independent git repositories**:
+
+| Repository | Location | Contains |
+|------------|----------|----------|
+| **CODE** | Root `.git` | Scripts, skills, reference, CLAUDE.md |
+| **DATA** | `cases/.git` | ALL investigation case data |
+
+**All `/action` commits go to the DATA repository (`cases/.git`).**
+
+To commit to cases repo from project root:
+```bash
+git -C cases add -A
+git -C cases commit -m "[case-slug] /command: summary"
+```
+
 ## Protocol
 
 ### 1. Determine Case Path
 
-Find the active case directory (most recent in `cases/`).
+Find the active case directory (read `cases/.active` or most recent in `cases/`).
 
 ### 2. Execute Command
 
@@ -68,14 +85,17 @@ node scripts/generate-pdf.js cases/<case-id>/
 ```
 This creates `articles/short.pdf`, `articles/medium.pdf`, and `articles/full.pdf`.
 
-### 4. Git Commit
+### 4. Git Commit (DATA Repository)
 
-After action (and post-processing) completes, commit changes to the main repository:
+After action (and post-processing) completes, commit changes to the **DATA repository** (`cases/.git`):
 
 ```bash
-git add cases/<case-id>/
-git commit -m "[<case-id>] /<command>: <summary>"
+# From project root - commit to cases repo
+git -C cases add -A
+git -C cases commit -m "[<case-id>] /<command>: <summary>"
 ```
+
+**⚠️ Do NOT commit case data to the root repository** - it is gitignored there.
 
 ### 5. Output Continuation Signal
 

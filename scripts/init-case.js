@@ -4,11 +4,18 @@
  *
  * Usage: node scripts/init-case.js "topic description"
  *
- * Creates a new case directory within the main repository.
+ * Creates a new case directory and commits to the DATA repository (cases/.git).
+ *
+ * IMPORTANT: This project has TWO git repositories:
+ * - CODE repo: Root .git (scripts, skills, docs)
+ * - DATA repo: cases/.git (all investigation data)
+ *
+ * This script commits to the DATA repo only.
  */
 
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 // 35 frameworks from reference/frameworks.md
 const FRAMEWORKS = [
@@ -248,10 +255,30 @@ function main() {
 
   console.log(`Created: questions/ (35 files)`);
 
+  // Update .active file to point to new case
+  const activePath = path.join(process.cwd(), 'cases', '.active');
+  fs.writeFileSync(activePath, caseSlug);
+  console.log(`Updated: .active → ${caseSlug}`);
+
+  // Commit to DATA repository (cases/.git)
+  console.log('');
+  console.log('Committing to DATA repository (cases/.git)...');
+  try {
+    const casesDir = path.join(process.cwd(), 'cases');
+    execSync('git add -A', { cwd: casesDir, stdio: 'pipe' });
+    execSync(`git commit -m "Initialize investigation: ${topic}"`, { cwd: casesDir, stdio: 'pipe' });
+    console.log('Committed to cases/.git');
+  } catch (err) {
+    console.error('Warning: Git commit failed (cases/.git may not exist or no changes)');
+    console.error(err.message);
+  }
+
   // Summary
   console.log('');
   console.log('='.repeat(50));
   console.log('Case initialized successfully!');
+  console.log('');
+  console.log('Repository: DATA (cases/.git)');
   console.log('');
   console.log('Structure:');
   console.log(`  cases/${caseSlug}/`);

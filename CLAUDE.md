@@ -4,6 +4,44 @@ Behavioral rules for Claude Code operating in this project.
 
 ---
 
+## Repository Architecture
+
+**⚠️ CRITICAL: This project uses TWO INDEPENDENT git repositories.**
+
+```
+D:/Personal/AgenticInvestigator/           ← CODE REPOSITORY (.git here)
+├── .git/                                  # Tracks: scripts, skills, reference, docs
+├── CLAUDE.md                              # This file - CODE REPO
+├── scripts/                               # CODE REPO
+├── reference/                             # CODE REPO
+├── .claude/commands/                      # CODE REPO
+│
+└── cases/                                 ← DATA REPOSITORY (.git here, gitignored by parent)
+    ├── .git/                              # Tracks: ALL investigation case data
+    ├── .active                            # DATA REPO
+    └── [case-slug]/                       # DATA REPO - each case folder
+        ├── state.json
+        ├── summary.md
+        ├── evidence/
+        └── ...
+```
+
+### Commit Routing Rules
+
+| What Changed | Which Repository | Command |
+|--------------|------------------|---------|
+| Code, scripts, docs, skills | **CODE** (root `.git`) | `git add . && git commit` from root |
+| Case data (anything in `cases/`) | **DATA** (`cases/.git`) | `git -C cases add . && git commit` from root, OR `git add . && git commit` from `cases/` |
+
+### Why Two Repositories?
+
+1. **Separation of concerns** - Code changes vs investigation data changes
+2. **Different lifecycles** - Code is versioned; case data accumulates
+3. **Privacy** - Cases may contain sensitive research; code is shareable
+4. **Size** - Case data (evidence, PDFs) can be large; code stays small
+
+---
+
 ## Core Principle
 
 **The orchestrator knows nothing about content.**
@@ -11,7 +49,7 @@ Behavioral rules for Claude Code operating in this project.
 - Orchestrator reads ONLY `state.json`
 - All research, analysis, and writing done by sub-agents via `/action` router
 - Git history IS the ledger (no separate ledger file)
-- **All cases in single repository** (main AgenticInvestigator repo)
+- **Code and cases are in SEPARATE git repositories** (see Repository Architecture above)
 
 ---
 
@@ -24,6 +62,7 @@ Behavioral rules for Claude Code operating in this project.
 ┌─────────────────┐
 │ CREATE CASE     │  node scripts/init-case.js "[topic]"
 │                 │  Creates cases/[topic-slug]/ folder
+│                 │  Commits to DATA REPO (cases/.git)
 │                 │  All subsequent work happens in the case folder
 └────────┬────────┘
          │
@@ -219,44 +258,51 @@ Commands that read large amounts of data should run in sub-agents to avoid pollu
 
 ## Case Structure
 
-Cases are folders within the main repository at `cases/[topic-slug]/`.
+Cases are folders within the **DATA repository** at `cases/[topic-slug]/`.
+
+**⚠️ REMINDER: `cases/` has its own `.git` - all case commits go there, NOT to the root repo.**
 
 ```
-cases/[topic-slug]/
-├── state.json               # Minimal (phase, iteration, gates)
-├── summary.md               # Living document, always current
-├── leads.json               # Leads with depth tracking (max_depth: 3)
-├── sources.json             # Source registry
-├── removed-points.md        # Auto-removed points (human review)
-├── future_research.md       # Leads beyond max_depth
+cases/                           ← DATA REPOSITORY ROOT
+├── .git/                        # Data repo - tracks all case data
+├── .active                      # Points to current case slug
 │
-├── questions/               # 35 framework documents
-│   ├── 01-follow-the-money.md
-│   ├── 02-follow-the-silence.md
-│   └── ... (35 total)
-│
-├── evidence/                # Captured sources
-│   └── S###/
-│       ├── metadata.json
-│       ├── content.md
-│       └── screenshot.png
-│
-└── articles/
-    ├── short.md             # 400-800 words
-    ├── short.pdf            # PDF with Kindle-style typography
-    ├── medium.md            # 2000-4000 words
-    ├── medium.pdf           # Balanced coverage PDF
-    ├── full.md              # No length limit - comprehensive
-    └── full.pdf             # Primary deliverable - all findings and conclusions
+└── [topic-slug]/                # One folder per investigation
+    ├── state.json               # Minimal (phase, iteration, gates)
+    ├── summary.md               # Living document, always current
+    ├── leads.json               # Leads with depth tracking (max_depth: 3)
+    ├── sources.json             # Source registry
+    ├── removed-points.md        # Auto-removed points (human review)
+    ├── future_research.md       # Leads beyond max_depth
+    │
+    ├── questions/               # 35 framework documents
+    │   ├── 01-follow-the-money.md
+    │   ├── 02-follow-the-silence.md
+    │   └── ... (35 total)
+    │
+    ├── evidence/                # Captured sources
+    │   └── S###/
+    │       ├── metadata.json
+    │       ├── content.md
+    │       └── screenshot.png
+    │
+    └── articles/
+        ├── short.md             # 400-800 words
+        ├── short.pdf            # PDF with Kindle-style typography
+        ├── medium.md            # 2000-4000 words
+        ├── medium.pdf           # Balanced coverage PDF
+        ├── full.md              # No length limit - comprehensive
+        └── full.pdf             # Primary deliverable - all findings and conclusions
 ```
 
 ### Case Creation (Before PLAN)
 
-Run `node scripts/init-case.js "[topic]"` which creates:
-- `cases/[topic-slug]/` directory
-- Initial files: state.json (`phase: PLAN`), sources.json, leads.json, future_research.md, 35 question files
+Run `node scripts/init-case.js "[topic]"` which:
+1. Creates `cases/[topic-slug]/` directory
+2. Creates initial files: state.json (`phase: PLAN`), sources.json, leads.json, future_research.md, 35 question files
+3. **Commits to the DATA repository** (`cases/.git`)
 
-All `/action` commits happen in the main repository.
+All `/action` commits go to the **DATA repository** (`cases/.git`), NOT the code repository.
 
 ---
 
@@ -344,11 +390,11 @@ All `/action` commits happen in the main repository.
 1. **CAPTURE BEFORE CITE** - No `[S###]` without `evidence/S###/` AND `captured: true`
 2. **EVERY FACT NEEDS A SOURCE** - Every factual statement needs citation
 3. **CITATION FORMAT** - Use `[S###](url)` markdown links, e.g., `[S001](https://example.com/article)`
-4. **Git commits per action** - Every `/action` auto-commits to the main repository
+4. **Git commits per action** - Every `/action` auto-commits to the **DATA repo** (`cases/.git`)
 5. **Steelman ALL positions** - Strongest version of EVERY side
 6. **Document uncertainty** - "We don't know" is valid
 7. **Detect circular reporting** - Multiple outlets citing same source = 1 source
-8. **Cases isolated** - Keep case data within `cases/[slug]/`
+8. **TWO REPOS** - Code changes → root `.git`; Case data → `cases/.git`
 9. **ALL LEADS RESOLVED** - Every lead must be `investigated` or `dead_end`. No `pending` at completion.
 10. **CITATION MUST SUPPORT CLAIM** - The cited source must actually contain the claimed fact (no citation laundering)
 11. **LEAD RESULTS NEED SOURCES** - If a lead result contains specific numbers/statistics, `sources[]` must be populated

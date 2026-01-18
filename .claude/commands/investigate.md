@@ -10,6 +10,14 @@ Start or resume an investigation.
 /investigate [case-id]        # Resume specific case
 ```
 
+## ⚠️ Two-Repository System
+
+This project has **TWO independent git repositories**:
+- **CODE repo** (root `.git`): Scripts, skills, reference docs
+- **DATA repo** (`cases/.git`): ALL investigation case data
+
+All investigation commits go to the **DATA repo** (`cases/.git`).
+
 ## Core Principle
 
 **The orchestrator knows nothing about content.**
@@ -37,7 +45,8 @@ CREATE CASE → PLAN → BOOTSTRAP → QUESTION → FOLLOW → WRITE → VERIFY 
 
 1. Run `node scripts/init-case.js "[topic]"` - creates case structure with `phase: PLAN`
 2. Case folder now exists at `cases/[topic-slug]/`
-3. All subsequent work happens inside the case folder
+3. Script commits to **DATA repo** (`cases/.git`)
+4. All subsequent work happens inside the case folder
 
 ### PLAN
 
@@ -46,7 +55,7 @@ CREATE CASE → PLAN → BOOTSTRAP → QUESTION → FOLLOW → WRITE → VERIFY 
    - Step 2: Strategic research (landscape understanding)
    - Step 3: Investigation design (GPT 5.2 Pro with xhigh reasoning)
 2. Outputs created directly in case folder: `refined_prompt.md`, `strategic_context.md`, `investigation_plan.md`, `custom_questions.md`
-3. All commits go to the case repo
+3. All commits go to the **DATA repo** (`cases/.git`)
 4. After planning completes, update state.json: `phase: BOOTSTRAP`, `gates.planning: true`
 
 ### BOOTSTRAP
