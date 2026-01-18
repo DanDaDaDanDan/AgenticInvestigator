@@ -15,42 +15,32 @@ Generate three publication-ready articles with **top-tier narrative clarity**, *
 
 ---
 
-## Execution: GPT 5.2 Pro in Parallel
+## Execution
 
-Article generation uses **GPT 5.2 Pro with extended thinking** for maximum quality.
+Use **GPT 5.2 Pro with extended thinking** for article generation.
 
-### Step 1: Gather Source Material
+### Step 1: Read Source Material
 
-Read and concatenate into a single context block:
-- `summary.md`
-- All `questions/*.md` files
+Read `summary.md` and all `questions/*.md` files. This is the source content for all three articles.
 
-### Step 2: Generate All Three Articles in Parallel
+### Step 2: Generate Articles with GPT 5.2 Pro
 
-Call `mcp__mcp-openai__generate_text` **three times in parallel** (single message, three tool calls):
+Generate all three articles **in parallel** using `mcp__mcp-openai__generate_text`:
 
-```
-Model: gpt-5.2-pro
-Reasoning: xhigh
-Max tokens: 16384 (short/medium), 32768 (full)
-```
+| Article | model | reasoning_effort | max_output_tokens |
+|---------|-------|------------------|-------------------|
+| Short | gpt-5.2-pro | xhigh | 16384 |
+| Medium | gpt-5.2-pro | xhigh | 16384 |
+| Full | gpt-5.2-pro | xhigh | 32768 |
 
-Each call gets:
-- **system_prompt**: The writing rules and safety checklists from this document
-- **prompt**: The source material + article-specific instructions (length, what to include/exclude)
+For each, pass:
+- `system_prompt`: The writing rules and safety checklists from this document
+- `prompt`: The source material + that article's specific requirements (length, inclusions, exclusions)
 
-### Step 3: Write Results
+### Step 3: Write and Generate PDFs
 
-Write each response to:
-- `articles/short.md`
-- `articles/medium.md`
-- `articles/full.md`
-
-### Step 4: Generate PDFs
-
-```bash
-node scripts/generate-pdf.js cases/<case-id>/
-```
+1. Write responses to `articles/short.md`, `articles/medium.md`, `articles/full.md`
+2. Run: `node scripts/generate-pdf.js cases/<case-id>/`
 
 ---
 
