@@ -47,7 +47,7 @@ Commands marked **via sub-agent** read large amounts of files (~200KB+). Use Tas
 | `/research` | deep_research results + captured sources (~100-200KB) | Heavy MCP calls, source capture |
 | `/reconcile` | summary + leads + sources (~50KB) | Cross-reference all findings |
 | `/curiosity` | 35 files + leads + summary + sources (~200KB) | Full investigation context |
-| `/article` | summary + 35 question files (~166KB) | Needs framework context |
+| `/article` | summary + 35 question files (~166KB) | GPT 5.2 Pro × 3 parallel calls, 10-30 min each |
 | `/verify` | article + all cited evidence (~100KB+) | Evidence files are large |
 | `/integrity` | article + summary + 35 questions + sources (~200KB) | Perspective coverage |
 | `/legal-review` | article + sources + evidence (~100KB) | Legal requires full context |
@@ -66,7 +66,7 @@ Sub-agent returns structured result. Main context stays clean.
 ```bash
 node scripts/generate-pdf.js cases/<case-id>/
 ```
-This creates `articles/short.pdf` and `articles/full.pdf` with publication-ready typography.
+This creates `articles/short.pdf`, `articles/medium.pdf`, and `articles/full.pdf`.
 
 ### 4. Git Commit
 

@@ -29,13 +29,15 @@ Generate all three articles **in parallel** using `mcp__mcp-openai__generate_tex
 
 | Article | model | reasoning_effort | max_output_tokens |
 |---------|-------|------------------|-------------------|
-| Short | gpt-5.2-pro | xhigh | 16384 |
-| Medium | gpt-5.2-pro | xhigh | 16384 |
-| Full | gpt-5.2-pro | xhigh | 32768 |
+| Short | gpt-5.2-pro | xhigh | 65536 |
+| Medium | gpt-5.2-pro | xhigh | 65536 |
+| Full | gpt-5.2-pro | xhigh | 65536 |
 
 For each, pass:
 - `system_prompt`: The writing rules and safety checklists from this document
 - `prompt`: The source material + that article's specific requirements (length, inclusions, exclusions)
+
+**Note:** With `xhigh` reasoning, each call may take 10-30 minutes. Run via Task tool with sufficient timeout.
 
 ### Step 3: Write and Generate PDFs
 
