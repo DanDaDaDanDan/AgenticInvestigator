@@ -13,8 +13,10 @@ Generate publication-ready articles with beautiful PDF output.
 
 Create three articles from `summary.md`:
 1. **Short** (400-800 words) - Quick overview, key findings only
-2. **Medium** (2,000-4,000 words) - Balanced coverage, main points
-3. **Full** (no length limit) - Comprehensive coverage, all findings and conclusions
+2. **Medium** (2,000-4,000 words + sources) - Balanced coverage, main points, with source list
+3. **Full** (no limit) - Comprehensive coverage with methodology and sources
+
+**Word counts exclude the Sources section** - sources are free.
 
 Then generate PDFs with professional typography.
 
@@ -25,11 +27,10 @@ Then generate PDFs with professional typography.
    - `questions/*.md` (framework answers - include ALL relevant findings)
 
 2. **Generate all three articles:**
-   - Write to `articles/short.md` (400-800 words)
-   - Write to `articles/medium.md` (2,000-4,000 words)
-   - Write to `articles/full.md` (no length limit - be comprehensive)
-   - Include source key in medium and full articles
-   - Include methodology note in medium and full articles
+   - `articles/short.md` (400-800 words) - No sources section
+   - `articles/medium.md` (2,000-4,000 words) - Include Sources section, skip methodology
+   - `articles/full.md` (no limit) - Include both Methodology and Sources sections
+   - Word counts exclude Sources section
 
 3. **Full article guidelines:**
    - Cover ALL findings from summary.md and questions/*.md
