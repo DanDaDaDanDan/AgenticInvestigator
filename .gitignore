@@ -44,3 +44,4 @@ verification-output.txt
 
 # Claude Code temp files
 tmpclaude-*
+article-prompt.md
