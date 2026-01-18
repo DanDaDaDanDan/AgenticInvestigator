@@ -15,6 +15,45 @@ Generate three publication-ready articles with **top-tier narrative clarity**, *
 
 ---
 
+## Execution: GPT 5.2 Pro in Parallel
+
+Article generation uses **GPT 5.2 Pro with extended thinking** for maximum quality.
+
+### Step 1: Gather Source Material
+
+Read and concatenate into a single context block:
+- `summary.md`
+- All `questions/*.md` files
+
+### Step 2: Generate All Three Articles in Parallel
+
+Call `mcp__mcp-openai__generate_text` **three times in parallel** (single message, three tool calls):
+
+```
+Model: gpt-5.2-pro
+Reasoning: xhigh
+Max tokens: 16384 (short/medium), 32768 (full)
+```
+
+Each call gets:
+- **system_prompt**: The writing rules and safety checklists from this document
+- **prompt**: The source material + article-specific instructions (length, what to include/exclude)
+
+### Step 3: Write Results
+
+Write each response to:
+- `articles/short.md`
+- `articles/medium.md`
+- `articles/full.md`
+
+### Step 4: Generate PDFs
+
+```bash
+node scripts/generate-pdf.js cases/<case-id>/
+```
+
+---
+
 ## Source Material
 
 Read (in order of authority):
@@ -187,15 +226,8 @@ Adapt subheads as needed. Keep paragraphs short. Make the piece skimmable.
 
 ---
 
-## After Writing
-
-Generate PDFs:
-```bash
-node scripts/generate-pdf.js cases/<case-id>/
-```
+## After Completion
 
 Update `state.json`: Set `gates.article: true`
 
-## Next Step
-
-After article generation, orchestrator invokes `/verify`.
+Orchestrator then invokes `/verify`.
