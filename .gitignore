@@ -5,6 +5,9 @@ logs/
 # MCP cache (mcp-osint)
 cache/
 
+# Investigation cases (each case has its own git repo)
+cases/
+
 # OS files
 .DS_Store
 Thumbs.db
