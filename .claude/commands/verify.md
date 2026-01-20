@@ -185,17 +185,19 @@ Check `state.json`:
 
 ### Self-Review Process
 
+Use **GPT 5.2 Pro with extended thinking** for the self-review via `mcp__mcp-openai__generate_text`:
+
+| Parameter | Value |
+|-----------|-------|
+| model | gpt-5.2-pro |
+| reasoning_effort | high |
+| max_output_tokens | 16384 |
+
 1. **Read the full article** (`articles/full.md`)
 
-2. **Evaluate as a critical editor** looking for:
-   - Unclear or confusing passages
-   - Claims that need stronger evidence or caveats
-   - Missing perspectives that should be represented
-   - Structural issues (flow, transitions, balance)
-   - Areas where the reader might have unanswered questions
-   - Tone issues (too academic, too casual, advocacy creeping in)
+2. **Call GPT 5.2 Pro** with the self-review prompt (see below)
 
-3. **Generate constructive feedback** - specific, actionable suggestions
+3. **Parse the response** for substantive feedback
 
 4. **If feedback is substantive:**
    - Set `state.json.ai_review_complete = true`
