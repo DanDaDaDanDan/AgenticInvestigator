@@ -116,8 +116,9 @@ Avoid "report voice" (Part I/Part II, CRITICAL FINDING, excessive bullets). If s
 - **Tone:** Long-form investigative/explanatory journalism
 - **Include:**
   - Everything needed to understand and verify the investigation
-  - Brief **Methodology** section: what was reviewed, how claims were selected, limitations
-  - Complete **Sources** section
+  - Brief **Methodology** section: what types of sources were consulted, how claims were selected, limitations
+  - Complete **Sources** section (cited sources with `[S###]`)
+  - **Sources Consulted** section (captured but uncited sources that informed the investigation)
 - **Appendices preferred** for heavy detail:
   - `## Appendix: Study Notes / Evidence Map`
   - `## Appendix: Implementation Details`
@@ -156,10 +157,28 @@ Adapt subheads as needed. Keep paragraphs short. Make the piece skimmable.
 
 ---
 
+## Methodology (full.md only)
+
+[Brief description of approach. Focus on:
+- Types of sources consulted (academic research, government data, court records, news reports, etc.)
+- How claims were selected for inclusion
+- Key limitations and what was NOT examined
+- Do NOT mention counts of sources, leads, or documents]
+
+---
+
 ## Sources
+
+[List all sources cited in the article with `[S###]` markers]
 
 - **[S001]** [Title](url) — Brief description
 - **[S002]** [Title](url) — Brief description
+
+## Sources Consulted
+
+[List captured sources that informed the investigation but were not directly cited. These provided background context.]
+
+- [Title](url) — Brief description
 ```
 
 ---
@@ -202,6 +221,7 @@ Adapt subheads as needed. Keep paragraphs short. Make the piece skimmable.
 - "Clearly," "obviously," "it's clear that"
 - Single study presented as definitive when evidence is mixed
 - CORRECTION, UPDATE, REVISION, or any revision language
+- Mentioning counts of sources, leads, or documents reviewed (e.g., "This investigation reviewed 47 sources..."). The sources speak for themselves through citations.
 
 ---
 
