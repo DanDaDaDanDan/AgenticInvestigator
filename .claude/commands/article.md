@@ -79,7 +79,7 @@ The feedback file is **required reading** during revisions. Articles must addres
 Write with a clear story spine:
 
 - **Lede** that captures the central tension in concrete terms (no hype, no moralizing)
-- **Nut graf** early: what the investigation examined, what it found, why it matters
+- **Nut graf** early: the question investigated, key findings, why it matters to readers
 - A structured arc: *what's happening → what the evidence says → what breaks in reality → honest implications*
 - End with a conclusion **earned** by the evidence, explicitly noting **uncertainties and limits**
 
@@ -135,7 +135,7 @@ Adapt subheads as needed. Keep paragraphs short. Make the piece skimmable.
 
 *[Lede: 1-2 sentences. Concrete tension, not vague trend language.]*
 
-[Nut graf: 3-6 sentences. What was examined, key findings, why it matters.]
+[Nut graf: 3-6 sentences. The question at stake, key findings, why it matters.]
 
 ## [The Core Dynamic]
 [Why this matters, what creates the tension]
@@ -159,11 +159,10 @@ Adapt subheads as needed. Keep paragraphs short. Make the piece skimmable.
 
 ## Methodology (full.md only)
 
-[Brief description of approach. Focus on:
+[Brief description of approach:
 - Types of sources consulted (academic research, government data, court records, news reports, etc.)
 - How claims were selected for inclusion
-- Key limitations and what was NOT examined
-- Do NOT mention counts of sources, leads, or documents]
+- Key limitations and what was not examined]
 
 ---
 
@@ -221,7 +220,6 @@ Adapt subheads as needed. Keep paragraphs short. Make the piece skimmable.
 - "Clearly," "obviously," "it's clear that"
 - Single study presented as definitive when evidence is mixed
 - CORRECTION, UPDATE, REVISION, or any revision language
-- Mentioning counts of sources, leads, or documents reviewed (e.g., "This investigation reviewed 47 sources..."). The sources speak for themselves through citations.
 
 ---
 
