@@ -134,15 +134,24 @@ Only `--new` creates a new case. All other `/investigate` calls operate on exist
 └────────┬────────┘
          │ All pass
          ▼
-     COMPLETE ◄────────────────────┐
-         │                         │
-         ▼ /feedback "..."         │
-┌─────────────────┐                │
-│ REVISION        │  Analyze feedback, create revision_plan.md
+┌─────────────────┐
+│ AI SELF-REVIEW  │  First iteration only
+│                 │  Review article as critical editor
+│                 │  Generate feedback if needed
+└────────┬────────┘
+         │
+         ├─── Has feedback ──► /feedback (auto) ──► REVISION ──┐
+         │                                                      │
+         ▼ No feedback or already reviewed                      │
+     COMPLETE ◄─────────────────────────────────────────────────┘
+         │
+         ▼ /feedback "..." (user)
+┌─────────────────┐
+│ REVISION        │  Analyze feedback, create revision plan
 │                 │  Add new leads, re-investigate
 │                 │  Reconcile, rewrite articles
 │                 │  Re-verify all gates
-└─────────────────┘────────────────┘
+└─────────────────┘
 ```
 
 ---
@@ -160,7 +169,7 @@ Only `--new` creates a new case. All other `/investigate` calls operate on exist
 | 6 | Integrity | `/integrity` review | Status: READY |
 | 7 | Legal | `/legal-review` | Status: READY |
 
-**Termination:** All 8 gates pass.
+**Termination:** All 8 gates pass + AI self-review complete (or no feedback generated).
 
 ### Gate 2 (Curiosity) Hard Blocks
 
@@ -455,7 +464,8 @@ All `/action` commits go to the **DATA repository** (`cases/.git`), NOT the code
     "number": 1,
     "feedback_file": "feedback/revision1.md",
     "started_at": "2026-01-19T12:00:00Z"
-  }
+  },
+  "ai_review_complete": false
 }
 ```
 
@@ -467,6 +477,9 @@ All `/action` commits go to the **DATA repository** (`cases/.git`), NOT the code
 - `revision.number` - Current revision number (1, 2, 3...)
 - `revision.feedback_file` - Path to feedback/plan file
 - `revision.started_at` - When revision cycle began
+
+**Quality assurance:**
+- `ai_review_complete` - Whether AI self-review has run (triggers once after first successful verification)
 
 ---
 

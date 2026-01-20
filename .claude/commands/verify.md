@@ -169,11 +169,66 @@ Update `state.json` gates with results.
 
 ## Result
 
-**ALL PASS:** "Verification: PASS - Ready for publication"
+**ALL PASS:** Check if AI self-review is needed (see below)
 
 **ANY FAIL:** Return specific failures and what needs fixing.
 
+## AI Self-Review (First Iteration Only)
+
+After all 8 gates pass for the first time, trigger an automatic AI review of the articles before declaring completion.
+
+### When to Trigger
+
+Check `state.json`:
+- If `ai_review_complete` is missing or `false`: trigger self-review
+- If `ai_review_complete` is `true`: skip to completion
+
+### Self-Review Process
+
+1. **Read the full article** (`articles/full.md`)
+
+2. **Evaluate as a critical editor** looking for:
+   - Unclear or confusing passages
+   - Claims that need stronger evidence or caveats
+   - Missing perspectives that should be represented
+   - Structural issues (flow, transitions, balance)
+   - Areas where the reader might have unanswered questions
+   - Tone issues (too academic, too casual, advocacy creeping in)
+
+3. **Generate constructive feedback** - specific, actionable suggestions
+
+4. **If feedback is substantive:**
+   - Set `state.json.ai_review_complete = true`
+   - Invoke `/feedback` with the review findings
+   - This triggers a revision cycle
+
+5. **If article is publication-ready (no substantive feedback):**
+   - Set `state.json.ai_review_complete = true`
+   - Proceed to completion
+
+### Self-Review Prompt Template
+
+```
+Review this investigative article as a senior editor. Identify:
+
+1. CLARITY: Passages that are confusing or could be clearer
+2. EVIDENCE: Claims that need stronger support or additional caveats
+3. BALANCE: Missing perspectives or viewpoints that should be represented
+4. STRUCTURE: Flow issues, awkward transitions, sections that feel unbalanced
+5. GAPS: Questions a reader would reasonably have that aren't addressed
+6. TONE: Areas where neutral tone slips into advocacy or excessive hedging
+
+Be specific. For each issue, quote the problematic text and suggest improvement.
+
+If the article is strong and ready for publication, say so explicitly.
+```
+
+### Why Only Once
+
+The self-review runs once to catch obvious issues before human review. Running it repeatedly would create an infinite loop. After the AI-triggered revision, the human user can provide additional feedback via `/feedback` if needed.
+
 ## Next Steps
 
-- If PASS: Investigation complete
+- If PASS + ai_review_complete: Investigation complete
+- If PASS + needs self-review: Trigger AI review → /feedback cycle
 - If FAIL: Route back to appropriate phase based on which gate failed
