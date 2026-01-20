@@ -140,12 +140,12 @@ Only `--new` creates a new case. All other `/investigate` calls operate on exist
 │                 │  Generate feedback if needed
 └────────┬────────┘
          │
-         ├─── Has feedback ──► /feedback (auto) ──► REVISION ──┐
+         ├─── Has feedback ──► /case-feedback (auto) ──► REVISION ──┐
          │                                                      │
          ▼ No feedback or already reviewed                      │
      COMPLETE ◄─────────────────────────────────────────────────┘
          │
-         ▼ /feedback "..." (user)
+         ▼ /case-feedback "..." (user)
 ┌─────────────────┐
 │ REVISION        │  Analyze feedback, create revision plan
 │                 │  Add new leads, re-investigate
@@ -196,7 +196,7 @@ The sources gate performs multiple verification layers:
 |---------|---------|------------|
 | `/investigate --new [topic]` | Start NEW investigation (--new required) | User |
 | `/investigate [case-id]` | Resume existing investigation | User |
-| `/feedback [text]` | Revise completed investigation with feedback | User |
+| `/case-feedback [text]` | Revise completed investigation with feedback | User |
 | `/action` | Router (git + dispatch) | Orchestrator |
 | `/plan-investigation` | Design investigation strategy (3 steps) | Orchestrator |
 | `/research` | Broad topic research | Orchestrator |
@@ -398,7 +398,7 @@ cases/                           ← DATA REPOSITORY ROOT
     │   ├── full.md              # No length limit - comprehensive
     │   └── full.pdf             # Primary deliverable - all findings and conclusions
     │
-    └── feedback/                # Revision history (created by /feedback)
+    └── feedback/                # Revision history (created by /case-feedback)
         ├── revision1.md         # First revision feedback + plan
         └── revision2.md         # Second revision feedback + plan
 ```

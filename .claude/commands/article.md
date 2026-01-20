@@ -89,7 +89,7 @@ Do not use outside knowledge. Do not invent anecdotes, quotes, stakeholders, or 
 
 ### During Revision Cycles
 
-When `state.json` contains a `revision` block, this is a revision cycle triggered by `/feedback`:
+When `state.json` contains a `revision` block, this is a revision cycle triggered by `/case-feedback`:
 
 1. Read `state.json` to get `revision.feedback_file` path (e.g., `feedback/revision1.md`)
 2. Read that feedback file to understand what user requested

@@ -234,7 +234,7 @@ Use **GPT 5.2 Pro with extended thinking** for the self-review via `mcp__mcp-ope
 
 4. **If feedback is substantive:**
    - Set `state.json.ai_review_complete = true`
-   - Invoke `/feedback` with the review findings
+   - Invoke `/case-feedback` with the review findings
    - This triggers a revision cycle
 
 5. **If article is publication-ready (no substantive feedback):**
@@ -260,10 +260,10 @@ If the article is strong and ready for publication, say so explicitly.
 
 ### Why Only Once
 
-The self-review runs once to catch obvious issues before human review. Running it repeatedly would create an infinite loop. After the AI-triggered revision, the human user can provide additional feedback via `/feedback` if needed.
+The self-review runs once to catch obvious issues before human review. Running it repeatedly would create an infinite loop. After the AI-triggered revision, the human user can provide additional feedback via `/case-feedback` if needed.
 
 ## Next Steps
 
 - If PASS + ai_review_complete: Investigation complete
-- If PASS + needs self-review: Trigger AI review → /feedback cycle
+- If PASS + needs self-review: Trigger AI review → /case-feedback cycle
 - If FAIL: Route back to appropriate phase based on which gate failed

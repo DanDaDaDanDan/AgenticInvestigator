@@ -1,11 +1,11 @@
-# /feedback - Revise Completed Investigation
+# /case-feedback - Revise Completed Investigation
 
 Incorporate feedback on completed articles and restart the investigation cycle.
 
 ## Usage
 
 ```
-/feedback [feedback text]
+/case-feedback [feedback text]
 ```
 
 ## Purpose
@@ -29,7 +29,7 @@ This command creates a structured revision cycle.
 ```
 COMPLETE
     │
-    ▼ /feedback "..."
+    ▼ /case-feedback "..."
 ┌─────────────────┐
 │ REVISION PLAN   │  Analyze feedback, determine scope
 │                 │  Output: revision_plan.md
@@ -159,7 +159,7 @@ Dispatch sub-agent to analyze feedback and update the feedback file (`feedback/r
 [Minor/Moderate/Significant revision]
 ```
 
-The feedback file serves as the **contract** between `/feedback` and `/article`. The `/article` command reads this file during revision cycles to understand what changes are required.
+The feedback file serves as the **contract** between `/case-feedback` and `/article`. The `/article` command reads this file during revision cycles to understand what changes are required.
 
 ### 5. Execute Revision
 
@@ -176,7 +176,7 @@ Based on the feedback file's action items:
 
 ```bash
 git -C cases add -A
-git -C cases commit -m "[case-id] /feedback: revision N started"
+git -C cases commit -m "[case-id] /case-feedback: revision N started"
 ```
 
 ## Revision History
@@ -189,7 +189,7 @@ Each revision is tracked:
 ## Example
 
 ```
-User: /feedback "The article doesn't adequately address the environmental impact
+User: /case-feedback "The article doesn't adequately address the environmental impact
 concerns raised by local communities. Please add more coverage of the community
 response and any environmental studies that have been conducted."
 

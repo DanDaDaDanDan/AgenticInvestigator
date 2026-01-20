@@ -56,7 +56,7 @@ Route to the specified command:
 - `/action integrity` → `/integrity` (**via sub-agent**)
 - `/action legal-review` → `/legal-review` (**via sub-agent**)
 - `/action parallel-review` → `/integrity` + `/legal-review` in parallel (**via sub-agents**)
-- `/action feedback <text>` → `/feedback` (**via sub-agent**) - revision cycle for completed investigations
+- `/action case-feedback <text>` → `/case-feedback` (**via sub-agent**) - revision cycle for completed investigations
 
 ### Context Isolation for Heavy Reads
 
