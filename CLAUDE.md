@@ -14,7 +14,7 @@ D:/Personal/AgenticInvestigator/           ← CODE REPOSITORY (.git here)
 ├── CLAUDE.md                              # This file - CODE REPO
 ├── scripts/                               # CODE REPO
 ├── reference/                             # CODE REPO
-├── .claude/commands/                      # CODE REPO
+├── .claude/skills/                        # CODE REPO - skill definitions with SKILL.md
 │
 └── cases/                                 ← DATA REPOSITORY (.git here, gitignored by parent)
     ├── .git/                              # Tracks: ALL investigation case data
@@ -190,28 +190,38 @@ The sources gate performs multiple verification layers:
 
 ---
 
-## Commands
+## Skills
 
-| Command | Purpose | Invoked By |
-|---------|---------|------------|
-| `/investigate --new [topic]` | Start NEW investigation (--new required) | User |
-| `/investigate [case-id]` | Resume existing investigation | User |
-| `/case-feedback [text]` | Revise completed investigation with feedback | User |
-| `/action` | Router (git + dispatch) | Orchestrator |
-| `/plan-investigation` | Design investigation strategy (3 steps) | Orchestrator |
-| `/research` | Broad topic research | Orchestrator |
-| `/question` | Answer framework batch | Orchestrator |
-| `/question-parallel` | All 5 batches in parallel | Orchestrator |
-| `/follow` | Pursue single lead | Orchestrator |
-| `/follow-batch` | Multiple leads in parallel | Orchestrator |
-| `/reconcile` | Sync lead results with summary.md | Orchestrator |
-| `/curiosity` | Check lead exhaustion | Orchestrator |
-| `/capture-source` | Capture evidence | Any agent |
-| `/verify` | Check 8 gates | Orchestrator |
-| `/article` | Write publication | Orchestrator |
-| `/integrity` | Journalistic check | Orchestrator |
-| `/legal-review` | Legal risk check | Orchestrator |
-| `/parallel-review` | Integrity + Legal in parallel | Orchestrator |
+Skills are defined in `.claude/skills/*/SKILL.md` with YAML frontmatter controlling behavior.
+
+### Skill Configuration Options
+
+| Option | Purpose |
+|--------|---------|
+| `context: fork` | Run in isolated sub-agent (automatic context isolation) |
+| `user-invocable: false` | Hide from `/` menu (internal skills only) |
+| `disable-model-invocation: true` | Prevent Claude from auto-invoking (user entry points) |
+
+### Skill Reference
+
+| Skill | Purpose | Invoked By | Isolation |
+|-------|---------|------------|-----------|
+| `/investigate` | Start or resume investigation | User | None |
+| `/case-feedback` | Revise completed investigation | User | None |
+| `/action` | Router (git + dispatch) | Orchestrator | None |
+| `/plan-investigation` | Design investigation strategy | Orchestrator | `context: fork` |
+| `/research` | Broad topic research | Orchestrator | `context: fork` |
+| `/question` | Answer framework batch | Orchestrator | None |
+| `/follow` | Pursue single lead | Orchestrator | None |
+| `/reconcile` | Sync lead results with summary.md | Orchestrator | `context: fork` |
+| `/curiosity` | Check lead exhaustion | Orchestrator | `context: fork` |
+| `/capture-source` | Capture evidence | Any agent | None |
+| `/verify` | Check 8 gates | Orchestrator | `context: fork` |
+| `/article` | Write publication | Orchestrator | `context: fork` |
+| `/integrity` | Journalistic check | Orchestrator | `context: fork` |
+| `/legal-review` | Legal risk check | Orchestrator | `context: fork` |
+| `/parallel-review` | Integrity + Legal in parallel | Orchestrator | `context: fork` |
+| `/merge-cases` | Combine multiple investigations | Orchestrator | `context: fork` |
 
 ---
 
@@ -319,24 +329,24 @@ Uses three-phase pattern: parallel context-free scans → parallel contextual ev
 
 ## Context Isolation Pattern
 
-Commands that read large amounts of data should run in sub-agents to avoid polluting the main conversation context.
+Skills that read large amounts of data use `context: fork` to automatically run in isolated sub-agents. This is configured in each skill's SKILL.md frontmatter.
 
-| Command | Reads | Use Sub-Agent |
-|---------|-------|---------------|
-| `/plan-investigation` | deep_research + 35 frameworks (~15KB for Step 3) | Yes (3 sub-agents) |
-| `/research` | deep_research results + captured sources (~100-200KB) | Yes |
-| `/reconcile` | summary + leads + sources (~50KB) | Yes |
-| `/curiosity` | 35 files + leads + summary + sources (~200KB) | Yes |
-| `/article` | summary + 35 question files (~166KB) | Yes |
-| `/verify` | article + all cited evidence (~100KB+) | Yes |
-| `/integrity` | article + summary + 35 questions + sources (~200KB) | Yes |
-| `/legal-review` | article + sources + evidence (~100KB) | Yes |
-| `/question` | 1 framework file (~4KB) | No |
-| `/follow` | 1 lead context (~5KB) | No |
+| Skill | Reads | Isolation |
+|-------|-------|-----------|
+| `/plan-investigation` | deep_research + 35 frameworks (~15KB for Step 3) | `context: fork` (auto) |
+| `/research` | deep_research results + captured sources (~100-200KB) | `context: fork` (auto) |
+| `/reconcile` | summary + leads + sources (~50KB) | `context: fork` (auto) |
+| `/curiosity` | 35 files + leads + summary + sources (~200KB) | `context: fork` (auto) |
+| `/article` | summary + 35 question files (~166KB) | `context: fork` (auto) |
+| `/verify` | article + all cited evidence (~100KB+) | `context: fork` (auto) |
+| `/integrity` | article + summary + 35 questions + sources (~200KB) | `context: fork` (auto) |
+| `/legal-review` | article + sources + evidence (~100KB) | `context: fork` (auto) |
+| `/question` | 1 framework file (~4KB) | None (lightweight) |
+| `/follow` | 1 lead context (~5KB) | None (lightweight) |
 
-**Why:** Reading 200KB into the main context makes subsequent turns expensive. Sub-agents return only structured results (verdicts, gaps), keeping main context clean.
+**Why:** Reading 200KB into the main context makes subsequent turns expensive. Skills with `context: fork` automatically run in sub-agents and return only structured results (verdicts, gaps), keeping main context clean.
 
-**Pattern:** The `/action` router dispatches heavy-read commands via Task tool. See `action.md` for dispatch details.
+**Implementation:** The skill system handles isolation automatically when `context: fork` is specified in SKILL.md frontmatter. No manual Task tool dispatch needed.
 
 ---
 
@@ -391,9 +401,9 @@ cases/                           ← DATA REPOSITORY ROOT
     │       └── screenshot.png
     │
     ├── articles/
-    │   ├── short.md             # 400-800 words
+    │   ├── short.md             # 500-900 words
     │   ├── short.pdf            # PDF with Kindle-style typography
-    │   ├── medium.md            # 2000-4000 words
+    │   ├── medium.md            # 2,200-3,800 words
     │   ├── medium.pdf           # Balanced coverage PDF
     │   ├── full.md              # No length limit - comprehensive
     │   └── full.pdf             # Primary deliverable - all findings and conclusions

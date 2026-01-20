@@ -48,8 +48,8 @@ Each case creates `cases/[topic-slug]/` with:
 | File | Purpose |
 |------|---------|
 | `summary.md` | Investigation record with all findings |
-| `articles/short.md` + `short.pdf` | Quick read (400-800 words) |
-| `articles/medium.md` + `medium.pdf` | Balanced coverage (2,000-4,000 words) |
+| `articles/short.md` + `short.pdf` | Quick read (500-900 words) |
+| `articles/medium.md` + `medium.pdf` | Balanced coverage (2,200-3,800 words) |
 | `articles/full.md` + `full.pdf` | Comprehensive (no limit) - primary deliverable |
 | `questions/` | 35 framework Q&A documents + custom questions |
 | `evidence/S###/` | Captured sources with metadata, content, raw HTML |
@@ -64,23 +64,30 @@ Planning phase creates (directly in case folder):
 - `investigation_plan.md` - Strategy and approach
 - `custom_questions.md` - Topic-specific questions beyond 35 frameworks
 
-## Commands
+## Skills
 
-| Command | Purpose |
-|---------|---------|
-| `/investigate` | Start/resume investigation |
-| `/action` | Router for all operations (auto git commits) |
-| `/plan-investigation` | Design investigation strategy (3-step planning) |
-| `/research` | Broad topic research |
-| `/question` | Answer framework questions |
-| `/follow` | Pursue a lead |
-| `/reconcile` | Sync lead results with summary |
-| `/curiosity` | Check if leads exhausted |
-| `/capture-source` | Capture web evidence |
-| `/article` | Generate articles |
-| `/verify` | Check 8 gates |
-| `/integrity` | Journalistic standards check |
-| `/legal-review` | Legal risk assessment |
+Skills are defined in `.claude/skills/*/SKILL.md` with YAML frontmatter for configuration.
+
+| Skill | Purpose | Isolation |
+|-------|---------|-----------|
+| `/investigate` | Start/resume investigation | User entry point |
+| `/case-feedback` | Revise completed investigation | User entry point |
+| `/action` | Router for all operations (auto git commits) | - |
+| `/plan-investigation` | Design investigation strategy (3-step) | `context: fork` |
+| `/research` | Broad topic research | `context: fork` |
+| `/question` | Answer framework questions | - |
+| `/follow` | Pursue a lead | - |
+| `/reconcile` | Sync lead results with summary | `context: fork` |
+| `/curiosity` | Check if leads exhausted | `context: fork` |
+| `/capture-source` | Capture web evidence | - |
+| `/article` | Generate articles | `context: fork` |
+| `/verify` | Check 8 gates | `context: fork` |
+| `/integrity` | Journalistic standards check | `context: fork` |
+| `/legal-review` | Legal risk assessment | `context: fork` |
+| `/parallel-review` | Integrity + Legal in parallel | `context: fork` |
+| `/merge-cases` | Combine multiple investigations | `context: fork` |
+
+Skills with `context: fork` automatically run in isolated sub-agents for context management.
 
 ## Evidence Capture
 
@@ -147,7 +154,7 @@ Each MCP server requires its respective API key:
 | File | Contents |
 |------|----------|
 | `CLAUDE.md` | Behavioral rules, workflow, schemas |
-| `.claude/commands/*.md` | Command procedures |
+| `.claude/skills/*/SKILL.md` | Skill definitions with frontmatter |
 | `reference/frameworks.md` | 35 analytical frameworks |
 | `scripts/README.md` | Script documentation |
 

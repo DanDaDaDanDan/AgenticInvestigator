@@ -1,3 +1,10 @@
+---
+name: case-feedback
+description: Revise completed investigation with feedback
+disable-model-invocation: true
+argument-hint: [feedback text]
+---
+
 # /case-feedback - Revise Completed Investigation
 
 Incorporate feedback on completed articles and restart the investigation cycle.
@@ -116,31 +123,7 @@ Gates 3-8 reset to require re-verification.
 
 ### 4. Create Revision Plan
 
-**Dispatch sub-agent using Task tool** to analyze feedback. This step reads ~150KB of files (summary.md, questions/, leads.json, sources.json) and must be isolated to avoid context pollution.
-
-```
-Task tool:
-  subagent_type: "general-purpose"
-  prompt: |
-    You are creating a revision plan for a completed investigation.
-
-    FEEDBACK FROM USER:
-    [paste the exact user feedback text]
-
-    CASE PATH: cases/<case-id>/
-
-    Read and analyze:
-    1. summary.md - current investigation findings
-    2. questions/*.md - framework responses
-    3. leads.json - investigated leads
-    4. sources.json - captured sources
-    5. articles/full.md - current article
-
-    Based on the feedback, create a revision plan following the template below.
-    Write the complete plan to feedback/revisionN.md
-
-    [Include the template from below]
-```
+**Dispatch sub-agent using Skill tool with /reconcile pattern** to analyze feedback. This step reads ~150KB of files (summary.md, questions/, leads.json, sources.json) and must be isolated to avoid context pollution.
 
 The sub-agent updates the feedback file (`feedback/revisionN.md`) with the analysis and plan:
 

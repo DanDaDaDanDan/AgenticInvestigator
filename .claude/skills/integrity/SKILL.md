@@ -1,3 +1,12 @@
+---
+name: integrity
+description: Journalistic integrity check with two-stage review
+context: fork
+agent: general-purpose
+user-invocable: false
+argument-hint: [case-id] [--stage-1-only] [--stage-2-only --flags <json>]
+---
+
 # /integrity - Journalistic Integrity Check
 
 Two-stage review: context-free detection, then contextual evaluation.

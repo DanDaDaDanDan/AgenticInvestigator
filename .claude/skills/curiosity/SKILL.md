@@ -1,3 +1,11 @@
+---
+name: curiosity
+description: Evaluate lead exhaustion using external model verification
+context: fork
+agent: general-purpose
+user-invocable: false
+---
+
 # /curiosity - Evaluate Lead Exhaustion
 
 Determine if the investigation has been pursued thoroughly using external model verification.

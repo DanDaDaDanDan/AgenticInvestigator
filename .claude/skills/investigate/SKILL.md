@@ -1,3 +1,10 @@
+---
+name: investigate
+description: Start or resume an investigation
+disable-model-invocation: true
+argument-hint: [--new topic] or [case-id]
+---
+
 # /investigate - Main Entry Point
 
 Start or resume an investigation.

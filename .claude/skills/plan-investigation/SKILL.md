@@ -1,3 +1,12 @@
+---
+name: plan-investigation
+description: Design investigation strategy before execution
+context: fork
+agent: general-purpose
+user-invocable: false
+argument-hint: [topic]
+---
+
 # /plan-investigation - Investigation Planning
 
 Design investigation strategy before execution.

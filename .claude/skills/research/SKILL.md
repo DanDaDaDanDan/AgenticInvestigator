@@ -1,3 +1,12 @@
+---
+name: research
+description: Conduct deep research on an investigation topic
+context: fork
+agent: general-purpose
+user-invocable: false
+argument-hint: <topic>
+---
+
 # /research - Broad Topic Research
 
 Conduct deep research on an investigation topic.

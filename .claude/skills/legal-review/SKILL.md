@@ -1,3 +1,12 @@
+---
+name: legal-review
+description: Legal risk assessment with two-stage review
+context: fork
+agent: general-purpose
+user-invocable: false
+argument-hint: [case-id] [--stage-1-only] [--stage-2-only --flags <json>]
+---
+
 # /legal-review - Legal Risk Assessment
 
 Two-stage review: context-free detection, then contextual evaluation with evidence.

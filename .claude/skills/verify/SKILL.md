@@ -1,3 +1,12 @@
+---
+name: verify
+description: Check all 8 gates for investigation readiness
+context: fork
+agent: general-purpose
+user-invocable: false
+argument-hint: [case-id]
+---
+
 # /verify - Check 8 Gates
 
 Verify investigation readiness for publication.

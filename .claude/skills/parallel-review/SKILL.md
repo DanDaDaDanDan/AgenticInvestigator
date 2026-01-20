@@ -1,3 +1,12 @@
+---
+name: parallel-review
+description: Run integrity and legal reviews in parallel
+context: fork
+agent: general-purpose
+user-invocable: false
+argument-hint: [case-id]
+---
+
 # /parallel-review - Parallel Integrity and Legal Review
 
 Run integrity and legal reviews in parallel.

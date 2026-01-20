@@ -1,3 +1,10 @@
+---
+name: follow
+description: Pursue a single lead to conclusion
+user-invocable: false
+argument-hint: <lead-id> [--source-range <start>-<end> --batch-id <id>]
+---
+
 # /follow - Pursue Lead to Conclusion
 
 Investigate a single lead to its conclusion.

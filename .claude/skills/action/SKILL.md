@@ -1,3 +1,10 @@
+---
+name: action
+description: Router for all investigation operations with git commits
+user-invocable: false
+argument-hint: <command> [args...]
+---
+
 # /action - Router with Git
 
 Route all actions through git commits for full audit trail.
@@ -41,45 +48,46 @@ Find the active case directory (read `cases/.active` or most recent in `cases/`)
 
 ### 2. Execute Command
 
-Route to the specified command:
-- `/action plan-investigation <topic>` → `/plan-investigation` (**via sub-agents** - 3 sequential steps)
-- `/action research <topic>` → `/research` (**via sub-agent**)
-- `/action question <batch>` → `/question`
-- `/action question-parallel` → `/question` (all 5 batches in parallel, **via sub-agents**)
-- `/action follow <lead-id>` → `/follow`
-- `/action follow-batch <L001> <L002> ...` → Multiple `/follow` in parallel (**via sub-agents**)
-- `/action reconcile` → `/reconcile` (**via sub-agent**)
-- `/action curiosity` → `/curiosity` (**via sub-agent**)
-- `/action capture-source <url>` → `/capture-source`
-- `/action verify` → `/verify` (**via sub-agent**)
-- `/action article` → `/article` (**via sub-agent**)
-- `/action integrity` → `/integrity` (**via sub-agent**)
-- `/action legal-review` → `/legal-review` (**via sub-agent**)
-- `/action parallel-review` → `/integrity` + `/legal-review` in parallel (**via sub-agents**)
-- `/action case-feedback <text>` → `/case-feedback` (**via sub-agent**) - revision cycle for completed investigations
+Route to the specified skill. Skills with `context: fork` automatically handle isolation.
 
-### Context Isolation for Heavy Reads
+**Skills with automatic isolation (context: fork):**
+- `/action plan-investigation <topic>` → invoke `/plan-investigation` (3 sequential steps)
+- `/action research <topic>` → invoke `/research`
+- `/action reconcile` → invoke `/reconcile`
+- `/action curiosity` → invoke `/curiosity`
+- `/action article` → invoke `/article`
+- `/action verify` → invoke `/verify`
+- `/action integrity` → invoke `/integrity`
+- `/action legal-review` → invoke `/legal-review`
+- `/action parallel-review` → invoke `/parallel-review`
+- `/action merge-cases <case1> <case2> --topic "..."` → invoke `/merge-cases`
 
-Commands marked **via sub-agent** read large amounts of files (~200KB+). Use Task tool to isolate:
+**Lightweight skills (no isolation needed):**
+- `/action question <batch>` → invoke `/question`
+- `/action follow <lead-id>` → invoke `/follow`
+- `/action capture-source <url>` → invoke `/capture-source`
 
-| Command | Reads | Why Sub-Agent |
-|---------|-------|---------------|
-| `/plan-investigation` | deep_research + 35 frameworks (~15KB for Step 3) | 3 sequential sub-agents, GPT 5.2 Pro for design |
-| `/research` | deep_research results + captured sources (~100-200KB) | Heavy MCP calls, source capture |
-| `/reconcile` | summary + leads + sources (~50KB) | Cross-reference all findings |
-| `/curiosity` | 35 files + leads + summary + sources (~200KB) | Full investigation context |
-| `/article` | summary + 35 question files (~166KB) | GPT 5.2 Pro × 3 parallel calls, up to 60 min each |
-| `/verify` | article + all cited evidence (~100KB+) | Evidence files are large |
-| `/integrity` | article + summary + 35 questions + sources (~200KB) | Perspective coverage |
-| `/legal-review` | article + sources + evidence (~100KB) | Legal requires full context |
+**Parallel processing commands:**
+- `/action question-parallel` → spawn 5 parallel `/question` sub-agents
+- `/action follow-batch <L001> <L002> ...` → spawn parallel `/follow` sub-agents
 
-**Dispatch pattern:**
-```
-Task (subagent_type: "general-purpose")
-  prompt: "Execute /curiosity for case [path]. Read all files, call external models, return only verdict."
-```
+### Context Isolation
 
-Sub-agent returns structured result. Main context stays clean.
+Skills with `context: fork` in their frontmatter automatically run in isolated sub-agents. No manual Task tool dispatch needed - the skill system handles it.
+
+| Command | Context | Isolation |
+|---------|---------|-----------|
+| `/plan-investigation` | Heavy (15KB+) | Automatic via `context: fork` |
+| `/research` | Heavy (100-200KB) | Automatic via `context: fork` |
+| `/reconcile` | Heavy (50KB) | Automatic via `context: fork` |
+| `/curiosity` | Heavy (200KB) | Automatic via `context: fork` |
+| `/article` | Heavy (166KB) | Automatic via `context: fork` |
+| `/verify` | Heavy (100KB+) | Automatic via `context: fork` |
+| `/integrity` | Heavy (200KB) | Automatic via `context: fork` |
+| `/legal-review` | Heavy (100KB) | Automatic via `context: fork` |
+| `/question` | Light (4KB) | None needed |
+| `/follow` | Light (5KB) | None needed |
+| `/capture-source` | Light | None needed |
 
 ### Parallel Processing Commands
 
@@ -100,7 +108,7 @@ Sub-agent returns structured result. Main context stays clean.
 
 #### `/action parallel-review`
 
-See `/parallel-review` command. Three phases:
+See `/parallel-review` skill. Three phases:
 1. Parallel Stage 1: context-free scans (integrity + legal)
 2. Parallel Stage 2: contextual evaluation with flags
 3. Sequential: merge fixes, detect conflicts, apply/ESCALATE

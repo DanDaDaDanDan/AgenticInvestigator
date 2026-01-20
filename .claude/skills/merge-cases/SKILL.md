@@ -1,3 +1,12 @@
+---
+name: merge-cases
+description: Combine multiple completed investigations into a unified case
+context: fork
+agent: general-purpose
+user-invocable: false
+argument-hint: [case1] [case2] --topic "[new topic]"
+---
+
 # /merge-cases - Combine Multiple Investigations
 
 Merge two or more completed investigations into a new unified case.

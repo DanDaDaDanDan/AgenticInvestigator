@@ -1,3 +1,12 @@
+---
+name: reconcile
+description: Ensure lead investigation results are reflected in summary.md
+context: fork
+agent: general-purpose
+user-invocable: false
+argument-hint: [case-id]
+---
+
 # /reconcile - Reconcile Lead Results with Summary
 
 Ensure lead investigation results are reflected in summary.md.

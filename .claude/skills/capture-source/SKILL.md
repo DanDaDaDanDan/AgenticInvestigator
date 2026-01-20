@@ -1,3 +1,10 @@
+---
+name: capture-source
+description: Capture a single URL as evidence for citations
+user-invocable: false
+argument-hint: <url> | --osint <query>
+---
+
 # /capture-source - Capture Web Evidence
 
 Capture a **single URL** as evidence for citations.

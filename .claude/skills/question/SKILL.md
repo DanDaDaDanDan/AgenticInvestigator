@@ -1,3 +1,10 @@
+---
+name: question
+description: Answer framework questions for a batch
+user-invocable: false
+argument-hint: <batch-number> [--parallel --source-start N --source-end M --lead-start X --lead-end Y]
+---
+
 # /question - Answer Framework Questions
 
 Apply the 35 analytical frameworks via structured Q&A.
