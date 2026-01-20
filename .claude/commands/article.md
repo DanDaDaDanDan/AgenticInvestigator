@@ -19,6 +19,29 @@ Generate three publication-ready articles with **top-tier narrative clarity**, *
 
 Use **GPT 5.2 Pro with extended thinking** for article generation.
 
+### Step 0: Prerequisite Gate Check (BLOCKING)
+
+**Before ANY article generation**, verify that gates 0-3 are passing:
+
+```
+Read state.json and verify:
+- gates.planning === true    (Gate 0)
+- gates.questions === true   (Gate 1)
+- gates.curiosity === true   (Gate 2)
+- gates.reconciliation === true (Gate 3)
+```
+
+**FAIL IMMEDIATELY if ANY of gates 0-3 are false.**
+
+Do not proceed to article generation. Return error:
+```
+ERROR: Cannot generate articles - prerequisite gates not satisfied.
+Failing gates: [list failing gates]
+Action required: Complete FOLLOW phase before WRITE phase.
+```
+
+This prevents generating articles from incomplete investigations. The curiosity and reconciliation gates ensure all leads are investigated and findings are reconciled with the summary before writing.
+
 ### Step 1: Read Source Material
 
 Read `summary.md` and all `questions/*.md` files. This is the source content for all three articles.

@@ -663,6 +663,8 @@ See `reference/frameworks.md` for the full list and guiding questions.
 
 ## MCP Quick Reference
 
+**CRITICAL: Never use Bash to invoke MCP tools.** MCP tools (mcp__mcp-osint__*, mcp__mcp-gemini__*, etc.) must be called directly as tool invocations, never via shell commands. Bash timeouts (max 10 minutes) are shorter than MCP operation timeouts (up to 60 minutes for deep_research), causing premature failures.
+
 | Need | Server | Tool |
 |------|--------|------|
 | **Find sources** | mcp-osint | `osint_search` |
@@ -726,6 +728,9 @@ osint_get target="https://example.com/paper.pdf" output_path="evidence/S001/pape
 - Do NOT skip number verification (`scripts/verify-numbers.js`)
 - Do NOT generate articles when semantic verification flags mismatches
 - Do NOT assume a citation supports a claim without verifying the source contains the fact
+- Do NOT generate articles before Gates 0-3 pass (planning, questions, curiosity, reconciliation)
+- Do NOT set `phase: WRITE` until curiosity and reconciliation gates are TRUE
+- Do NOT use Bash to invoke MCP tools (causes timeout issues)
 
 ---
 

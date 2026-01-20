@@ -279,6 +279,24 @@ function determineNextAction(state, casePath, options = {}) {
       };
 
     case 'WRITE':
+      // SAFETY CHECK: Verify prerequisites before article generation
+      // Gates 0-3 must pass before we can write articles
+      if (!gates.planning || !gates.questions || !gates.curiosity || !gates.reconciliation) {
+        const missingGates = [];
+        if (!gates.planning) missingGates.push('planning');
+        if (!gates.questions) missingGates.push('questions');
+        if (!gates.curiosity) missingGates.push('curiosity');
+        if (!gates.reconciliation) missingGates.push('reconciliation');
+        return {
+          status: 'CONTINUE',
+          next: 'ERROR: Cannot write articles - prerequisites not met',
+          reason: `Missing gates: ${missingGates.join(', ')}. Return to FOLLOW phase.`,
+          leadInfo: null,
+          error: true,
+          missingPrerequisites: missingGates
+        };
+      }
+
       if (!gates.article) {
         return {
           status: 'CONTINUE',
@@ -426,6 +444,15 @@ function main() {
     console.log(`Reason: ${result.reason}`);
     console.log('');
     console.log('Investigation finished. All 8 gates pass.');
+  } else if (result.error) {
+    console.log('Status: ✗ ERROR');
+    console.log(`Reason: ${result.reason}`);
+    console.log(`Next: ${result.next}`);
+    console.log('');
+    console.log('STOP. Fix the error before continuing.');
+    if (result.missingPrerequisites) {
+      console.log(`Missing prerequisites: ${result.missingPrerequisites.join(', ')}`);
+    }
   } else {
     console.log('Status: → CONTINUE');
     console.log(`Reason: ${result.reason}`);
@@ -437,8 +464,8 @@ function main() {
   console.log('═══════════════════════════════════════════════════════');
   console.log('');
 
-  // Exit with 0 for COMPLETE, 2 for CONTINUE
-  process.exit(result.status === 'COMPLETE' ? 0 : 2);
+  // Exit with 0 for COMPLETE, 1 for ERROR, 2 for CONTINUE
+  process.exit(result.status === 'COMPLETE' ? 0 : (result.error ? 1 : 2));
 }
 
 main();
