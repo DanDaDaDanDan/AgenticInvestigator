@@ -23,6 +23,36 @@ Use **GPT 5.2 Pro with extended thinking** for article generation.
 
 Read `summary.md` and all `questions/*.md` files. This is the source content for all three articles.
 
+### Step 1.5: Pre-Generation Citation Validation (BLOCKING)
+
+**Before generating any articles**, validate ALL citations in summary.md:
+
+```bash
+node scripts/audit-citations.js cases/<case-id>/ --block
+```
+
+If the audit fails, **DO NOT proceed** to article generation. Fix issues first:
+1. Re-capture missing sources using `/capture-source`
+2. Update `sources.json` entries to have `captured: true`
+3. Ensure each `evidence/S###/` has `metadata.json` and `content.md`
+
+**Then run semantic verification:**
+
+```bash
+node scripts/semantic-verify.js cases/<case-id>/ --pre-article
+```
+
+For each citation in summary.md:
+1. Verify the claim text is actually supported by `evidence/S###/content.md`
+2. If statistics are cited, verify the numbers match exactly
+3. If semantic verification flags mismatches, either:
+   - Correct the claim in summary.md to match the source
+   - Find a different source that supports the original claim
+   - Add appropriate caveats ("according to X" or "estimates suggest")
+
+**CRITICAL:** Do not generate articles with unverified citations. Citation laundering
+(attaching citations to claims they don't support) is a root cause of article failures.
+
 ### Step 2: Generate Articles with GPT 5.2 Pro
 
 Generate all three articles **in parallel** using `mcp__mcp-openai__generate_text`:
@@ -64,11 +94,7 @@ When `state.json` contains a `revision` block, this is a revision cycle triggere
 1. Read `state.json` to get `revision.feedback_file` path (e.g., `feedback/revision1.md`)
 2. Read that feedback file to understand what user requested
 3. The `## Article Changes` section contains specific revision instructions
-4. Archive previous articles before overwriting:
-   - `full.md` → `full.r{N-1}.md`
-   - `medium.md` → `medium.r{N-1}.md`
-   - `short.md` → `short.r{N-1}.md`
-5. Generate new articles that incorporate the feedback
+4. Generate new articles that incorporate the feedback (git provides revision history)
 
 The feedback file is **required reading** during revisions. Articles must address the user's feedback while maintaining all existing quality standards.
 
@@ -116,9 +142,9 @@ Avoid "report voice" (Part I/Part II, CRITICAL FINDING, excessive bullets). If s
 - **Tone:** Long-form investigative/explanatory journalism
 - **Include:**
   - Everything needed to understand and verify the investigation
-  - Brief **Methodology** section: what types of sources were consulted, how claims were selected, limitations
-  - Complete **Sources** section (cited sources with `[S###]`)
-  - **Sources Consulted** section (captured but uncited sources that informed the investigation)
+  - Brief **Methodology** section: what types of sources consulted, how claims were selected, limitations
+  - Complete **Sources Cited** section (sources with `[S###]` markers used in text)
+  - **REQUIRED: Sources Consulted** section listing ALL other captured sources from `sources.json` that informed the investigation but were not directly cited. This provides transparency about the full evidence base.
 - **Appendices preferred** for heavy detail:
   - `## Appendix: Study Notes / Evidence Map`
   - `## Appendix: Implementation Details`
@@ -166,7 +192,7 @@ Adapt subheads as needed. Keep paragraphs short. Make the piece skimmable.
 
 ---
 
-## Sources
+## Sources Cited
 
 [List all sources cited in the article with `[S###]` markers]
 
@@ -175,9 +201,10 @@ Adapt subheads as needed. Keep paragraphs short. Make the piece skimmable.
 
 ## Sources Consulted
 
-[List captured sources that informed the investigation but were not directly cited. These provided background context.]
+[REQUIRED for full.md: List ALL other captured sources from sources.json that informed the investigation but were not directly cited. Read sources.json and include every source not already in Sources Cited above. This section demonstrates the full evidence base examined.]
 
-- [Title](url) — Brief description
+- **[S003]** [Title](url) — Brief description of how it informed the investigation
+- **[S004]** [Title](url) — Brief description
 ```
 
 ---

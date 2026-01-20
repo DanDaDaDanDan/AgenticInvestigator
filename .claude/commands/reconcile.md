@@ -39,6 +39,45 @@ Read:
 - `leads.json` - All lead investigation results
 - `sources.json` - Source capture status
 
+### Step 1.5: Validate Lead Sources (BLOCKING)
+
+**Before reconciling**, validate that lead results with specific claims have sources:
+
+For each lead with status `investigated`:
+
+1. **If result contains statistics/numbers:**
+   - The `sources[]` array MUST be populated
+   - Each source ID in `sources[]` must have `captured: true` in sources.json
+   - The evidence content must actually contain the claimed statistic
+   - **FAIL reconciliation if sources[] is empty for statistical claims**
+
+2. **If result makes factual claims:**
+   - At least one source should be referenced
+   - Source must be captured (evidence/S###/ exists)
+   - **WARN if factual claim has no source** (may proceed with caveat)
+
+**Example of invalid lead result (DO NOT RECONCILE):**
+```json
+{
+  "id": "L015",
+  "status": "investigated",
+  "result": "Found 3,000 agents deployed with $2.5M equipment budget",
+  "sources": []  // INVALID - specific numbers without sources
+}
+```
+
+**Example of valid lead result:**
+```json
+{
+  "id": "L015",
+  "status": "investigated",
+  "result": "Found 3,000 agents deployed with $2.5M equipment budget",
+  "sources": ["S045", "S046"]  // VALID - sources provided
+}
+```
+
+If invalid leads are found, return them for follow-up investigation before reconciliation.
+
 ### Step 2: Identify Contradictions
 
 For each lead with status `investigated` or `dead_end`:
@@ -94,6 +133,12 @@ For each issue found:
 - NEVER use: "CORRECTION:", "UPDATE:", "REVISION:", "Initial finding was wrong"
 - Simply replace incorrect information with correct information
 - Articles must be self-contained - readers shouldn't see editorial process
+
+**Citation requirements when updating summary.md:**
+- Every new claim added to summary.md MUST have a citation [S###]
+- The citation MUST actually support the claim (no citation laundering)
+- If adding a statistic, verify the exact number appears in the cited source
+- If no source supports a claim, add explicit caveats ("unverified reports suggest...")
 
 For each issue:
 

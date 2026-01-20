@@ -164,7 +164,7 @@ Only `--new` creates a new case. All other `/investigate` calls operate on exist
 | 1 | Questions | All `questions/*.md` | Status: investigated (includes custom_questions.md) |
 | 2 | Curiosity | `/curiosity` judgment | ALL leads resolved + HIGH priority complete + `<!-- LEAD:` markers tracked + planning_todos addressed |
 | 3 | Reconciliation | `/reconcile` | Lead results reconciled with summary.md, contradictions resolved |
-| 4 | Article | `articles/*.md` + PDFs | short/medium/full.md exist with [S###] citations + PDFs generated |
+| 4 | Article | `articles/*.md` + PDFs | short/medium/full.md exist with [S###] citations + PDFs + full.md has Sources Consulted section |
 | 5 | Sources | Evidence verification | All [S###] captured + semantically verified + lead results have sources |
 | 6 | Integrity | `/integrity` review | Status: READY |
 | 7 | Legal | `/legal-review` | Status: READY |
@@ -183,8 +183,10 @@ The curiosity gate has automatic failures that cannot be overridden:
 The sources gate performs multiple verification layers:
 - **5a. Capture verification** - All cited sources must have `captured: true`
 - **5b. Fabrication check** - No synthesized/compiled sources
-- **5c. Semantic verification** - Citations must actually support the claims made
-- **5d. Lead source coverage** - Investigated leads with specific findings must have captured sources
+- **5c. Semantic verification** - Citations must actually support the claims made (`scripts/semantic-verify.js`)
+- **5d. Number verification** - Statistics in article match values in cited sources (`scripts/verify-numbers.js`)
+- **5e. Lead source coverage** - Investigated leads with specific findings must have captured sources
+- **5f. Auto-removal** - Last resort for unfixable sources
 
 ---
 
@@ -269,6 +271,9 @@ Uses three-phase pattern: parallel context-free scans → parallel contextual ev
 | `scripts/allocate-sources.js` | Pre-allocate source ID ranges |
 | `scripts/merge-batch-results.js` | Merge parallel follow results |
 | `scripts/merge-question-batches.js` | Merge parallel question results |
+| `scripts/audit-citations.js` | Pre-article citation audit (Gate 5a) |
+| `scripts/semantic-verify.js` | Semantic claim-evidence verification (Gate 5c) |
+| `scripts/verify-numbers.js` | Statistics/number verification (Gate 5d) |
 
 ### Estimated Time Savings
 
@@ -391,8 +396,7 @@ cases/                           ← DATA REPOSITORY ROOT
     │   ├── medium.md            # 2000-4000 words
     │   ├── medium.pdf           # Balanced coverage PDF
     │   ├── full.md              # No length limit - comprehensive
-    │   ├── full.pdf             # Primary deliverable - all findings and conclusions
-    │   └── full.r1.md           # Pre-revision backup (created by /feedback)
+    │   └── full.pdf             # Primary deliverable - all findings and conclusions
     │
     └── feedback/                # Revision history (created by /feedback)
         ├── revision1.md         # First revision feedback + plan
@@ -544,6 +548,11 @@ All `/action` commits go to the **DATA repository** (`cases/.git`), NOT the code
 11. **LEAD RESULTS NEED SOURCES** - If a lead result contains specific numbers/statistics, `sources[]` must be populated
 12. **RECONCILE BEFORE COMPLETE** - Lead results that contradict summary claims must update the summary
 13. **TEMPORAL CONTEXT** - Dated evidence must include dates: `[S###, Month Year]` for statistics/polls
+14. **TWO-SOURCE RULE FOR STATISTICS** - High-salience quantitative claims (agent counts, dollar amounts, percentages) require either:
+    a. A primary source (government data, official records, academic studies), OR
+    b. Two independent secondary sources that report the same figure
+
+    If only one secondary source (news report) is available, caveat with "according to [outlet]" or "reportedly"
 
 ---
 
@@ -712,6 +721,11 @@ osint_get target="https://example.com/paper.pdf" output_path="evidence/S001/pape
 - Do NOT skip reconciliation when lead results contradict summary
 - Do NOT store lead results with statistics but empty sources[]
 - Do NOT omit temporal context for dated evidence
+- Do NOT skip pre-article citation audit (`scripts/audit-citations.js`)
+- Do NOT skip semantic verification (`scripts/semantic-verify.js`)
+- Do NOT skip number verification (`scripts/verify-numbers.js`)
+- Do NOT generate articles when semantic verification flags mismatches
+- Do NOT assume a citation supports a claim without verifying the source contains the fact
 
 ---
 

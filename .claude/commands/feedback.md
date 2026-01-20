@@ -186,11 +186,6 @@ Each revision is tracked:
 - `feedback/revision2.md` - Second revision feedback + plan
 - etc.
 
-Previous article versions are preserved:
-- `articles/full.md` - Current version
-- `articles/full.r1.md` - Pre-revision-1 version
-- `articles/full.r2.md` - Pre-revision-2 version
-
 ## Example
 
 ```
@@ -218,5 +213,4 @@ Proceeding with revision cycle...
 1. Preserve original investigation work
 2. Only re-run gates that feedback affects
 3. Track revision number in state.json
-4. Archive previous article versions before regenerating
-5. New leads use `from: "revision-N"` for traceability
+4. New leads use `from: "revision-N"` for traceability
