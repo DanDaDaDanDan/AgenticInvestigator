@@ -73,21 +73,19 @@ If not complete, return error: "Investigation must be complete before providing 
 
 ### 2. Record Feedback
 
-Create `feedback/revisionN.md` in the case folder:
+Create `feedback/` directory if it doesn't exist, then create `feedback/revisionN.md`:
 ```markdown
 # Revision N Feedback
 
 **Received:** [timestamp]
 **From:** User
 
-## Feedback
+## Original Feedback
 
-[user's feedback text]
-
-## Analysis
-
-[To be filled by revision planning]
+[user's exact feedback text - preserved verbatim for article regeneration]
 ```
+
+The rest of the file (Analysis, Scope Assessment, Article Changes, etc.) is filled in during step 4.
 
 ### 3. Update State
 
@@ -118,13 +116,21 @@ Gates 3-8 reset to require re-verification.
 
 ### 4. Create Revision Plan
 
-Dispatch sub-agent to analyze feedback and create `revision_plan.md`:
+Dispatch sub-agent to analyze feedback and update the feedback file (`feedback/revisionN.md`) with the analysis and plan:
 
 ```markdown
-# Revision Plan
+# Revision N Feedback
 
-## Feedback Summary
-[Condensed version of user feedback]
+**Received:** [timestamp]
+**From:** User
+
+## Original Feedback
+
+[user's exact feedback text - preserved verbatim]
+
+## Analysis
+
+[Sub-agent's analysis of what the feedback requires]
 
 ## Scope Assessment
 - [ ] Requires new research
@@ -133,31 +139,37 @@ Dispatch sub-agent to analyze feedback and create `revision_plan.md`:
 - [ ] Requires perspective additions
 - [ ] Tone/style changes only
 
-## Action Items
-
-### New Leads to Pursue
+## New Leads to Pursue
 - L_R1: [lead from feedback]
 - L_R2: [lead from feedback]
 
-### Questions to Revisit
+## Questions to Revisit
 - [framework]: [specific aspect]
 
-### Article Changes
-- [section]: [change needed]
+## Article Changes
+
+[Specific instructions for article regeneration. This section is READ BY /article during revision cycles.]
+
+- **Section X:** [what to change and why]
+- **Tone:** [any tone/style adjustments]
+- **Coverage:** [areas to expand/reduce]
+- **Missing elements:** [what to add]
 
 ## Estimated Impact
 [Minor/Moderate/Significant revision]
 ```
 
+The feedback file serves as the **contract** between `/feedback` and `/article`. The `/article` command reads this file during revision cycles to understand what changes are required.
+
 ### 5. Execute Revision
 
-Based on revision_plan.md:
+Based on the feedback file's action items:
 
 1. **Add new leads** to `leads.json` with `from: "revision-N"`
 2. **Dispatch** `/action follow` for new leads
 3. **Dispatch** `/action reconcile` to update summary
 4. **Dispatch** `/action curiosity` to verify completeness
-5. **Dispatch** `/action article` to regenerate articles
+5. **Dispatch** `/action article` to regenerate articles (reads feedback file for revision instructions)
 6. **Dispatch** `/action verify` to check all gates
 
 ### 6. Commit

@@ -57,6 +57,21 @@ If a claim appears in `questions/*.md` but not in `summary.md`, **do not include
 
 Do not use outside knowledge. Do not invent anecdotes, quotes, stakeholders, or timelines.
 
+### During Revision Cycles
+
+When `state.json` contains a `revision` block, this is a revision cycle triggered by `/feedback`:
+
+1. Read `state.json` to get `revision.feedback_file` path (e.g., `feedback/revision1.md`)
+2. Read that feedback file to understand what user requested
+3. The `## Article Changes` section contains specific revision instructions
+4. Archive previous articles before overwriting:
+   - `full.md` → `full.r{N-1}.md`
+   - `medium.md` → `medium.r{N-1}.md`
+   - `short.md` → `short.r{N-1}.md`
+5. Generate new articles that incorporate the feedback
+
+The feedback file is **required reading** during revisions. Articles must address the user's feedback while maintaining all existing quality standards.
+
 ---
 
 ## Editorial Goal
