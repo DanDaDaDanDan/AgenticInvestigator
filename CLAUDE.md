@@ -6,7 +6,7 @@ Behavioral rules for Claude Code operating in this project.
 
 ## Repository Architecture
 
-**⚠️ CRITICAL: This project uses TWO INDEPENDENT git repositories.**
+This project uses **two independent git repositories**.
 
 ```
 D:/Personal/AgenticInvestigator/           ← CODE REPOSITORY (.git here)
@@ -55,12 +55,12 @@ D:/Personal/AgenticInvestigator/           ← CODE REPOSITORY (.git here)
 
 ## Workflow
 
-**⚠️ CRITICAL: Only `--new` creates a new case. All other `/investigate` calls operate on existing cases only.**
+Only `--new` creates a new case. All other `/investigate` calls operate on existing cases.
 
 ```
-/investigate --new [topic]     # Creates new case (REQUIRED for new cases)
-/investigate [case-id]         # Resumes existing case (ERROR if not found)
-/investigate                   # Resumes active case (ERROR if no active case)
+/investigate --new [topic]     # Creates new case
+/investigate [case-id]         # Resumes existing case
+/investigate                   # Resumes active case
 ```
 
 ```
@@ -68,7 +68,7 @@ D:/Personal/AgenticInvestigator/           ← CODE REPOSITORY (.git here)
       │
       ▼
 ┌─────────────────┐
-│ CREATE CASE     │  ONLY with --new flag!
+│ CREATE CASE     │  Requires --new flag
 │                 │  node scripts/init-case.js "[topic]"
 │                 │  Creates cases/[topic-slug]/ folder
 │                 │  Commits to DATA REPO (cases/.git)
@@ -134,7 +134,15 @@ D:/Personal/AgenticInvestigator/           ← CODE REPOSITORY (.git here)
 └────────┬────────┘
          │ All pass
          ▼
-     COMPLETE
+     COMPLETE ◄────────────────────┐
+         │                         │
+         ▼ /feedback "..."         │
+┌─────────────────┐                │
+│ REVISION        │  Analyze feedback, create revision_plan.md
+│                 │  Add new leads, re-investigate
+│                 │  Reconcile, rewrite articles
+│                 │  Re-verify all gates
+└─────────────────┘────────────────┘
 ```
 
 ---
@@ -177,6 +185,7 @@ The sources gate performs multiple verification layers:
 |---------|---------|------------|
 | `/investigate --new [topic]` | Start NEW investigation (--new required) | User |
 | `/investigate [case-id]` | Resume existing investigation | User |
+| `/feedback [text]` | Revise completed investigation with feedback | User |
 | `/action` | Router (git + dispatch) | Orchestrator |
 | `/plan-investigation` | Design investigation strategy (3 steps) | Orchestrator |
 | `/research` | Broad topic research | Orchestrator |
@@ -341,7 +350,7 @@ Commands that read large amounts of data should run in sub-agents to avoid pollu
 
 Cases are folders within the **DATA repository** at `cases/[topic-slug]/`.
 
-**⚠️ REMINDER: `cases/` has its own `.git` - all case commits go there, NOT to the root repo.**
+Note: `cases/` has its own `.git` - all case commits go there, not to the root repo.
 
 ```
 cases/                           ← DATA REPOSITORY ROOT
@@ -367,18 +376,23 @@ cases/                           ← DATA REPOSITORY ROOT
     │       ├── content.md
     │       └── screenshot.png
     │
-    └── articles/
-        ├── short.md             # 400-800 words
-        ├── short.pdf            # PDF with Kindle-style typography
-        ├── medium.md            # 2000-4000 words
-        ├── medium.pdf           # Balanced coverage PDF
-        ├── full.md              # No length limit - comprehensive
-        └── full.pdf             # Primary deliverable - all findings and conclusions
+    ├── articles/
+    │   ├── short.md             # 400-800 words
+    │   ├── short.pdf            # PDF with Kindle-style typography
+    │   ├── medium.md            # 2000-4000 words
+    │   ├── medium.pdf           # Balanced coverage PDF
+    │   ├── full.md              # No length limit - comprehensive
+    │   ├── full.pdf             # Primary deliverable - all findings and conclusions
+    │   └── full.r1.md           # Pre-revision backup (created by /feedback)
+    │
+    └── feedback/                # Revision history (created by /feedback)
+        ├── revision1.md         # First revision feedback + plan
+        └── revision2.md         # Second revision feedback + plan
 ```
 
-### Case Creation (Only with --new flag)
+### Case Creation (requires --new)
 
-**⚠️ CRITICAL: Only create a case when the user explicitly specifies `--new`.** Without `--new`, return an error if no existing case is found.
+Only create a case when `--new` is specified. Without it, return an error if no existing case is found.
 
 Run `node scripts/init-case.js "[topic]"` which:
 1. Creates `cases/[topic-slug]/` directory
@@ -436,6 +450,11 @@ All `/action` commits go to the **DATA repository** (`cases/.git`), NOT the code
     "integrity_complete": false,
     "legal_complete": false,
     "last_error": null
+  },
+  "revision": {
+    "number": 1,
+    "feedback_file": "feedback/revision1.md",
+    "started_at": "2026-01-19T12:00:00Z"
   }
 }
 ```
@@ -443,6 +462,11 @@ All `/action` commits go to the **DATA repository** (`cases/.git`), NOT the code
 **Parallel processing fields:**
 - `source_allocations` - Tracks pre-allocated source ID ranges for parallel agents
 - `parallel_review` - Tracks state of parallel integrity/legal review
+
+**Revision fields (present during feedback cycle):**
+- `revision.number` - Current revision number (1, 2, 3...)
+- `revision.feedback_file` - Path to feedback/plan file
+- `revision.started_at` - When revision cycle began
 
 ---
 

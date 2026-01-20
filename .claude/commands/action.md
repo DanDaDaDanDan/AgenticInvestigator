@@ -16,9 +16,9 @@ Every investigation action flows through `/action` to ensure:
 3. Clean orchestrator pattern
 4. **Continuation signal for autonomous operation**
 
-## ⚠️ CRITICAL: Two-Repository System
+## Two-Repository System
 
-This project has **TWO independent git repositories**:
+This project has two independent git repositories:
 
 | Repository | Location | Contains |
 |------------|----------|----------|
@@ -56,6 +56,7 @@ Route to the specified command:
 - `/action integrity` → `/integrity` (**via sub-agent**)
 - `/action legal-review` → `/legal-review` (**via sub-agent**)
 - `/action parallel-review` → `/integrity` + `/legal-review` in parallel (**via sub-agents**)
+- `/action feedback <text>` → `/feedback` (**via sub-agent**) - revision cycle for completed investigations
 
 ### Context Isolation for Heavy Reads
 
