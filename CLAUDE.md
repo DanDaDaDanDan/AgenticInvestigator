@@ -6,7 +6,7 @@ Behavioral rules for Claude Code operating in this project.
 
 ## Repository Architecture
 
-**⚠️ CRITICAL: This project uses TWO INDEPENDENT git repositories.**
+This project uses **two independent git repositories**.
 
 ```
 D:/Personal/AgenticInvestigator/           ← CODE REPOSITORY (.git here)
@@ -55,12 +55,21 @@ D:/Personal/AgenticInvestigator/           ← CODE REPOSITORY (.git here)
 
 ## Workflow
 
+Only `--new` creates a new case. All other `/investigate` calls operate on existing cases.
+
 ```
-/investigate [topic]
+/investigate --new [topic]     # Creates new case
+/investigate [case-id]         # Resumes existing case
+/investigate                   # Resumes active case
+```
+
+```
+/investigate --new [topic]
       │
       ▼
 ┌─────────────────┐
-│ CREATE CASE     │  node scripts/init-case.js "[topic]"
+│ CREATE CASE     │  Requires --new flag
+│                 │  node scripts/init-case.js "[topic]"
 │                 │  Creates cases/[topic-slug]/ folder
 │                 │  Commits to DATA REPO (cases/.git)
 │                 │  All subsequent work happens in the case folder
@@ -125,7 +134,24 @@ D:/Personal/AgenticInvestigator/           ← CODE REPOSITORY (.git here)
 └────────┬────────┘
          │ All pass
          ▼
-     COMPLETE
+┌─────────────────┐
+│ AI SELF-REVIEW  │  First iteration only
+│                 │  Review article as critical editor
+│                 │  Generate feedback if needed
+└────────┬────────┘
+         │
+         ├─── Has feedback ──► /feedback (auto) ──► REVISION ──┐
+         │                                                      │
+         ▼ No feedback or already reviewed                      │
+     COMPLETE ◄─────────────────────────────────────────────────┘
+         │
+         ▼ /feedback "..." (user)
+┌─────────────────┐
+│ REVISION        │  Analyze feedback, create revision plan
+│                 │  Add new leads, re-investigate
+│                 │  Reconcile, rewrite articles
+│                 │  Re-verify all gates
+└─────────────────┘
 ```
 
 ---
@@ -143,7 +169,7 @@ D:/Personal/AgenticInvestigator/           ← CODE REPOSITORY (.git here)
 | 6 | Integrity | `/integrity` review | Status: READY |
 | 7 | Legal | `/legal-review` | Status: READY |
 
-**Termination:** All 8 gates pass.
+**Termination:** All 8 gates pass + AI self-review complete (or no feedback generated).
 
 ### Gate 2 (Curiosity) Hard Blocks
 
@@ -166,7 +192,9 @@ The sources gate performs multiple verification layers:
 
 | Command | Purpose | Invoked By |
 |---------|---------|------------|
-| `/investigate` | Start/resume investigation | User |
+| `/investigate --new [topic]` | Start NEW investigation (--new required) | User |
+| `/investigate [case-id]` | Resume existing investigation | User |
+| `/feedback [text]` | Revise completed investigation with feedback | User |
 | `/action` | Router (git + dispatch) | Orchestrator |
 | `/plan-investigation` | Design investigation strategy (3 steps) | Orchestrator |
 | `/research` | Broad topic research | Orchestrator |
@@ -331,7 +359,7 @@ Commands that read large amounts of data should run in sub-agents to avoid pollu
 
 Cases are folders within the **DATA repository** at `cases/[topic-slug]/`.
 
-**⚠️ REMINDER: `cases/` has its own `.git` - all case commits go there, NOT to the root repo.**
+Note: `cases/` has its own `.git` - all case commits go there, not to the root repo.
 
 ```
 cases/                           ← DATA REPOSITORY ROOT
@@ -357,16 +385,23 @@ cases/                           ← DATA REPOSITORY ROOT
     │       ├── content.md
     │       └── screenshot.png
     │
-    └── articles/
-        ├── short.md             # 400-800 words
-        ├── short.pdf            # PDF with Kindle-style typography
-        ├── medium.md            # 2000-4000 words
-        ├── medium.pdf           # Balanced coverage PDF
-        ├── full.md              # No length limit - comprehensive
-        └── full.pdf             # Primary deliverable - all findings and conclusions
+    ├── articles/
+    │   ├── short.md             # 400-800 words
+    │   ├── short.pdf            # PDF with Kindle-style typography
+    │   ├── medium.md            # 2000-4000 words
+    │   ├── medium.pdf           # Balanced coverage PDF
+    │   ├── full.md              # No length limit - comprehensive
+    │   ├── full.pdf             # Primary deliverable - all findings and conclusions
+    │   └── full.r1.md           # Pre-revision backup (created by /feedback)
+    │
+    └── feedback/                # Revision history (created by /feedback)
+        ├── revision1.md         # First revision feedback + plan
+        └── revision2.md         # Second revision feedback + plan
 ```
 
-### Case Creation (Before PLAN)
+### Case Creation (requires --new)
+
+Only create a case when `--new` is specified. Without it, return an error if no existing case is found.
 
 Run `node scripts/init-case.js "[topic]"` which:
 1. Creates `cases/[topic-slug]/` directory
@@ -424,13 +459,27 @@ All `/action` commits go to the **DATA repository** (`cases/.git`), NOT the code
     "integrity_complete": false,
     "legal_complete": false,
     "last_error": null
-  }
+  },
+  "revision": {
+    "number": 1,
+    "feedback_file": "feedback/revision1.md",
+    "started_at": "2026-01-19T12:00:00Z"
+  },
+  "ai_review_complete": false
 }
 ```
 
 **Parallel processing fields:**
 - `source_allocations` - Tracks pre-allocated source ID ranges for parallel agents
 - `parallel_review` - Tracks state of parallel integrity/legal review
+
+**Revision fields (present during feedback cycle):**
+- `revision.number` - Current revision number (1, 2, 3...)
+- `revision.feedback_file` - Path to feedback/plan file
+- `revision.started_at` - When revision cycle began
+
+**Quality assurance:**
+- `ai_review_complete` - Whether AI self-review has run (triggers once after first successful verification)
 
 ---
 

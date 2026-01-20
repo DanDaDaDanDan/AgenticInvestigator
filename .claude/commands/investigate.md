@@ -5,12 +5,22 @@ Start or resume an investigation.
 ## Usage
 
 ```
-/investigate --new [topic]    # Start new investigation
+/investigate --new [topic]    # Start new investigation (REQUIRED for new cases)
 /investigate                  # Resume active case
 /investigate [case-id]        # Resume specific case
 ```
 
-## ⚠️ Two-Repository System
+## --new Flag Requirement
+
+Only `--new` creates a new case. All other invocations operate on existing cases only.
+
+| Input | Behavior |
+|-------|----------|
+| `--new [topic]` | Creates new case via `init-case.js` |
+| `[case-id]` | Resumes existing case (error if not found) |
+| *(no args)* | Resumes case from `cases/.active` (error if no active case) |
+
+## Two-Repository System
 
 This project has **TWO independent git repositories**:
 - **CODE repo** (root `.git`): Scripts, skills, reference docs
@@ -41,12 +51,14 @@ The `/action` skill handles continuation internally - you just start it.
 CREATE CASE → PLAN → BOOTSTRAP → QUESTION → FOLLOW → WRITE → VERIFY → COMPLETE
 ```
 
-### CREATE CASE (New Cases Only)
+### CREATE CASE (requires --new)
+
+Only create a case when `--new` is specified. Otherwise, return an error if no existing case is found.
 
 1. Run `node scripts/init-case.js "[topic]"` - creates case structure with `phase: PLAN`
-2. Case folder now exists at `cases/[topic-slug]/`
-3. Script commits to **DATA repo** (`cases/.git`)
-4. All subsequent work happens inside the case folder
+3. Case folder now exists at `cases/[topic-slug]/`
+4. Script commits to **DATA repo** (`cases/.git`)
+5. All subsequent work happens inside the case folder
 
 ### PLAN
 

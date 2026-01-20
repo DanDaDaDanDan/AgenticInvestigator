@@ -57,6 +57,21 @@ If a claim appears in `questions/*.md` but not in `summary.md`, **do not include
 
 Do not use outside knowledge. Do not invent anecdotes, quotes, stakeholders, or timelines.
 
+### During Revision Cycles
+
+When `state.json` contains a `revision` block, this is a revision cycle triggered by `/feedback`:
+
+1. Read `state.json` to get `revision.feedback_file` path (e.g., `feedback/revision1.md`)
+2. Read that feedback file to understand what user requested
+3. The `## Article Changes` section contains specific revision instructions
+4. Archive previous articles before overwriting:
+   - `full.md` → `full.r{N-1}.md`
+   - `medium.md` → `medium.r{N-1}.md`
+   - `short.md` → `short.r{N-1}.md`
+5. Generate new articles that incorporate the feedback
+
+The feedback file is **required reading** during revisions. Articles must address the user's feedback while maintaining all existing quality standards.
+
 ---
 
 ## Editorial Goal
@@ -64,7 +79,7 @@ Do not use outside knowledge. Do not invent anecdotes, quotes, stakeholders, or 
 Write with a clear story spine:
 
 - **Lede** that captures the central tension in concrete terms (no hype, no moralizing)
-- **Nut graf** early: what the investigation examined, what it found, why it matters
+- **Nut graf** early: the question investigated, key findings, why it matters to readers
 - A structured arc: *what's happening → what the evidence says → what breaks in reality → honest implications*
 - End with a conclusion **earned** by the evidence, explicitly noting **uncertainties and limits**
 
@@ -101,8 +116,9 @@ Avoid "report voice" (Part I/Part II, CRITICAL FINDING, excessive bullets). If s
 - **Tone:** Long-form investigative/explanatory journalism
 - **Include:**
   - Everything needed to understand and verify the investigation
-  - Brief **Methodology** section: what was reviewed, how claims were selected, limitations
-  - Complete **Sources** section
+  - Brief **Methodology** section: what types of sources were consulted, how claims were selected, limitations
+  - Complete **Sources** section (cited sources with `[S###]`)
+  - **Sources Consulted** section (captured but uncited sources that informed the investigation)
 - **Appendices preferred** for heavy detail:
   - `## Appendix: Study Notes / Evidence Map`
   - `## Appendix: Implementation Details`
@@ -119,7 +135,7 @@ Adapt subheads as needed. Keep paragraphs short. Make the piece skimmable.
 
 *[Lede: 1-2 sentences. Concrete tension, not vague trend language.]*
 
-[Nut graf: 3-6 sentences. What was examined, key findings, why it matters.]
+[Nut graf: 3-6 sentences. The question at stake, key findings, why it matters.]
 
 ## [The Core Dynamic]
 [Why this matters, what creates the tension]
@@ -141,10 +157,27 @@ Adapt subheads as needed. Keep paragraphs short. Make the piece skimmable.
 
 ---
 
+## Methodology (full.md only)
+
+[Brief description of approach:
+- Types of sources consulted (academic research, government data, court records, news reports, etc.)
+- How claims were selected for inclusion
+- Key limitations and what was not examined]
+
+---
+
 ## Sources
+
+[List all sources cited in the article with `[S###]` markers]
 
 - **[S001]** [Title](url) — Brief description
 - **[S002]** [Title](url) — Brief description
+
+## Sources Consulted
+
+[List captured sources that informed the investigation but were not directly cited. These provided background context.]
+
+- [Title](url) — Brief description
 ```
 
 ---

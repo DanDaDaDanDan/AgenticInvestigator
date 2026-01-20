@@ -371,7 +371,11 @@ function main() {
     console.log('═══════════════════════════════════════════════════════');
     console.log('Status: ERROR');
     console.log('Reason: No active case found');
-    console.log('Next: /investigate --new [topic]');
+    console.log('');
+    console.log('To start a new investigation, use --new flag:');
+    console.log('  /investigate --new [topic]');
+    console.log('');
+    console.log('Without --new, only existing cases can be resumed.');
     console.log('═══════════════════════════════════════════════════════');
     process.exit(1);
   }
