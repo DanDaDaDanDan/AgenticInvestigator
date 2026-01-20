@@ -68,6 +68,8 @@ CREATE CASE → PLAN → BOOTSTRAP → QUESTION → FOLLOW → WRITE → VERIFY 
 Dispatch `/action question` for batches 1-5 (all 35 frameworks) + custom_questions.md from planning.
 When all questions answered (including custom), update state.json: phase=FOLLOW, gates.questions=true
 
+**Parallel option:** Use `/action question-parallel` to run all 5 batches concurrently (~5x faster).
+
 ### FOLLOW
 
 1. Read `leads.json` for pending leads
@@ -76,6 +78,9 @@ When all questions answered (including custom), update state.json: phase=FOLLOW,
 4. After reconciliation: dispatch `/action curiosity` to evaluate completeness
 5. If NOT SATISFIED: continue investigating, follow new leads
 6. If SATISFIED: update state.json: phase=WRITE, gates.curiosity=true, gates.reconciliation=true
+
+**Parallel option:** Use `/action follow-batch L001 L002 L003 L004` to process 3-5 leads concurrently (~4x faster).
+Use `node scripts/check-continue.js <case-path> --batch` to get batch recommendations.
 
 ### WRITE
 
@@ -87,6 +92,8 @@ Update state.json: phase=VERIFY, gates.article=true
 Dispatch `/action verify` to check all 8 gates.
 - If ANY fail: fix issues, loop back
 - If ALL pass: phase=COMPLETE
+
+**Parallel option:** When Gate 5 passes and Gates 6+7 both need to run, use `/action parallel-review` to run integrity and legal reviews concurrently (~2x faster).
 
 ## Orchestrator Rules
 

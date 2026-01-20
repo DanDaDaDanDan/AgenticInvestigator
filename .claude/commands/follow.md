@@ -6,6 +6,29 @@ Investigate a single lead to its conclusion.
 
 ```
 /follow <lead-id>
+/follow <lead-id> --source-range <start>-<end> --batch-id <id>
+```
+
+### Batch Mode Parameters
+
+When called as part of parallel batch processing:
+
+- `--source-range <start>-<end>` - Pre-allocated source ID range (e.g., `48-60`)
+- `--batch-id <id>` - Batch identifier for result merging
+- `--output-temp` - Write results to temp files instead of main files
+
+In batch mode, output is a structured JSON result instead of direct file updates:
+
+```json
+{
+  "lead_id": "L001",
+  "status": "investigated",
+  "result": "Found relevant data in S048",
+  "sources_used": ["S048", "S049"],
+  "new_leads": [...],
+  "summary_fragment": "...",
+  "framework_finding": { "file": "01-follow-the-money.md", "content": "..." }
+}
 ```
 
 ## Task

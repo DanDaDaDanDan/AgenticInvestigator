@@ -5,7 +5,11 @@
  * Reads state.json and leads.json to determine next action.
  * Called by /action after each command to tell orchestrator what to do next.
  *
- * Usage: node scripts/check-continue.js [case-path]
+ * Usage: node scripts/check-continue.js [case-path] [--batch] [--batch-size N]
+ *
+ * Options:
+ *   --batch         Enable batch mode for parallel lead processing
+ *   --batch-size N  Number of leads per batch (default: 4)
  *
  * Output format:
  * ═══════════════════════════════════════════════════════
@@ -76,6 +80,38 @@ function getNextPendingLead(leads) {
   return pendingLeads.length > 0 ? pendingLeads[0] : null;
 }
 
+/**
+ * Get a batch of pending leads for parallel processing
+ * @param {Array} leads - All leads
+ * @param {number} batchSize - Number of leads to select
+ * @returns {Array} Selected leads
+ */
+function getBatchOfPendingLeads(leads, batchSize = 4) {
+  const priorityOrder = { 'HIGH': 0, 'MEDIUM': 1, 'LOW': 2 };
+  const STALE_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
+
+  // Filter to pending, unclaimed leads
+  const available = leads.filter(l => {
+    if (l.status !== 'pending') return false;
+    // Skip if claimed and not stale
+    if (l.claimed_by && l.claimed_at) {
+      const claimTime = new Date(l.claimed_at).getTime();
+      if (Date.now() - claimTime < STALE_THRESHOLD_MS) return false;
+    }
+    return true;
+  });
+
+  // Sort by priority (HIGH first), then depth (shallower first)
+  available.sort((a, b) => {
+    const aPriority = priorityOrder[a.priority] ?? 3;
+    const bPriority = priorityOrder[b.priority] ?? 3;
+    if (aPriority !== bPriority) return aPriority - bPriority;
+    return (a.depth || 0) - (b.depth || 0);
+  });
+
+  return available.slice(0, batchSize);
+}
+
 function countLeadsByStatus(leads) {
   const counts = { pending: 0, investigated: 0, dead_end: 0, total: leads.length };
   leads.forEach(l => {
@@ -86,8 +122,9 @@ function countLeadsByStatus(leads) {
   return counts;
 }
 
-function determineNextAction(state, casePath) {
+function determineNextAction(state, casePath, options = {}) {
   const { phase, gates } = state;
+  const { batchMode = false, batchSize = 4 } = options;
 
   // Check if all gates pass
   const allGatesPass = Object.values(gates).every(Boolean);
@@ -144,22 +181,64 @@ function determineNextAction(state, casePath) {
 
     case 'FOLLOW':
       // Check for pending leads - MUST pursue ALL before reconcile/curiosity
-      const nextLead = getNextPendingLead(leads);
+      if (batchMode) {
+        // Batch mode: select multiple leads for parallel processing
+        const batchLeads = getBatchOfPendingLeads(leads, batchSize);
 
-      if (nextLead) {
-        // There are pending leads - MUST follow them
-        return {
-          status: 'CONTINUE',
-          next: `/action follow ${nextLead.id}`,
-          reason: `Pending lead: "${nextLead.lead}"`,
-          leadInfo: {
-            pending: leadCounts.pending,
-            investigated: leadCounts.investigated,
-            dead_end: leadCounts.dead_end,
-            total: leadCounts.total,
-            nextLead: nextLead
-          }
-        };
+        if (batchLeads.length > 1) {
+          // Multiple leads available - recommend batch processing
+          const leadIds = batchLeads.map(l => l.id).join(' ');
+          return {
+            status: 'CONTINUE',
+            next: `/action follow-batch ${leadIds}`,
+            reason: `Batch processing ${batchLeads.length} leads in parallel`,
+            leadInfo: {
+              pending: leadCounts.pending,
+              investigated: leadCounts.investigated,
+              dead_end: leadCounts.dead_end,
+              total: leadCounts.total,
+              batchLeads: batchLeads
+            },
+            batchRecommendation: {
+              size: batchLeads.length,
+              leads: batchLeads.map(l => ({ id: l.id, priority: l.priority, lead: l.lead }))
+            }
+          };
+        } else if (batchLeads.length === 1) {
+          // Only one lead - use single follow
+          return {
+            status: 'CONTINUE',
+            next: `/action follow ${batchLeads[0].id}`,
+            reason: `Pending lead: "${batchLeads[0].lead}"`,
+            leadInfo: {
+              pending: leadCounts.pending,
+              investigated: leadCounts.investigated,
+              dead_end: leadCounts.dead_end,
+              total: leadCounts.total,
+              nextLead: batchLeads[0]
+            }
+          };
+        }
+        // Fall through to reconcile if no pending leads
+      } else {
+        // Sequential mode: process one lead at a time
+        const nextLead = getNextPendingLead(leads);
+
+        if (nextLead) {
+          // There are pending leads - MUST follow them
+          return {
+            status: 'CONTINUE',
+            next: `/action follow ${nextLead.id}`,
+            reason: `Pending lead: "${nextLead.lead}"`,
+            leadInfo: {
+              pending: leadCounts.pending,
+              investigated: leadCounts.investigated,
+              dead_end: leadCounts.dead_end,
+              total: leadCounts.total,
+              nextLead: nextLead
+            }
+          };
+        }
       }
 
       // All leads are terminal - first reconcile lead results with summary
@@ -222,6 +301,22 @@ function determineNextAction(state, casePath) {
         .map(([k, _]) => k);
 
       if (failingGates.length > 0) {
+        // Check for parallel review opportunity: Gate 5 (sources) passes, Gates 6+7 fail
+        const sourcesPass = gates.sources;
+        const integrityFails = !gates.integrity;
+        const legalFails = !gates.legal;
+
+        if (sourcesPass && integrityFails && legalFails) {
+          // Both integrity and legal need to run - use parallel review
+          return {
+            status: 'CONTINUE',
+            next: '/action parallel-review',
+            reason: 'Parallel integrity + legal review (Gate 5 passed)',
+            leadInfo: null,
+            parallelReviewOpportunity: true
+          };
+        }
+
         return {
           status: 'CONTINUE',
           next: `/action verify (failing: ${failingGates.join(', ')})`,
@@ -244,9 +339,31 @@ function determineNextAction(state, casePath) {
   }
 }
 
+function parseArgs(args) {
+  const options = {
+    casePath: null,
+    batchMode: false,
+    batchSize: 4
+  };
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--batch') {
+      options.batchMode = true;
+    } else if (args[i] === '--batch-size' && args[i + 1]) {
+      options.batchSize = parseInt(args[i + 1], 10);
+      i++;
+    } else if (!args[i].startsWith('-')) {
+      options.casePath = args[i];
+    }
+  }
+
+  return options;
+}
+
 function main() {
   const args = process.argv.slice(2);
-  const casePath = findCasePath(args[0]);
+  const options = parseArgs(args);
+  const casePath = findCasePath(options.casePath);
 
   if (!casePath) {
     console.log('═══════════════════════════════════════════════════════');
@@ -263,7 +380,10 @@ function main() {
   const state = JSON.parse(fs.readFileSync(statePath, 'utf-8'));
 
   const passingGates = countPassingGates(state.gates);
-  const result = determineNextAction(state, casePath);
+  const result = determineNextAction(state, casePath, {
+    batchMode: options.batchMode,
+    batchSize: options.batchSize
+  });
 
   console.log('');
   console.log('═══════════════════════════════════════════════════════');
@@ -278,6 +398,21 @@ function main() {
   if (result.leadInfo) {
     console.log('───────────────────────────────────────────────────────');
     console.log(`Leads: ${result.leadInfo.pending} pending, ${result.leadInfo.investigated} investigated, ${result.leadInfo.dead_end} dead_end`);
+
+    // Show batch recommendation if available
+    if (result.batchRecommendation) {
+      console.log(`Batch: ${result.batchRecommendation.size} leads selected for parallel processing`);
+      result.batchRecommendation.leads.forEach(l => {
+        const leadText = l.lead.length > 50 ? l.lead.substring(0, 50) + '...' : l.lead;
+        console.log(`  - ${l.id} [${l.priority}]: ${leadText}`);
+      });
+    }
+  }
+
+  // Show parallel review opportunity
+  if (result.parallelReviewOpportunity) {
+    console.log('───────────────────────────────────────────────────────');
+    console.log('Parallel review: integrity + legal can run simultaneously');
   }
 
   console.log('───────────────────────────────────────────────────────');

@@ -5,9 +5,27 @@ Two-stage review: context-free detection, then contextual evaluation with eviden
 ## Usage
 
 ```
-/legal-review              # Review active case
-/legal-review [case-id]    # Review specific case
+/legal-review              # Full review (Stage 1 + Stage 2)
+/legal-review [case-id]    # Full review for specific case
+/legal-review --stage-1-only [case-id]   # Context-free scan only (for parallel execution)
+/legal-review --stage-2-only [case-id] --flags <json>  # Contextual evaluation only
 ```
+
+## Split-Phase Modes (for Parallel Execution)
+
+### `--stage-1-only`
+
+Read ONLY `articles/full.md`. Return JSON with `flags[]` array.
+Each flag: `{id, quote, location, issue, to_clear}`
+
+### `--stage-2-only --flags <json>`
+
+Read full context. For each flag, return resolution:
+- `CLEARED` - with evidence (S###) and quote
+- `FIX_REQUIRED` - with specific fix text
+- `ESCALATE` - with reason
+
+Used by `/parallel-review` for concurrent execution.
 
 ---
 

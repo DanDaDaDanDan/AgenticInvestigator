@@ -147,6 +147,22 @@ Invoke `/integrity` if not already run.
 ### Gate 7: Legal
 Invoke `/legal-review` if not already run.
 
+### Gates 6+7: Parallel Review Optimization
+
+When Gate 5 passes and both Gates 6 and 7 need to run, use `/parallel-review` for faster execution:
+
+```
+If gates.sources === true && gates.integrity === false && gates.legal === false:
+  → Use /action parallel-review instead of sequential /integrity then /legal-review
+```
+
+This runs both reviews concurrently using the three-phase pattern:
+1. Parallel Stage 1 (context-free scans)
+2. Parallel Stage 2 (contextual evaluation)
+3. Sequential fix application
+
+See `/parallel-review` command for details.
+
 ## Output
 
 Update `state.json` gates with results.

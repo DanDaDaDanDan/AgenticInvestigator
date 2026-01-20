@@ -45,7 +45,9 @@ Route to the specified command:
 - `/action plan-investigation <topic>` → `/plan-investigation` (**via sub-agents** - 3 sequential steps)
 - `/action research <topic>` → `/research` (**via sub-agent**)
 - `/action question <batch>` → `/question`
+- `/action question-parallel` → `/question` (all 5 batches in parallel, **via sub-agents**)
 - `/action follow <lead-id>` → `/follow`
+- `/action follow-batch <L001> <L002> ...` → Multiple `/follow` in parallel (**via sub-agents**)
 - `/action reconcile` → `/reconcile` (**via sub-agent**)
 - `/action curiosity` → `/curiosity` (**via sub-agent**)
 - `/action capture-source <url>` → `/capture-source`
@@ -53,6 +55,7 @@ Route to the specified command:
 - `/action article` → `/article` (**via sub-agent**)
 - `/action integrity` → `/integrity` (**via sub-agent**)
 - `/action legal-review` → `/legal-review` (**via sub-agent**)
+- `/action parallel-review` → `/integrity` + `/legal-review` in parallel (**via sub-agents**)
 
 ### Context Isolation for Heavy Reads
 
@@ -76,6 +79,30 @@ Task (subagent_type: "general-purpose")
 ```
 
 Sub-agent returns structured result. Main context stays clean.
+
+### Parallel Processing Commands
+
+#### `/action follow-batch L001 L002 L003 L004`
+
+1. `node scripts/leads-lock.js batch-claim <case> L001 L002 L003 L004`
+2. `node scripts/allocate-sources.js allocate <case> 48 <batch-id>`
+3. Spawn parallel Task agents for each lead with `--source-range` and `--batch-id`
+4. `node scripts/merge-batch-results.js <case> <batch-id> <results-json>`
+5. Single git commit: `[case-id] /follow-batch: L001 L002 L003 L004`
+
+#### `/action question-parallel`
+
+1. Allocate: 100 source IDs + 50 lead IDs per batch
+2. Spawn 5 parallel Tasks: `/question N --parallel --source-start X --source-end Y`
+3. `node scripts/merge-question-batches.js <case>`
+4. Run batch 6 (custom_questions.md) if exists
+
+#### `/action parallel-review`
+
+See `/parallel-review` command. Three phases:
+1. Parallel Stage 1: context-free scans (integrity + legal)
+2. Parallel Stage 2: contextual evaluation with flags
+3. Sequential: merge fixes, detect conflicts, apply/ESCALATE
 
 ### 3. Post-Processing
 

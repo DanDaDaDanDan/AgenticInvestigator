@@ -7,6 +7,7 @@ Apply the 35 analytical frameworks via structured Q&A.
 ```
 /question <batch-number>
 /question all
+/question <batch-number> --parallel --source-start N --source-end M --lead-start X --lead-end Y
 ```
 
 **Batches:**
@@ -16,6 +17,82 @@ Apply the 35 analytical frameworks via structured Q&A.
 - Batch 4: Frameworks 21-25
 - Batch 5: Frameworks 26-35
 - Batch 6: Custom questions from planning (if `custom_questions.md` exists)
+
+## Parallel Mode
+
+When called with `--parallel` flag, operates in isolation mode for parallel execution:
+
+```
+/question 1 --parallel --source-start 1 --source-end 100 --lead-start 1 --lead-end 50
+```
+
+### Parameters
+- `--parallel` - Enable parallel mode (writes to temp files)
+- `--source-start N` - First source ID in pre-allocated range
+- `--source-end M` - Last source ID in range (exclusive)
+- `--lead-start X` - First lead ID in pre-allocated range
+- `--lead-end Y` - Last lead ID in range (exclusive)
+
+### Output Files (Parallel Mode)
+
+Instead of updating main files directly, parallel mode writes to temp files:
+
+```
+temp/
+├── summary-batch-1.md       # Summary findings for this batch
+├── leads-batch-1.json       # New leads generated (with pre-allocated IDs)
+└── sources-batch-1.json     # Sources captured (with pre-allocated IDs)
+```
+
+These are later merged by `scripts/merge-question-batches.js`.
+
+### Source ID Assignment (Parallel Mode)
+
+Use source IDs from your allocated range:
+```
+# If allocated range 1-100, use S001, S002, ... S099
+# Track highest used in your batch for merge script
+```
+
+### Lead ID Assignment (Parallel Mode)
+
+Use lead IDs from your allocated range:
+```
+# If allocated range 1-50, use L001, L002, ... L049
+# Track highest used in your batch for merge script
+```
+
+### Reporting Results (Parallel Mode)
+
+When in parallel mode, include a metadata block at the end of each temp file for the merge script:
+
+**In `sources-batch-N.json`:**
+```json
+{
+  "sources": [...],
+  "_batch_metadata": {
+    "batch_num": 1,
+    "source_range": { "start": 1, "end": 100 },
+    "highest_used": 47,
+    "completed_at": "2026-01-19T10:30:00Z"
+  }
+}
+```
+
+**In `leads-batch-N.json`:**
+```json
+{
+  "leads": [...],
+  "_batch_metadata": {
+    "batch_num": 1,
+    "lead_range": { "start": 1, "end": 50 },
+    "highest_used": 23,
+    "completed_at": "2026-01-19T10:30:00Z"
+  }
+}
+```
+
+This metadata enables the merge script to correctly update `state.json.next_source` and detect ID collisions.
 
 ## Task
 

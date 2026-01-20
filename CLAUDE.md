@@ -171,7 +171,9 @@ The sources gate performs multiple verification layers:
 | `/plan-investigation` | Design investigation strategy (3 steps) | Orchestrator |
 | `/research` | Broad topic research | Orchestrator |
 | `/question` | Answer framework batch | Orchestrator |
+| `/question-parallel` | All 5 batches in parallel | Orchestrator |
 | `/follow` | Pursue single lead | Orchestrator |
+| `/follow-batch` | Multiple leads in parallel | Orchestrator |
 | `/reconcile` | Sync lead results with summary.md | Orchestrator |
 | `/curiosity` | Check lead exhaustion | Orchestrator |
 | `/capture-source` | Capture evidence | Any agent |
@@ -179,6 +181,75 @@ The sources gate performs multiple verification layers:
 | `/article` | Write publication | Orchestrator |
 | `/integrity` | Journalistic check | Orchestrator |
 | `/legal-review` | Legal risk check | Orchestrator |
+| `/parallel-review` | Integrity + Legal in parallel | Orchestrator |
+
+---
+
+## Parallel Processing
+
+Three phases support parallel execution for faster investigation:
+
+### QUESTION Phase (~5x speedup)
+
+```bash
+# Sequential (default)
+/action question 1
+/action question 2
+...
+
+# Parallel
+/action question-parallel
+```
+
+Runs all 5 framework batches concurrently. Uses pre-allocated source/lead ID ranges.
+
+### FOLLOW Phase (~4x speedup)
+
+```bash
+# Sequential (default)
+/action follow L001
+/action follow L002
+...
+
+# Parallel (batch of 4)
+/action follow-batch L001 L002 L003 L004
+```
+
+Get batch recommendations:
+```bash
+node scripts/check-continue.js cases/<case-id>/ --batch --batch-size 4
+```
+
+### VERIFY Phase (~2x speedup for Gates 6+7)
+
+```bash
+# Sequential (default)
+/action integrity
+/action legal-review
+
+# Parallel (when Gate 5 passes, Gates 6+7 both fail)
+/action parallel-review
+```
+
+Uses three-phase pattern: parallel context-free scans → parallel contextual evaluation → sequential fix application.
+
+### Supporting Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/leads-lock.js` | Optimistic locking for parallel lead processing |
+| `scripts/allocate-sources.js` | Pre-allocate source ID ranges |
+| `scripts/merge-batch-results.js` | Merge parallel follow results |
+| `scripts/merge-question-batches.js` | Merge parallel question results |
+
+### Estimated Time Savings
+
+| Phase | Sequential | Parallel | Savings |
+|-------|------------|----------|---------|
+| QUESTION (35 frameworks) | ~25 min | ~5 min | 20 min |
+| FOLLOW (20 leads) | ~40 min | ~10 min | 30 min |
+| VERIFY (Gates 6-7) | ~20 min | ~12 min | 8 min |
+| **Total** | ~85 min | ~27 min | **~58 min (68%)** |
 
 ---
 
@@ -340,9 +411,26 @@ All `/action` commits go to the **DATA repository** (`cases/.git`), NOT the code
     "sources": false,
     "integrity": false,
     "legal": false
+  },
+  "source_allocations": {
+    "batch_1705612345": {
+      "start": 48,
+      "end": 60,
+      "allocated_at": "2026-01-19T10:00:00Z",
+      "status": "active"
+    }
+  },
+  "parallel_review": {
+    "integrity_complete": false,
+    "legal_complete": false,
+    "last_error": null
   }
 }
 ```
+
+**Parallel processing fields:**
+- `source_allocations` - Tracks pre-allocated source ID ranges for parallel agents
+- `parallel_review` - Tracks state of parallel integrity/legal review
 
 ---
 
@@ -350,6 +438,7 @@ All `/action` commits go to the **DATA repository** (`cases/.git`), NOT the code
 
 ```json
 {
+  "version": 47,
   "max_depth": 3,
   "leads": [
     {
@@ -370,12 +459,18 @@ All `/action` commits go to the **DATA repository** (`cases/.git`), NOT the code
       "priority": "MEDIUM",
       "depth": 1,
       "parent": "L001",
-      "status": "dead_end",
-      "result": "Data not disaggregated"
+      "status": "pending",
+      "claimed_by": "pid_12345_1705612345000",
+      "claimed_at": "2026-01-19T10:00:00Z"
     }
   ]
 }
 ```
+
+**Parallel processing fields:**
+- `version` - Increments on each write (optimistic locking)
+- `claimed_by` - Agent ID that claimed this lead for processing
+- `claimed_at` - Timestamp of claim (stale after 30 minutes)
 
 **Depth tracking:**
 - `depth: 0` - Original leads from research/questions
