@@ -55,12 +55,21 @@ D:/Personal/AgenticInvestigator/           ← CODE REPOSITORY (.git here)
 
 ## Workflow
 
+**⚠️ CRITICAL: Only `--new` creates a new case. All other `/investigate` calls operate on existing cases only.**
+
 ```
-/investigate [topic]
+/investigate --new [topic]     # Creates new case (REQUIRED for new cases)
+/investigate [case-id]         # Resumes existing case (ERROR if not found)
+/investigate                   # Resumes active case (ERROR if no active case)
+```
+
+```
+/investigate --new [topic]
       │
       ▼
 ┌─────────────────┐
-│ CREATE CASE     │  node scripts/init-case.js "[topic]"
+│ CREATE CASE     │  ONLY with --new flag!
+│                 │  node scripts/init-case.js "[topic]"
 │                 │  Creates cases/[topic-slug]/ folder
 │                 │  Commits to DATA REPO (cases/.git)
 │                 │  All subsequent work happens in the case folder
@@ -166,7 +175,8 @@ The sources gate performs multiple verification layers:
 
 | Command | Purpose | Invoked By |
 |---------|---------|------------|
-| `/investigate` | Start/resume investigation | User |
+| `/investigate --new [topic]` | Start NEW investigation (--new required) | User |
+| `/investigate [case-id]` | Resume existing investigation | User |
 | `/action` | Router (git + dispatch) | Orchestrator |
 | `/plan-investigation` | Design investigation strategy (3 steps) | Orchestrator |
 | `/research` | Broad topic research | Orchestrator |
@@ -366,7 +376,9 @@ cases/                           ← DATA REPOSITORY ROOT
         └── full.pdf             # Primary deliverable - all findings and conclusions
 ```
 
-### Case Creation (Before PLAN)
+### Case Creation (Only with --new flag)
+
+**⚠️ CRITICAL: Only create a case when the user explicitly specifies `--new`.** Without `--new`, return an error if no existing case is found.
 
 Run `node scripts/init-case.js "[topic]"` which:
 1. Creates `cases/[topic-slug]/` directory
