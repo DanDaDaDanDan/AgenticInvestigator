@@ -27,18 +27,9 @@ Verify investigation readiness for publication.
 | 2 | Curiosity | `/curiosity` returns SATISFIED |
 | 3 | Reconciliation | All lead results reconciled with summary.md |
 | 4 | Article | `articles/full.md` + `full.pdf` exist with [S###] citations |
-| 5 | Sources | All [S###] citations captured, verified, and semantically support claims |
+| 5 | Sources | **Unified Verification Pipeline** - 5-step verification with audit trail |
 | 6 | Integrity | `/integrity` returns READY |
 | 7 | Legal | `/legal-review` returns READY |
-
-## MCP Tools for Verification
-
-Gate 5 (Sources) requires **semantic verification** - checking that evidence actually supports claims. Consider using:
-
-- `mcp__mcp-gemini__generate_text` for semantic claim-evidence matching
-- `mcp__mcp-openai__generate_text` for complex judgment calls
-
-This is about verifying that citations actually support what they're cited for, not just that they exist.
 
 ## Gate Details
 
@@ -48,7 +39,7 @@ Verify investigation planning was completed:
 - Verify planning outputs exist in case directory: `refined_prompt.md`, `investigation_plan.md`
 - If `custom_questions.md` exists, verify it was processed during QUESTION phase
 
-**Note:** This gate is typically already passed by the time we reach VERIFY. It's checked for completeness.
+**Note:** This gate is typically already passed by the time we reach VERIFY.
 
 ### Gate 1: Questions
 Check each `questions/*.md` file has Status: investigated or not-applicable.
@@ -84,117 +75,75 @@ Verify:
 3. Verify "Sources Consulted" section exists and lists remaining sources
 4. **FAIL if:** Sources Consulted section is missing or empty when uncited sources exist
 
-### Gate 5: Sources (Enhanced)
+### Gate 5: Sources - Unified Verification Pipeline
 
-For each [S###] citation in summary.md and articles, verify:
-
-**5a. Capture Verification (BLOCKING)**
-
-Check sources.json for each cited source:
-```json
-{ "id": "S###", "captured": true }  // REQUIRED
-```
-
-**FAIL IMMEDIATELY if ANY cited source has:**
-- `captured: false` in sources.json
-- Missing entry in sources.json
-- Empty or missing `evidence/S###/` directory
-- No `metadata.json` in evidence folder
-
-This is a HARD BLOCK. Do not proceed to 5b until all sources are captured.
-
-**5b. Source Integrity (Fabrication Check)**
-
-Check each evidence/S###/ folder:
-```bash
-ls evidence/S###/
-```
-
-**FAIL if:**
-- content.md starts with "Research compilation..."
-- URL in sources.json is a homepage, not specific article
-- Timestamp is suspiciously round (e.g., `T20:00:00.000Z`)
-- No `_capture_signature` in metadata.json
-
-These indicate fabricated sources that must be deleted and re-captured properly.
-
-**5c. Claim Verification (Full Audit Trail) - AUTOMATED**
-
-Run the comprehensive claim verification script:
+**Run the unified 5-step verification pipeline:**
 
 ```bash
-node scripts/verify-claims.js cases/<case-id>/ --generate-audit --generate-report --block
+node scripts/verification/index.js cases/<case-id>/ --generate-report --block
 ```
 
-This script:
-1. Extracts ALL factual claims from `articles/full.md`
-2. Classifies claims (quantitative, attribution, temporal, etc.)
-3. Performs tiered verification:
-   - Tier 1: Fast heuristics (exact number/term matching)
-   - Tier 2: LLM semantic verification (for heuristic failures)
-4. Stores per-source verification in `evidence/S###/claim-support.json`
-5. Generates persistent audit trail: `claim-verification.json`
-6. Generates human-readable report: `claim-verification-report.md`
+This runs all verification steps in sequence with cryptographic chain hash:
 
-For flagged citations needing LLM verification, use `mcp__mcp-gemini__generate_text` (model: gemini-3-pro) with prompts from the script output.
+#### Step 1: CAPTURE
+Verifies each cited source has:
+- Entry in sources.json with `captured: true`
+- `evidence/S###/` directory exists
+- `metadata.json` is valid
+- `content.md` is not empty
+
+#### Step 2: INTEGRITY
+Hash verification and red flag detection:
+- `_capture_signature` present in metadata.json
+- Hash matches computed hash (content not tampered)
+- No fabrication patterns (round timestamps, homepage URLs, "compilation" content)
+
+#### Step 3: BINDING (CRITICAL NEW STEP)
+**Three-way URL consistency check:**
+
+This step catches citation laundering where the URL in the article differs from what was captured:
+
+| Location | URL Must Match |
+|----------|---------------|
+| Article citation | `[S001](https://example.com/article)` |
+| sources.json | `"url": "https://example.com/article"` |
+| metadata.json | `"url": "https://example.com/article"` |
+
+After URL normalization (removing www, trailing slashes, etc), ALL THREE must match.
+
+**ANY mismatch is a BLOCKING failure** - it means the citation may point to a different resource than what was captured.
+
+#### Step 4: SEMANTIC
+Claim-evidence verification using two tiers:
+- Tier 1: Fast heuristics (statistics in source, key terms present)
+- Tier 2: LLM prompts generated for claims failing heuristics
+
+Updates `evidence/S###/claim-support.json` with verification results.
+
+#### Step 5: STATISTICS
+Number matching verification:
+- Extracts percentages, dollar amounts, counts with citations
+- Searches cited source for exact numbers
+- Flags mismatches (e.g., article says 72% but source says 52%)
 
 **Outputs:**
-- `claim-verification.json` - Complete audit trail with all claims and evidence mappings
-- `claim-verification-report.md` - Human-readable summary with actionable items
-- `evidence/S###/claim-support.json` - Per-source verification records (persists with evidence)
+- `verification-state.json` - Complete pipeline state with chain hash
+- `verification-report.md` - Human-readable report with actionable fixes
 
-**FAIL if:**
-- Any claim has `status: failed`
-- >10% of claims have `status: flagged_review`
-- Any quantitative claim has confidence < 0.60
-- Missing evidence for cited sources
+**Blocking Criteria:**
+- ANY source not captured (Step 1)
+- ANY URL mismatch (Step 3) - Maximum: 0
+- ANY orphan citation (Step 3) - Maximum: 0
+- >10% claims unsupported (Step 4)
+- ANY statistic mismatch (Step 5)
 
-This catches **citation laundering** - attaching citations to claims they don't support.
+**If Pipeline Fails:**
 
-**Note:** `semantic-verify.js` is deprecated. All functionality is now in `verify-claims.js`.
-
-**5d. Number Verification (Statistics Match) - AUTOMATED**
-
-Run the number verification script:
-
-```bash
-node scripts/verify-numbers.js cases/<case-id>/
-```
-
-This script:
-1. Extracts all numbers with citations (percentages, dollar amounts, counts)
-2. Searches cited source content for those exact numbers
-3. Flags mismatches where article states different values than sources
-
-**FAIL if:**
-- Article says "72%" but source says "52%"
-- Article says "3,000 agents" but source says "2,000"
-- Article states a number with citation but number not found in source
-
-This catches **statistical drift** - where numbers change as they flow through the system.
-
-**5e. Lead Results Source Coverage**
-
-Check leads.json for investigated leads:
-```json
-{
-  "status": "investigated",
-  "result": "Contains specific claims or statistics",
-  "sources": []  // FAIL - should have source IDs
-}
-```
-
-**FAIL if:**
-- Lead result contains specific numbers/statistics but `sources: []` is empty
-- Lead result makes factual claims without captured evidence
-
-**5f. Auto-removal (Last Resort)**
-
-If source cannot be verified after attempting 5a-5e:
-1. If fabricated → delete evidence/S###/ and remove from sources.json
-2. Try re-capture (URL may have changed)
-3. Search for alternate source (XAI real-time search)
-4. If none found, remove citation and log to `removed-points.md`
+1. Read `verification-report.md` for specific issues and fix suggestions
+2. For URL mismatches: Update article citations OR re-capture sources
+3. For missing sources: Run `/capture-source` with the correct URL
+4. For unsupported claims: Find supporting source or caveat the claim
+5. Re-run verification after fixes
 
 ### Gate 6: Integrity
 Invoke `/integrity` if not already run.
@@ -210,13 +159,6 @@ When Gate 5 passes and both Gates 6 and 7 need to run, use `/parallel-review` fo
 If gates.sources === true && gates.integrity === false && gates.legal === false:
   → Use /action parallel-review instead of sequential /integrity then /legal-review
 ```
-
-This runs both reviews concurrently using the three-phase pattern:
-1. Parallel Stage 1 (context-free scans)
-2. Parallel Stage 2 (contextual evaluation)
-3. Sequential fix application
-
-See `/parallel-review` command for details.
 
 ## Output
 

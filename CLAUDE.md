@@ -178,19 +178,31 @@ The curiosity gate has automatic failures that cannot be overridden:
 - **Any verification leads pending** - Leads with "Verify" in description must be resolved
 - **More than 40% of leads pending** - Insufficient investigation coverage
 
-### Gate 5 (Sources) Sub-Checks
+### Gate 5 (Sources) - Unified Verification Pipeline
 
-The sources gate performs multiple verification layers:
-- **5a. Capture verification** - All cited sources must have `captured: true`
-- **5b. Fabrication check** - No synthesized/compiled sources
-- **5c. Claim verification** - Full audit trail mapping claims to evidence (`scripts/verify-claims.js`)
-- **5d. Number verification** - Statistics in article match values in cited sources (`scripts/verify-numbers.js`)
-- **5e. Lead source coverage** - Investigated leads with specific findings must have captured sources
-- **5f. Auto-removal** - Last resort for unfixable sources
+Gate 5 runs a **5-step verification pipeline** with cryptographic chain hash:
 
-**Gate 5c produces persistent audit trail:**
-- `claim-verification.json` - Complete claim-to-evidence mapping
-- `claim-verification-report.md` - Human-readable summary
+```bash
+node scripts/verification/index.js cases/<case-id>/ --generate-report --block
+```
+
+| Step | Name | Purpose |
+|------|------|---------|
+| 1 | CAPTURE | Verify sources exist (in sources.json, captured: true, evidence dir) |
+| 2 | INTEGRITY | Hash verification, red flag detection (fabrication patterns) |
+| 3 | **BINDING** | **3-way URL consistency** (citation URL = sources.json URL = metadata.json URL) |
+| 4 | SEMANTIC | Claim-evidence verification (heuristics → LLM prompts) |
+| 5 | STATISTICS | Number matching (article stats = source stats) |
+
+**Step 3 (BINDING) is critical** - it catches citation laundering where:
+- Article cites `[S001](https://example.com/article-v1)`
+- But metadata.json has `url: "https://different.com/other-article"`
+
+ANY URL mismatch is a blocking failure.
+
+**Outputs:**
+- `verification-state.json` - Complete pipeline state with chain hash
+- `verification-report.md` - Human-readable report with fix suggestions
 - `evidence/S###/claim-support.json` - Per-source verification records
 
 ---
@@ -286,11 +298,13 @@ Uses three-phase pattern: parallel context-free scans → parallel contextual ev
 | `scripts/allocate-sources.js` | Pre-allocate source ID ranges |
 | `scripts/merge-batch-results.js` | Merge parallel follow results |
 | `scripts/merge-question-batches.js` | Merge parallel question results |
-| `scripts/audit-citations.js` | Pre-article citation audit (Gate 5a) |
-| `scripts/extract-claims.js` | Claim extraction utilities |
-| `scripts/verify-claims.js` | Comprehensive claim verification with audit trail (Gate 5c) |
-| `scripts/verify-numbers.js` | Statistics/number verification (Gate 5d) |
-| `scripts/semantic-verify.js` | DEPRECATED - use verify-claims.js instead |
+| **`scripts/verification/index.js`** | **Unified 5-step verification pipeline (Gate 5)** |
+| `scripts/verification/pipeline.js` | Pipeline orchestrator with chain hash |
+| `scripts/verification/steps/*.js` | Individual verification steps (capture, integrity, binding, semantic, statistics) |
+| `scripts/verification/url-normalize.js` | URL canonicalization for binding check |
+| `scripts/audit-citations.js` | Legacy citation audit (superseded by verification pipeline) |
+| `scripts/verify-claims.js` | Legacy claim verification (superseded by verification pipeline) |
+| `scripts/semantic-verify.js` | DEPRECATED - superseded by verification pipeline |
 
 ### Estimated Time Savings
 
@@ -743,10 +757,9 @@ osint_get target="https://example.com/paper.pdf" output_path="evidence/S001/pape
 - Do NOT skip reconciliation when lead results contradict summary
 - Do NOT store lead results with statistics but empty sources[]
 - Do NOT omit temporal context for dated evidence
-- Do NOT skip pre-article citation audit (`scripts/audit-citations.js`)
-- Do NOT skip claim verification (`scripts/verify-claims.js`)
-- Do NOT skip number verification (`scripts/verify-numbers.js`)
-- Do NOT generate articles when semantic verification flags mismatches
+- Do NOT skip the unified verification pipeline (`scripts/verification/index.js`)
+- Do NOT ignore URL binding mismatches (citation URL must match sources.json and metadata.json)
+- Do NOT generate articles when verification pipeline fails
 - Do NOT assume a citation supports a claim without verifying the source contains the fact
 - Do NOT generate articles before Gates 0-3 pass (planning, questions, curiosity, reconciliation)
 - Do NOT set `phase: WRITE` until curiosity and reconciliation gates are TRUE
