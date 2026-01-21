@@ -27,7 +27,7 @@ Verify investigation readiness for publication.
 | 2 | Curiosity | `/curiosity` returns SATISFIED |
 | 3 | Reconciliation | All lead results reconciled with summary.md |
 | 4 | Article | `articles/full.md` + `full.pdf` exist with [S###] citations |
-| 5 | Sources | **Unified Verification Pipeline** - 5-step verification with audit trail |
+| 5 | Sources | **Claim Registry Verification** - Match article claims to registry |
 | 6 | Integrity | `/integrity` returns READY |
 | 7 | Legal | `/legal-review` returns READY |
 
@@ -36,10 +36,7 @@ Verify investigation readiness for publication.
 ### Gate 0: Planning
 Verify investigation planning was completed:
 - Check `state.json.gates.planning === true`
-- Verify planning outputs exist in case directory: `refined_prompt.md`, `investigation_plan.md`
-- If `custom_questions.md` exists, verify it was processed during QUESTION phase
-
-**Note:** This gate is typically already passed by the time we reach VERIFY.
+- Verify planning outputs exist: `refined_prompt.md`, `investigation_plan.md`
 
 ### Gate 1: Questions
 Check each `questions/*.md` file has Status: investigated or not-applicable.
@@ -48,102 +45,84 @@ Check each `questions/*.md` file has Status: investigated or not-applicable.
 Invoke `/curiosity` if not already run this iteration.
 
 ### Gate 3: Reconciliation
-
-Verify lead investigation results are reconciled with summary.md:
-
-1. **Read leads.json** - extract all leads with status "investigated" or "dead_end"
-2. **For each lead result that contradicts or caveats a summary.md claim:**
-   - The summary.md claim MUST be updated or caveated
-   - Example: If L016 found "PAC names don't exist in FEC records", summary.md cannot state those PACs as fact
-
-**FAIL if:**
-- Lead result contradicts summary.md claim without caveat
-- Lead marked "dead_end" for a claim still stated as fact in summary.md
-- Unverified claims (leads like "Verify X") still asserted without verification note
+Verify lead results are reconciled with summary.md:
+- Lead results that contradict summary.md claims must be updated
+- Unverified claims must have caveats
 
 ### Gate 4: Article
 Verify:
-- `articles/full.md` exists and contains [S###] citations
-- `articles/full.md` has **Sources Consulted** section listing uncited sources from `sources.json`
-- `articles/full.pdf` exists (generated via `node scripts/generate-pdf.js`)
-- `articles/short.md` and `short.pdf` exist (optional but expected)
-- `articles/medium.md` and `medium.pdf` exist (optional but expected)
+- `articles/full.md` exists with [S###] citations
+- `articles/full.pdf` exists
+- Sources Consulted section lists uncited sources
 
-**Sources Consulted Check:**
-1. Read `sources.json` to get total captured source count
-2. Count [S###] markers in full.md's "Sources Cited" section
-3. Verify "Sources Consulted" section exists and lists remaining sources
-4. **FAIL if:** Sources Consulted section is missing or empty when uncited sources exist
+### Gate 5: Sources - Claim Registry Verification
 
-### Gate 5: Sources - Unified Verification Pipeline
-
-**Run the unified 5-step verification pipeline:**
+**Run claim-based verification:**
 
 ```bash
-node scripts/verification/index.js cases/<case-id>/ --generate-report --block
+node scripts/claims/verify-article.js cases/<case-id>/ --fix
 ```
 
-This runs all verification steps in sequence with cryptographic chain hash:
+This matches every factual claim in the article against the claim registry.
 
-#### Step 1: CAPTURE
-Verifies each cited source has:
-- Entry in sources.json with `captured: true`
-- `evidence/S###/` directory exists
-- `metadata.json` is valid
-- `content.md` is not empty
+#### How It Works
 
-#### Step 2: INTEGRITY
-Hash verification and red flag detection:
-- `_capture_signature` present in metadata.json
-- Hash matches computed hash (content not tampered)
-- No fabrication patterns (round timestamps, homepage URLs, "compilation" content)
+1. **Extract claims from article** - Finds sentences with citations
+2. **Match to registry** - Multiple strategies:
+   - Exact text match
+   - Number matching (same statistics)
+   - Keyword overlap
+   - Source-constrained matching
+3. **Report results** - Verified, unverified, or mismatched
 
-#### Step 3: BINDING (CRITICAL NEW STEP)
-**Three-way URL consistency check:**
+#### Verification States
 
-This step catches citation laundering where the URL in the article differs from what was captured:
+| Status | Meaning | Action |
+|--------|---------|--------|
+| VERIFIED | Claim matched registry entry from cited source | None |
+| UNVERIFIED | No matching claim in registry | Find source or remove claim |
+| SOURCE_MISMATCH | Claim found but from different source | Update citation |
 
-| Location | URL Must Match |
-|----------|---------------|
-| Article citation | `[S001](https://example.com/article)` |
-| sources.json | `"url": "https://example.com/article"` |
-| metadata.json | `"url": "https://example.com/article"` |
+#### Handling Unverified Claims
 
-After URL normalization (removing www, trailing slashes, etc), ALL THREE must match.
+For each unverified claim:
 
-**ANY mismatch is a BLOCKING failure** - it means the citation may point to a different resource than what was captured.
+1. **Search for supporting source:**
+   ```
+   mcp__mcp-xai__research or mcp__mcp-osint__osint_search
+   ```
 
-#### Step 4: SEMANTIC
-Claim-evidence verification using two tiers:
-- Tier 1: Fast heuristics (statistics in source, key terms present)
-- Tier 2: LLM prompts generated for claims failing heuristics
+2. **Capture source** (which extracts and registers claims):
+   ```
+   /capture-source <url>
+   ```
 
-Updates `evidence/S###/claim-support.json` with verification results.
+3. **Re-run verification** - Newly registered claims should match
 
-#### Step 5: STATISTICS
-Number matching verification:
-- Extracts percentages, dollar amounts, counts with citations
-- Searches cited source for exact numbers
-- Flags mismatches (e.g., article says 72% but source says 52%)
+4. **If no source found:**
+   - Add caveat ("reportedly", "according to...")
+   - Or remove the claim
 
-**Outputs:**
-- `verification-state.json` - Complete pipeline state with chain hash
-- `verification-report.md` - Human-readable report with actionable fixes
+#### Pre-requisite: Claim Registry Populated
 
-**Blocking Criteria:**
-- ANY source not captured (Step 1)
-- ANY URL mismatch (Step 3) - Maximum: 0
-- ANY orphan citation (Step 3) - Maximum: 0
-- >10% claims unsupported (Step 4)
-- ANY statistic mismatch (Step 5)
+Before running verification, ensure claims have been extracted from sources:
 
-**If Pipeline Fails:**
+```bash
+# Check status
+node scripts/claims/migrate-sources.js cases/<case-id> status
 
-1. Read `verification-report.md` for specific issues and fix suggestions
-2. For URL mismatches: Update article citations OR re-capture sources
-3. For missing sources: Run `/capture-source` with the correct URL
-4. For unsupported claims: Find supporting source or caveat the claim
-5. Re-run verification after fixes
+# Quick extraction (regex-based, no LLM)
+node scripts/claims/migrate-sources.js cases/<case-id> quick-all
+
+# LLM extraction for one source
+node scripts/claims/capture-integration.js cases/<case-id> prepare S001
+# → Send prompt to LLM, then register response
+```
+
+#### Outputs
+
+- `claim-verification.json` - Structured verification results
+- `claim-verification-report.md` - Human-readable report with fix suggestions
 
 ### Gate 6: Integrity
 Invoke `/integrity` if not already run.
@@ -153,11 +132,9 @@ Invoke `/legal-review` if not already run.
 
 ### Gates 6+7: Parallel Review Optimization
 
-When Gate 5 passes and both Gates 6 and 7 need to run, use `/parallel-review` for faster execution:
-
+When Gate 5 passes and both Gates 6 and 7 need to run:
 ```
-If gates.sources === true && gates.integrity === false && gates.legal === false:
-  → Use /action parallel-review instead of sequential /integrity then /legal-review
+/action parallel-review
 ```
 
 ## Output
@@ -166,13 +143,13 @@ Update `state.json` gates with results.
 
 ## Result
 
-**ALL PASS:** Check if AI self-review is needed (see below)
+**ALL PASS:** Check if AI self-review is needed
 
-**ANY FAIL:** Return specific failures and what needs fixing.
+**ANY FAIL:** Return specific failures and fixes
 
 ## AI Self-Review (First Iteration Only)
 
-After all 8 gates pass for the first time, trigger an automatic AI review of the articles before declaring completion.
+After all 8 gates pass for the first time, trigger automatic AI review.
 
 ### When to Trigger
 
@@ -182,7 +159,7 @@ Check `state.json`:
 
 ### Self-Review Process
 
-Use **GPT 5.2 Pro with extended thinking** for the self-review via `mcp__mcp-openai__generate_text`:
+Use **GPT 5.2 Pro** via `mcp__mcp-openai__generate_text`:
 
 | Parameter | Value |
 |-----------|-------|
@@ -190,44 +167,28 @@ Use **GPT 5.2 Pro with extended thinking** for the self-review via `mcp__mcp-ope
 | reasoning_effort | high |
 | max_output_tokens | 16384 |
 
-1. **Read the full article** (`articles/full.md`)
-
-2. **Call GPT 5.2 Pro** with the self-review prompt (see below)
-
-3. **Parse the response** for substantive feedback
-
-4. **If feedback is substantive:**
-   - Set `state.json.ai_review_complete = true`
-   - Invoke `/case-feedback` with the review findings
-   - This triggers a revision cycle
-
-5. **If article is publication-ready (no substantive feedback):**
-   - Set `state.json.ai_review_complete = true`
-   - Proceed to completion
-
-### Self-Review Prompt Template
-
+Prompt:
 ```
 Review this investigative article as a senior editor. Identify:
 
-1. CLARITY: Passages that are confusing or could be clearer
-2. EVIDENCE: Claims that need stronger support or additional caveats
-3. BALANCE: Missing perspectives or viewpoints that should be represented
-4. STRUCTURE: Flow issues, awkward transitions, sections that feel unbalanced
-5. GAPS: Questions a reader would reasonably have that aren't addressed
-6. TONE: Areas where neutral tone slips into advocacy or excessive hedging
+1. CLARITY: Passages that are confusing
+2. EVIDENCE: Claims needing stronger support
+3. BALANCE: Missing perspectives
+4. STRUCTURE: Flow issues
+5. GAPS: Unanswered questions
+6. TONE: Advocacy or excessive hedging
 
-Be specific. For each issue, quote the problematic text and suggest improvement.
-
-If the article is strong and ready for publication, say so explicitly.
+Be specific. Quote problematic text and suggest improvements.
+If the article is ready for publication, say so explicitly.
 ```
 
-### Why Only Once
+### After Self-Review
 
-The self-review runs once to catch obvious issues before human review. Running it repeatedly would create an infinite loop. After the AI-triggered revision, the human user can provide additional feedback via `/case-feedback` if needed.
+- **If feedback:** Set `ai_review_complete = true`, invoke `/case-feedback`
+- **If no feedback:** Set `ai_review_complete = true`, complete
 
 ## Next Steps
 
 - If PASS + ai_review_complete: Investigation complete
-- If PASS + needs self-review: Trigger AI review → /case-feedback cycle
-- If FAIL: Route back to appropriate phase based on which gate failed
+- If PASS + needs self-review: AI review → /case-feedback
+- If FAIL: Route to appropriate phase based on which gate failed

@@ -178,32 +178,30 @@ The curiosity gate has automatic failures that cannot be overridden:
 - **Any verification leads pending** - Leads with "Verify" in description must be resolved
 - **More than 40% of leads pending** - Insufficient investigation coverage
 
-### Gate 5 (Sources) - Unified Verification Pipeline
+### Gate 5 (Sources) - Claim Registry Verification
 
-Gate 5 runs a **5-step verification pipeline** with cryptographic chain hash:
+Gate 5 uses **claim-based verification** - matching article claims to the claim registry:
 
 ```bash
-node scripts/verification/index.js cases/<case-id>/ --generate-report --block
+node scripts/claims/verify-article.js cases/<case-id>/ --fix
 ```
 
-| Step | Name | Purpose |
-|------|------|---------|
-| 1 | CAPTURE | Verify sources exist (in sources.json, captured: true, evidence dir) |
-| 2 | INTEGRITY | Hash verification, red flag detection (fabrication patterns) |
-| 3 | **BINDING** | **3-way URL consistency** (citation URL = sources.json URL = metadata.json URL) |
-| 4 | SEMANTIC | Claim-evidence verification (heuristics → LLM prompts) |
-| 5 | STATISTICS | Number matching (article stats = source stats) |
+| Status | Meaning | Action |
+|--------|---------|--------|
+| VERIFIED | Claim matched registry entry | None |
+| UNVERIFIED | No matching claim in registry | Find source or caveat |
+| SOURCE_MISMATCH | Claim found but from different source | Update citation |
 
-**Step 3 (BINDING) is critical** - it catches citation laundering where:
-- Article cites `[S001](https://example.com/article-v1)`
-- But metadata.json has `url: "https://different.com/other-article"`
+**Key principle:** Claims are verified at CAPTURE time, not after writing. When a source is captured, factual claims are extracted and registered with supporting quotes. Article verification is just matching - not re-verifying.
 
-ANY URL mismatch is a blocking failure.
+**Pre-requisite:** Populate the claim registry before verification:
+```bash
+node scripts/claims/migrate-sources.js cases/<case-id> quick-all
+```
 
 **Outputs:**
-- `verification-state.json` - Complete pipeline state with chain hash
-- `verification-report.md` - Human-readable report with fix suggestions
-- `evidence/S###/claim-support.json` - Per-source verification records
+- `claim-verification.json` - Structured verification results
+- `claim-verification-report.md` - Human-readable report with fix suggestions
 
 ---
 
@@ -298,13 +296,13 @@ Uses three-phase pattern: parallel context-free scans → parallel contextual ev
 | `scripts/allocate-sources.js` | Pre-allocate source ID ranges |
 | `scripts/merge-batch-results.js` | Merge parallel follow results |
 | `scripts/merge-question-batches.js` | Merge parallel question results |
-| **`scripts/verification/index.js`** | **Unified 5-step verification pipeline (Gate 5)** |
-| `scripts/verification/pipeline.js` | Pipeline orchestrator with chain hash |
-| `scripts/verification/steps/*.js` | Individual verification steps (capture, integrity, binding, semantic, statistics) |
-| `scripts/verification/url-normalize.js` | URL canonicalization for binding check |
-| `scripts/audit-citations.js` | Legacy citation audit (superseded by verification pipeline) |
-| `scripts/verify-claims.js` | Legacy claim verification (superseded by verification pipeline) |
-| `scripts/semantic-verify.js` | DEPRECATED - superseded by verification pipeline |
+| **`scripts/claims/verify-article.js`** | **Claim-based article verification (Gate 5)** |
+| `scripts/claims/registry.js` | CRUD for claims.json |
+| `scripts/claims/extract.js` | LLM prompt generation for claim extraction |
+| `scripts/claims/match.js` | Match article claims to registry |
+| `scripts/claims/migrate-sources.js` | Batch extract claims from existing sources |
+| `scripts/osint-save.js` | Save osint_get output as evidence |
+| `scripts/deprecated/` | Old verification pipeline (superseded by claims system) |
 
 ### Estimated Time Savings
 
@@ -834,9 +832,9 @@ osint_get target="https://example.com/paper.pdf" output_path="evidence/S001/pape
 - Do NOT skip reconciliation when lead results contradict summary
 - Do NOT store lead results with statistics but empty sources[]
 - Do NOT omit temporal context for dated evidence
-- Do NOT skip the unified verification pipeline (`scripts/verification/index.js`)
-- Do NOT ignore URL binding mismatches (citation URL must match sources.json and metadata.json)
-- Do NOT generate articles when verification pipeline fails
+- Do NOT skip claim extraction when capturing sources
+- Do NOT write articles using claims not in the registry
+- Do NOT skip article verification (`scripts/claims/verify-article.js`)
 - Do NOT assume a citation supports a claim without verifying the source contains the fact
 - Do NOT generate articles before Gates 0-3 pass (planning, questions, curiosity, reconciliation)
 - Do NOT set `phase: WRITE` until curiosity and reconciliation gates are TRUE

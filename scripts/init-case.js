@@ -122,6 +122,14 @@ function createLeadsJson() {
   }, null, 2);
 }
 
+function createClaimsJson() {
+  return JSON.stringify({
+    version: 1,
+    created_at: new Date().toISOString(),
+    claims: []
+  }, null, 2);
+}
+
 function createFutureResearchMd() {
   return `# Future Research
 
@@ -220,6 +228,13 @@ function main() {
   );
   console.log('Created: leads.json');
 
+  // Create claims.json (claim registry)
+  fs.writeFileSync(
+    path.join(casePath, 'claims.json'),
+    createClaimsJson()
+  );
+  console.log('Created: claims.json (claim registry)');
+
   // Create summary.md
   fs.writeFileSync(
     path.join(casePath, 'summary.md'),
@@ -286,6 +301,7 @@ function main() {
   console.log('  ├── summary.md');
   console.log('  ├── sources.json');
   console.log('  ├── leads.json         (max_depth: 3)');
+  console.log('  ├── claims.json        (claim registry)');
   console.log('  ├── removed-points.md');
   console.log('  ├── future_research.md');
   console.log('  ├── questions/         (35 framework files)');

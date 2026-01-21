@@ -142,6 +142,35 @@ Register in sources.json:
 }
 ```
 
+### Claim Extraction (Required)
+
+After capturing a source, extract and register factual claims:
+
+1. **Generate extraction prompt:**
+   ```bash
+   node scripts/claims/capture-integration.js cases/<case-id> prepare S###
+   ```
+
+2. **Send prompt to LLM** (Gemini or GPT):
+   ```
+   mcp__mcp-gemini__generate_text
+     prompt: <the extraction prompt>
+     model: gemini-3-pro
+   ```
+
+3. **Register extracted claims:**
+   ```javascript
+   const { registerExtractedClaims } = require('./scripts/claims');
+   registerExtractedClaims(caseDir, sourceId, sourceUrl, llmResponse, content);
+   ```
+
+**Why:** Claims registered at capture time are verified by definition - they came directly from the source with supporting quotes. Article verification becomes simple matching.
+
+**Quick extraction (no LLM):** For sources with statistics, use regex extraction:
+```bash
+node scripts/claims/migrate-sources.js cases/<case-id> quick-all
+```
+
 ---
 
 ## Structured Data Capture (OSINT Sources)
