@@ -4,7 +4,7 @@
  * The claim registry is the single source of truth for verified claims.
  *
  * Architecture:
- * 1. Sources are captured → claims extracted → registered in claims.json
+ * 1. Sources are captured → claims extracted via LLM → registered in claims.json
  * 2. Article writing uses registered claims
  * 3. Verification = matching article claims to registry
  *
@@ -36,11 +36,10 @@ module.exports = {
   removeClaim: registry.removeClaim,
   getRegistryStats: registry.getStats,
 
-  // Extraction
+  // Extraction (LLM-based)
   generateExtractionPrompt: extract.generateExtractionPrompt,
   parseExtractionResponse: extract.parseExtractionResponse,
   verifyQuoteInSource: extract.verifyQuoteInSource,
-  quickExtract: extract.quickExtract,
   prepareExtraction: extract.prepareExtraction,
   postProcessClaims: extract.postProcessClaims,
 
@@ -53,7 +52,6 @@ module.exports = {
   // Capture integration
   prepareSourceForExtraction: captureIntegration.prepareSourceForExtraction,
   registerExtractedClaims: captureIntegration.registerExtractedClaims,
-  registerQuickClaims: captureIntegration.registerQuickClaims,
   getSourcesNeedingExtraction: captureIntegration.getSourcesNeedingExtraction,
   getExtractionStatus: captureIntegration.getExtractionStatus,
 

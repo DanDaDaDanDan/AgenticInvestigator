@@ -1,30 +1,27 @@
 #!/usr/bin/env node
 /**
- * migrate-sources.js - Extract claims from existing sources
+ * migrate-sources.js - Extract claims from existing sources using LLM
  *
- * This script helps migrate existing cases to use the claim registry.
- * It generates LLM prompts for each source that needs claim extraction.
+ * This script helps extract claims from existing case sources.
+ * All extraction is LLM-based for comprehensive claim capture.
  *
  * Usage:
  *   node scripts/claims/migrate-sources.js <case-dir> status
  *   node scripts/claims/migrate-sources.js <case-dir> prompt <source-id>
  *   node scripts/claims/migrate-sources.js <case-dir> prompt-all > prompts.json
  *   node scripts/claims/migrate-sources.js <case-dir> register <source-id> <response-file>
- *   node scripts/claims/migrate-sources.js <case-dir> quick-all
  */
 
 'use strict';
 
 const fs = require('fs');
 const path = require('path');
-const { loadRegistry, addClaim } = require('./registry');
+const { loadRegistry } = require('./registry');
 const {
   prepareSourceForExtraction,
   registerExtractedClaims,
-  registerQuickClaims,
   getExtractionStatus
 } = require('./capture-integration');
-const { quickExtract } = require('./extract');
 
 /**
  * Get detailed status of claim extraction
@@ -33,7 +30,7 @@ function showStatus(caseDir) {
   const status = getExtractionStatus(caseDir);
 
   console.log('\n' + '='.repeat(60));
-  console.log('CLAIM REGISTRY MIGRATION STATUS');
+  console.log('CLAIM REGISTRY STATUS');
   console.log('='.repeat(60));
   console.log(`\nCase: ${caseDir}`);
   console.log(`\nSources:`);
@@ -80,8 +77,7 @@ function generatePrompt(caseDir, sourceId) {
   return {
     sourceId: result.sourceId,
     sourceUrl: result.sourceUrl,
-    prompt: result.prompt,
-    quickClaimsCount: result.quickClaims.length
+    prompt: result.prompt
   };
 }
 
@@ -157,61 +153,6 @@ function registerFromFile(caseDir, sourceId, responseFile) {
 }
 
 /**
- * Quick extraction for all sources (regex-based, no LLM)
- *
- * This extracts claims with numbers/statistics using regex patterns.
- * Fast but less comprehensive than LLM extraction.
- */
-function quickExtractAll(caseDir) {
-  const status = getExtractionStatus(caseDir);
-  const pending = status.sources.filter(s => s.hasContent && !s.hasClaims);
-
-  console.log(`\nQuick-extracting claims from ${pending.length} sources...`);
-
-  let totalRegistered = 0;
-  let totalDuplicates = 0;
-
-  for (const source of pending) {
-    const evidenceDir = path.join(caseDir, 'evidence', source.sourceId);
-    const contentPath = path.join(evidenceDir, 'content.md');
-    const metadataPath = path.join(evidenceDir, 'metadata.json');
-
-    if (!fs.existsSync(contentPath)) continue;
-
-    const content = fs.readFileSync(contentPath, 'utf-8');
-
-    let sourceUrl = '';
-    if (fs.existsSync(metadataPath)) {
-      try {
-        const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf-8'));
-        sourceUrl = metadata.url || '';
-      } catch (e) {
-        // Ignore
-      }
-    }
-
-    // Quick extract
-    const quickClaims = quickExtract(content);
-
-    if (quickClaims.length > 0) {
-      const result = registerQuickClaims(caseDir, source.sourceId, sourceUrl, quickClaims);
-      totalRegistered += result.registered;
-      totalDuplicates += result.duplicates;
-
-      if (result.registered > 0) {
-        console.log(`  ${source.sourceId}: ${result.registered} claims`);
-      }
-    }
-  }
-
-  console.log(`\nQuick extraction complete:`);
-  console.log(`  Total registered: ${totalRegistered}`);
-  console.log(`  Duplicates skipped: ${totalDuplicates}`);
-
-  return { registered: totalRegistered, duplicates: totalDuplicates };
-}
-
-/**
  * CLI entry point
  */
 async function main() {
@@ -223,14 +164,19 @@ async function main() {
     console.log('  node migrate-sources.js <case-dir> prompt <source-id>');
     console.log('  node migrate-sources.js <case-dir> prompt-all');
     console.log('  node migrate-sources.js <case-dir> register <source-id> <response-file>');
-    console.log('  node migrate-sources.js <case-dir> quick-all');
     console.log('');
     console.log('Commands:');
-    console.log('  status      - Show migration status');
+    console.log('  status      - Show extraction status');
     console.log('  prompt      - Generate LLM prompt for one source');
     console.log('  prompt-all  - Generate prompts for all sources (JSON output)');
     console.log('  register    - Register claims from LLM response file');
-    console.log('  quick-all   - Quick extraction (regex, no LLM) for all sources');
+    console.log('');
+    console.log('Workflow:');
+    console.log('  1. Run "status" to see which sources need extraction');
+    console.log('  2. Run "prompt <source-id>" to get the extraction prompt');
+    console.log('  3. Send prompt to LLM (Gemini 3 Pro recommended)');
+    console.log('  4. Save LLM response to a file');
+    console.log('  5. Run "register <source-id> <response-file>" to register claims');
     process.exit(1);
   }
 
@@ -261,7 +207,6 @@ async function main() {
         console.log('\n=== PROMPT FOR ' + sourceId + ' ===\n');
         console.log(result.prompt);
         console.log('\n=== END PROMPT ===\n');
-        console.log(`Quick claims found: ${result.quickClaimsCount}`);
       }
       break;
     }
@@ -285,11 +230,6 @@ async function main() {
       break;
     }
 
-    case 'quick-all': {
-      quickExtractAll(caseDir);
-      break;
-    }
-
     default:
       console.error(`Unknown command: ${command}`);
       process.exit(1);
@@ -307,6 +247,5 @@ module.exports = {
   showStatus,
   generatePrompt,
   generateAllPrompts,
-  registerFromFile,
-  quickExtractAll
+  registerFromFile
 };

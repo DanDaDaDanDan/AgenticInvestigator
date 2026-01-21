@@ -166,11 +166,6 @@ After capturing a source, extract and register factual claims:
 
 **Why:** Claims registered at capture time are verified by definition - they came directly from the source with supporting quotes. Article verification becomes simple matching.
 
-**Quick extraction (no LLM):** For sources with statistics, use regex extraction:
-```bash
-node scripts/claims/migrate-sources.js cases/<case-id> quick-all
-```
-
 ---
 
 ## Structured Data Capture (OSINT Sources)

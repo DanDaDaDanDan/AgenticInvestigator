@@ -194,9 +194,9 @@ node scripts/claims/verify-article.js cases/<case-id>/ --fix
 
 **Key principle:** Claims are verified at CAPTURE time, not after writing. When a source is captured, factual claims are extracted and registered with supporting quotes. Article verification is just matching - not re-verifying.
 
-**Pre-requisite:** Populate the claim registry before verification:
+**Pre-requisite:** Ensure claims are extracted from sources. Check status:
 ```bash
-node scripts/claims/migrate-sources.js cases/<case-id> quick-all
+node scripts/claims/migrate-sources.js cases/<case-id> status
 ```
 
 **Outputs:**
@@ -300,9 +300,9 @@ Uses three-phase pattern: parallel context-free scans → parallel contextual ev
 | `scripts/claims/registry.js` | CRUD for claims.json |
 | `scripts/claims/extract.js` | LLM prompt generation for claim extraction |
 | `scripts/claims/match.js` | Match article claims to registry |
-| `scripts/claims/migrate-sources.js` | Batch extract claims from existing sources |
+| `scripts/claims/migrate-sources.js` | Batch extract claims from existing sources (LLM-based) |
 | `scripts/osint-save.js` | Save osint_get output as evidence |
-| `scripts/deprecated/` | Old verification pipeline (superseded by claims system) |
+| `scripts/verify-source.js` | Hash verification for source integrity |
 
 ### Estimated Time Savings
 
@@ -430,10 +430,11 @@ Source Capture → Extract Claims → Register in claims.json (verified by defin
 | Module | Purpose |
 |--------|---------|
 | `registry.js` | CRUD for claims.json |
-| `extract.js` | Extract claims from source content (LLM prompt generation) |
+| `extract.js` | Generate LLM prompts for claim extraction |
 | `match.js` | Match article claims to registry |
 | `capture-integration.js` | Integrate extraction into capture flow |
 | `verify-article.js` | Main verification entry point |
+| `migrate-sources.js` | Batch extraction for existing cases |
 | `report.js` | Generate verification reports |
 
 ### Verification Process

@@ -1,8 +1,8 @@
 /**
  * extract.js - Extract Factual Claims from Source Content
  *
- * Extracts verifiable factual claims from source content.
- * Uses LLM for extraction, with structured output parsing.
+ * Extracts verifiable factual claims from source content using LLM.
+ * All extraction is LLM-based for comprehensive claim capture.
  */
 
 'use strict';
@@ -135,67 +135,6 @@ function parseNumbers(numbers) {
 }
 
 /**
- * Extract numbers from text using regex (fallback/supplement to LLM)
- *
- * @param {string} text - Claim text
- * @returns {array} - Extracted numbers
- */
-function extractNumbersFromText(text) {
-  const numbers = [];
-
-  // Percentages
-  const percentMatch = text.matchAll(/(\d+(?:\.\d+)?)\s*(?:percent|%)/gi);
-  for (const match of percentMatch) {
-    numbers.push({
-      value: parseFloat(match[1]),
-      unit: 'percent',
-      context: extractContext(text, match.index)
-    });
-  }
-
-  // Dollar amounts
-  const dollarMatch = text.matchAll(/\$\s*(\d+(?:,\d{3})*(?:\.\d+)?)\s*(million|billion|thousand)?/gi);
-  for (const match of dollarMatch) {
-    let value = parseFloat(match[1].replace(/,/g, ''));
-    const multiplier = match[2]?.toLowerCase();
-    if (multiplier === 'thousand') value *= 1000;
-    if (multiplier === 'million') value *= 1000000;
-    if (multiplier === 'billion') value *= 1000000000;
-
-    numbers.push({
-      value,
-      unit: 'dollars',
-      context: extractContext(text, match.index)
-    });
-  }
-
-  // Plain numbers with context
-  const plainMatch = text.matchAll(/(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s+(\w+)/gi);
-  for (const match of plainMatch) {
-    // Skip if already captured as percent or dollar
-    if (text.substring(match.index - 1, match.index) === '$') continue;
-    if (/percent|%/i.test(match[2])) continue;
-
-    numbers.push({
-      value: parseFloat(match[1].replace(/,/g, '')),
-      unit: match[2].toLowerCase(),
-      context: extractContext(text, match.index)
-    });
-  }
-
-  return numbers;
-}
-
-/**
- * Extract context around a match
- */
-function extractContext(text, index, windowSize = 30) {
-  const start = Math.max(0, index - windowSize);
-  const end = Math.min(text.length, index + windowSize);
-  return text.substring(start, end).trim();
-}
-
-/**
  * Verify that a quote exists in the source content
  *
  * @param {string} quote - The supporting quote
@@ -229,59 +168,21 @@ function verifyQuoteInSource(quote, content) {
 }
 
 /**
- * Quick extraction using regex patterns (no LLM, for fast preliminary scan)
- *
- * @param {string} content - Source content
- * @returns {array} - Array of potential claims (numbers with context)
- */
-function quickExtract(content) {
-  const claims = [];
-
-  // Split into sentences
-  const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 10);
-
-  for (const sentence of sentences) {
-    const numbers = extractNumbersFromText(sentence);
-
-    if (numbers.length > 0) {
-      claims.push({
-        text: sentence.trim(),
-        type: 'statistic',
-        numbers,
-        entities: [],
-        supporting_quote: sentence.trim(),
-        quote_location: null,
-        extraction_method: 'regex'
-      });
-    }
-  }
-
-  return claims;
-}
-
-/**
- * Main extraction function
+ * Prepare extraction for a source
  *
  * Returns a prompt for LLM extraction. The caller should:
  * 1. Call this to get the prompt
- * 2. Send prompt to LLM
+ * 2. Send prompt to LLM (Gemini 3 Pro recommended)
  * 3. Call parseExtractionResponse with the LLM response
- * 4. Optionally verify quotes with verifyQuoteInSource
+ * 4. Call postProcessClaims to verify quotes
  *
  * @param {string} content - Source content
  * @param {string} sourceUrl - Source URL
- * @param {object} options - Options
- * @returns {object} - {prompt, quickClaims}
+ * @returns {object} - {prompt}
  */
-function prepareExtraction(content, sourceUrl, options = {}) {
+function prepareExtraction(content, sourceUrl) {
   const prompt = generateExtractionPrompt(content, sourceUrl);
-
-  // Also do quick regex extraction as supplement
-  const quickClaims = options.includeQuick !== false
-    ? quickExtract(content)
-    : [];
-
-  return { prompt, quickClaims };
+  return { prompt };
 }
 
 /**
@@ -296,13 +197,8 @@ function postProcessClaims(claims, content) {
     // Verify quote exists in source
     const verification = verifyQuoteInSource(claim.supporting_quote, content);
 
-    // Extract additional numbers if LLM missed any
-    const textNumbers = extractNumbersFromText(claim.text);
-    const allNumbers = mergeNumbers(claim.numbers, textNumbers);
-
     return {
       ...claim,
-      numbers: allNumbers,
       quote_verified: verification.found,
       quote_location: verification.location || claim.quote_location,
       quote_match_type: verification.matchType
@@ -310,30 +206,10 @@ function postProcessClaims(claims, content) {
   });
 }
 
-/**
- * Merge number arrays, avoiding duplicates
- */
-function mergeNumbers(nums1, nums2) {
-  const seen = new Set();
-  const merged = [];
-
-  for (const num of [...(nums1 || []), ...(nums2 || [])]) {
-    const key = `${num.value}:${num.unit}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      merged.push(num);
-    }
-  }
-
-  return merged;
-}
-
 module.exports = {
   generateExtractionPrompt,
   parseExtractionResponse,
   verifyQuoteInSource,
-  quickExtract,
   prepareExtraction,
-  postProcessClaims,
-  extractNumbersFromText
+  postProcessClaims
 };

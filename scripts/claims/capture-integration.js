@@ -1,8 +1,8 @@
 /**
  * capture-integration.js - Integrate Claim Extraction into Source Capture
  *
- * This module can be called after a source is captured to extract and
- * register claims. It can also be used to batch-process existing sources.
+ * This module is called after a source is captured to extract and
+ * register claims using LLM. All extraction is LLM-based.
  */
 
 'use strict';
@@ -13,7 +13,7 @@ const { addClaim, loadRegistry, findClaimsBySource } = require('./registry');
 const { prepareExtraction, parseExtractionResponse, postProcessClaims } = require('./extract');
 
 /**
- * Process a single captured source and extract claims
+ * Process a single captured source and prepare for claim extraction
  *
  * This function:
  * 1. Reads the source content from evidence/S###/content.md
@@ -22,7 +22,7 @@ const { prepareExtraction, parseExtractionResponse, postProcessClaims } = requir
  *
  * @param {string} caseDir - Case directory
  * @param {string} sourceId - Source ID (S###)
- * @returns {object} - {prompt, sourceId, sourceUrl, content, quickClaims}
+ * @returns {object} - {prompt, sourceId, sourceUrl, content} or {error}
  */
 function prepareSourceForExtraction(caseDir, sourceId) {
   const evidenceDir = path.join(caseDir, 'evidence', sourceId);
@@ -63,15 +63,14 @@ function prepareSourceForExtraction(caseDir, sourceId) {
     };
   }
 
-  // Prepare extraction
-  const { prompt, quickClaims } = prepareExtraction(content, sourceUrl);
+  // Prepare extraction prompt
+  const { prompt } = prepareExtraction(content, sourceUrl);
 
   return {
     sourceId,
     sourceUrl,
     content,
     prompt,
-    quickClaims,
     alreadyExtracted: false
   };
 }
@@ -84,14 +83,14 @@ function prepareSourceForExtraction(caseDir, sourceId) {
  * @param {string} sourceUrl - Source URL
  * @param {string} llmResponse - LLM response (JSON)
  * @param {string} content - Original source content (for verification)
- * @returns {object} - {registered: number, duplicates: number, claims: array}
+ * @returns {object} - {registered: number, duplicates: number, unverified: number, claims: array}
  */
 function registerExtractedClaims(caseDir, sourceId, sourceUrl, llmResponse, content) {
   // Parse LLM response
   const claims = parseExtractionResponse(llmResponse);
 
   if (claims.length === 0) {
-    return { registered: 0, duplicates: 0, claims: [] };
+    return { registered: 0, duplicates: 0, unverified: 0, claims: [] };
   }
 
   // Post-process to verify quotes
@@ -132,42 +131,6 @@ function registerExtractedClaims(caseDir, sourceId, sourceUrl, llmResponse, cont
     unverified: claims.length - verifiedClaims.length,
     claims: registeredClaims
   };
-}
-
-/**
- * Register quick-extracted claims (regex-based)
- *
- * @param {string} caseDir - Case directory
- * @param {string} sourceId - Source ID
- * @param {string} sourceUrl - Source URL
- * @param {array} quickClaims - Claims from quickExtract()
- * @returns {object} - {registered: number, duplicates: number}
- */
-function registerQuickClaims(caseDir, sourceId, sourceUrl, quickClaims) {
-  let registered = 0;
-  let duplicates = 0;
-
-  for (const claim of quickClaims) {
-    const result = addClaim(caseDir, {
-      text: claim.text,
-      type: claim.type,
-      numbers: claim.numbers,
-      entities: claim.entities,
-      sourceId,
-      sourceUrl,
-      supporting_quote: claim.supporting_quote,
-      quote_location: claim.quote_location,
-      extraction_method: 'regex'
-    });
-
-    if (result.duplicate) {
-      duplicates++;
-    } else {
-      registered++;
-    }
-  }
-
-  return { registered, duplicates };
 }
 
 /**
@@ -288,7 +251,6 @@ async function main() {
       console.log('\n=== EXTRACTION PROMPT ===\n');
       console.log(result.prompt);
       console.log('\n=== END PROMPT ===\n');
-      console.log(`Quick claims found: ${result.quickClaims.length}`);
       break;
     }
 
@@ -324,7 +286,6 @@ if (require.main === module) {
 module.exports = {
   prepareSourceForExtraction,
   registerExtractedClaims,
-  registerQuickClaims,
   getSourcesNeedingExtraction,
   getExtractionStatus
 };

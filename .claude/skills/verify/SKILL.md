@@ -111,12 +111,14 @@ Before running verification, ensure claims have been extracted from sources:
 # Check status
 node scripts/claims/migrate-sources.js cases/<case-id> status
 
-# Quick extraction (regex-based, no LLM)
-node scripts/claims/migrate-sources.js cases/<case-id> quick-all
-
-# LLM extraction for one source
+# Generate extraction prompt for one source
 node scripts/claims/capture-integration.js cases/<case-id> prepare S001
-# → Send prompt to LLM, then register response
+
+# Send prompt to LLM (Gemini 3 Pro recommended)
+mcp__mcp-gemini__generate_text prompt=<extraction_prompt> model=gemini-3-pro
+
+# Register extracted claims
+node scripts/claims/migrate-sources.js cases/<case-id> register S001 response.json
 ```
 
 #### Outputs
