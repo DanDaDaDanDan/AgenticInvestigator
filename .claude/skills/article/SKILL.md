@@ -70,18 +70,18 @@ If the audit fails, **DO NOT proceed** to article generation. Fix issues first:
 2. Update `sources.json` entries to have `captured: true`
 3. Ensure each `evidence/S###/` has `metadata.json` and `content.md`
 
-**Then run semantic verification:**
+**Then run claim verification:**
 
 ```bash
-node scripts/semantic-verify.js cases/<case-id>/ --pre-article
+node scripts/claims/verify-article.js cases/<case-id>/ --fix
 ```
 
-For each citation in summary.md:
-1. Verify the claim text is actually supported by `evidence/S###/content.md`
+For each claim in summary.md:
+1. Verify the claim is registered in `claims.json` (extracted from source at capture time)
 2. If statistics are cited, verify the numbers match exactly
-3. If semantic verification flags mismatches, either:
-   - Correct the claim in summary.md to match the source
-   - Find a different source that supports the original claim
+3. If verification flags unverified claims, either:
+   - Capture a source that supports the claim (which extracts and registers claims)
+   - Correct the claim in summary.md to match a registered claim
    - Add appropriate caveats ("according to X" or "estimates suggest")
 
 **CRITICAL:** Do not generate articles with unverified citations. Citation laundering

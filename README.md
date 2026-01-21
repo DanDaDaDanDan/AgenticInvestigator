@@ -37,7 +37,7 @@ CREATE CASE → PLAN → BOOTSTRAP → QUESTION → FOLLOW → WRITE → VERIFY 
 | 2 | Curiosity | All leads pursued to conclusion |
 | 3 | Reconciliation | Lead results sync with summary |
 | 4 | Article | Publication-ready article exists |
-| 5 | Sources | All citations have captured evidence |
+| 5 | Sources | All citations verified against claim registry |
 | 6 | Integrity | Journalistic standards met |
 | 7 | Legal | Legal risk assessment passed |
 
@@ -55,6 +55,7 @@ Each case creates `cases/[topic-slug]/` with:
 | `evidence/S###/` | Captured sources with metadata, content, raw HTML |
 | `leads.json` | Lead tracking with depth and parent relationships |
 | `sources.json` | Source registry with capture status |
+| `claims.json` | Verified claims registry (extracted from sources) |
 | `removed-points.md` | Auto-removed unverifiable claims (for review) |
 | `future_research.md` | Leads beyond max depth (for future work) |
 

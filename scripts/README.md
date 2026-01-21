@@ -38,6 +38,83 @@ Creates:
 
 ---
 
+---
+
+## Claim Registry (`scripts/claims/`)
+
+The claim registry system verifies article claims against source evidence. Claims are extracted from sources using LLM at capture time, then article verification is simple matching.
+
+### `claims/verify-article.js`
+
+Main verification entry point - matches article claims to registry.
+
+```bash
+# Basic verification
+node scripts/claims/verify-article.js cases/[case-id]
+
+# With fix suggestions
+node scripts/claims/verify-article.js cases/[case-id] --fix
+
+# JSON output
+node scripts/claims/verify-article.js cases/[case-id] --json
+```
+
+Creates:
+- `claim-verification.json` - Structured verification results
+- `claim-verification-report.md` - Human-readable report
+
+### `claims/migrate-sources.js`
+
+Batch extract claims from existing sources (LLM-based).
+
+```bash
+# Check extraction status
+node scripts/claims/migrate-sources.js cases/[case-id] status
+
+# Generate LLM prompt for one source
+node scripts/claims/migrate-sources.js cases/[case-id] prompt S001
+
+# Generate prompts for all sources (JSON output)
+node scripts/claims/migrate-sources.js cases/[case-id] prompt-all
+
+# Register claims from LLM response file
+node scripts/claims/migrate-sources.js cases/[case-id] register S001 response.json
+```
+
+**Workflow:**
+1. Run `status` to see which sources need extraction
+2. Run `prompt <source-id>` to get the LLM prompt
+3. Send prompt to Gemini 3 Pro
+4. Save LLM response to file
+5. Run `register <source-id> <response-file>` to register claims
+
+### `claims/capture-integration.js`
+
+Integrate claim extraction into source capture workflow.
+
+```bash
+# Check status
+node scripts/claims/capture-integration.js cases/[case-id] status
+
+# Prepare extraction prompt for a source
+node scripts/claims/capture-integration.js cases/[case-id] prepare S001
+
+# List sources pending extraction
+node scripts/claims/capture-integration.js cases/[case-id] list-pending
+```
+
+### Other Claim Modules
+
+| Module | Purpose |
+|--------|---------|
+| `registry.js` | CRUD for claims.json |
+| `extract.js` | Generate LLM prompts for claim extraction |
+| `match.js` | Match article claims to registry |
+| `report.js` | Generate verification reports |
+| `index.js` | Module exports |
+
+---
+
 ### `verify-source.js`
 
 Verify evidence integrity via hash verification and red flag detection.
