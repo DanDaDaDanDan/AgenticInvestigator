@@ -391,6 +391,82 @@ Skills that read large amounts of data use `context: fork` to automatically run 
 
 ---
 
+## Claim Registry Architecture
+
+Claims are verified at **capture time**, not after article writing. This eliminates hallucination risk.
+
+### Flow
+
+```
+Source Capture → Extract Claims → Register in claims.json (verified by definition)
+                                           ↓
+                              Article Writing uses Registry
+                                           ↓
+                              Verification = Match Article to Registry
+```
+
+### claims.json Structure
+
+```json
+{
+  "version": 1,
+  "claims": [
+    {
+      "id": "CL0001",
+      "text": "62% of brand payments went to top 10% of creators",
+      "type": "statistic",
+      "numbers": [{"value": 62, "unit": "percent", "context": "brand payments"}],
+      "entities": ["brand payments", "creators"],
+      "sourceId": "S027",
+      "sourceUrl": "https://...",
+      "supporting_quote": "The top 10 percent of creators received 62 percent...",
+      "quote_location": {"line": 42},
+      "extracted_at": "2026-01-21T..."
+    }
+  ]
+}
+```
+
+### Claim Modules (`scripts/claims/`)
+
+| Module | Purpose |
+|--------|---------|
+| `registry.js` | CRUD for claims.json |
+| `extract.js` | Extract claims from source content (LLM prompt generation) |
+| `match.js` | Match article claims to registry |
+| `capture-integration.js` | Integrate extraction into capture flow |
+| `verify-article.js` | Main verification entry point |
+| `report.js` | Generate verification reports |
+
+### Verification Process
+
+1. **Extract claims from article** - Find sentences with citations
+2. **Match to registry** - Multiple strategies: exact text, number matching, keyword overlap
+3. **For unverified claims:**
+   - Search for supporting source
+   - Capture source (which extracts and registers new claims)
+   - Re-match article claim to newly registered claim
+   - Or flag for manual review
+
+### Usage
+
+```bash
+# Check extraction status
+node scripts/claims/capture-integration.js cases/<case-id> status
+
+# Prepare extraction prompt for a source
+node scripts/claims/capture-integration.js cases/<case-id> prepare S001
+
+# Verify article against registry
+node scripts/claims/verify-article.js cases/<case-id> --fix
+```
+
+### Key Principle
+
+**Claims are verified by construction.** A claim in the registry came directly from a captured source, with the exact supporting quote recorded. Article verification is just matching - not re-verifying.
+
+---
+
 ## Case Structure
 
 Cases are folders within the **DATA repository** at `cases/[topic-slug]/`.
@@ -407,9 +483,10 @@ cases/                           ← DATA REPOSITORY ROOT
     ├── summary.md               # Living document, always current
     ├── leads.json               # Leads with depth tracking (max_depth: 3)
     ├── sources.json             # Source registry
+    ├── claims.json              # CLAIM REGISTRY - verified claims from sources
     ├── removed-points.md        # Auto-removed points (human review)
     ├── future_research.md       # Leads beyond max_depth
-    ├── claim-verification.json  # Full audit trail (Gate 5c output)
+    ├── claim-verification.json  # Article verification results
     ├── claim-verification-report.md  # Human-readable verification report
     │
     ├── questions/               # 35 framework documents
