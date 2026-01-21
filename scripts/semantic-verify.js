@@ -2,6 +2,15 @@
 /**
  * semantic-verify.js - Verify citations semantically support their claims
  *
+ * @deprecated This script is deprecated. Use verify-claims.js instead, which provides:
+ * - Full audit trail (claim-verification.json)
+ * - Human-readable report (claim-verification-report.md)
+ * - Per-source verification storage (evidence/S###/claim-support.json)
+ * - Tiered verification (heuristics + LLM)
+ * - Claim type classification
+ *
+ * This file is kept for backward compatibility but will be removed in a future version.
+ *
  * Addresses Root Cause 3: Gate 5c was documented but not implemented.
  * This script uses LLM to verify that cited sources actually contain
  * the facts they're cited for, preventing citation laundering.

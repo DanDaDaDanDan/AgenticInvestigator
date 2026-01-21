@@ -191,6 +191,19 @@ async function saveEvidence(sourceId, caseDir, osintData) {
   fs.writeFileSync(path.join(evidenceDir, 'metadata.json'), JSON.stringify(metadata, null, 2));
   logger.debug(`Saved metadata.json`);
 
+  // Initialize empty claim-support.json for claim verification tracking
+  const claimSupportPath = path.join(evidenceDir, 'claim-support.json');
+  if (!fs.existsSync(claimSupportPath)) {
+    const claimSupport = {
+      source_id: sourceId,
+      verified_at: null,
+      source_content_hash: verificationHash,
+      claims_verified: []
+    };
+    fs.writeFileSync(claimSupportPath, JSON.stringify(claimSupport, null, 2));
+    logger.debug(`Initialized claim-support.json`);
+  }
+
   // Warn if hash mismatch
   if (osintReportedHash && verificationHash !== osintReportedHash) {
     logger.warn(`Hash mismatch for ${sourceId}: computed=${verificationHash}, osint_reported=${osintReportedHash}`);

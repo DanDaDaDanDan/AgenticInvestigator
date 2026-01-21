@@ -183,10 +183,15 @@ The curiosity gate has automatic failures that cannot be overridden:
 The sources gate performs multiple verification layers:
 - **5a. Capture verification** - All cited sources must have `captured: true`
 - **5b. Fabrication check** - No synthesized/compiled sources
-- **5c. Semantic verification** - Citations must actually support the claims made (`scripts/semantic-verify.js`)
+- **5c. Claim verification** - Full audit trail mapping claims to evidence (`scripts/verify-claims.js`)
 - **5d. Number verification** - Statistics in article match values in cited sources (`scripts/verify-numbers.js`)
 - **5e. Lead source coverage** - Investigated leads with specific findings must have captured sources
 - **5f. Auto-removal** - Last resort for unfixable sources
+
+**Gate 5c produces persistent audit trail:**
+- `claim-verification.json` - Complete claim-to-evidence mapping
+- `claim-verification-report.md` - Human-readable summary
+- `evidence/S###/claim-support.json` - Per-source verification records
 
 ---
 
@@ -282,8 +287,10 @@ Uses three-phase pattern: parallel context-free scans → parallel contextual ev
 | `scripts/merge-batch-results.js` | Merge parallel follow results |
 | `scripts/merge-question-batches.js` | Merge parallel question results |
 | `scripts/audit-citations.js` | Pre-article citation audit (Gate 5a) |
-| `scripts/semantic-verify.js` | Semantic claim-evidence verification (Gate 5c) |
+| `scripts/extract-claims.js` | Claim extraction utilities |
+| `scripts/verify-claims.js` | Comprehensive claim verification with audit trail (Gate 5c) |
 | `scripts/verify-numbers.js` | Statistics/number verification (Gate 5d) |
+| `scripts/semantic-verify.js` | DEPRECATED - use verify-claims.js instead |
 
 ### Estimated Time Savings
 
@@ -388,6 +395,8 @@ cases/                           ← DATA REPOSITORY ROOT
     ├── sources.json             # Source registry
     ├── removed-points.md        # Auto-removed points (human review)
     ├── future_research.md       # Leads beyond max_depth
+    ├── claim-verification.json  # Full audit trail (Gate 5c output)
+    ├── claim-verification-report.md  # Human-readable verification report
     │
     ├── questions/               # 35 framework documents
     │   ├── 01-follow-the-money.md
@@ -398,6 +407,7 @@ cases/                           ← DATA REPOSITORY ROOT
     │   └── S###/
     │       ├── metadata.json
     │       ├── content.md
+    │       ├── claim-support.json  # Per-source verification records
     │       └── screenshot.png
     │
     ├── articles/
@@ -734,7 +744,7 @@ osint_get target="https://example.com/paper.pdf" output_path="evidence/S001/pape
 - Do NOT store lead results with statistics but empty sources[]
 - Do NOT omit temporal context for dated evidence
 - Do NOT skip pre-article citation audit (`scripts/audit-citations.js`)
-- Do NOT skip semantic verification (`scripts/semantic-verify.js`)
+- Do NOT skip claim verification (`scripts/verify-claims.js`)
 - Do NOT skip number verification (`scripts/verify-numbers.js`)
 - Do NOT generate articles when semantic verification flags mismatches
 - Do NOT assume a citation supports a claim without verifying the source contains the fact
