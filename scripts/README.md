@@ -118,7 +118,6 @@ node scripts/claims/capture-integration.js cases/[case-id] list-pending
 | `registry.js` | CRUD for claims.json |
 | `extract.js` | Generate LLM prompts for claim extraction |
 | `match.js` | LLM-based semantic matching of article claims to registry |
-| `report.js` | Generate verification reports |
 | `index.js` | Module exports |
 
 ---
