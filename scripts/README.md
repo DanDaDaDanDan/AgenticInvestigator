@@ -46,11 +46,17 @@ The claim registry system verifies article claims against source evidence. Claim
 
 ### `claims/verify-article.js`
 
-Main verification entry point - matches article claims to registry.
+Main verification entry point - matches article claims to registry using LLM semantic matching.
 
 ```bash
-# Basic verification
+# Basic verification (returns pending items that need LLM)
 node scripts/claims/verify-article.js cases/[case-id]
+
+# Output only LLM prompts for batch processing
+node scripts/claims/verify-article.js cases/[case-id] --prompts-only
+
+# Process LLM responses to complete verification
+node scripts/claims/verify-article.js cases/[case-id] --responses responses.json
 
 # With fix suggestions
 node scripts/claims/verify-article.js cases/[case-id] --fix
@@ -59,9 +65,11 @@ node scripts/claims/verify-article.js cases/[case-id] --fix
 node scripts/claims/verify-article.js cases/[case-id] --json
 ```
 
-Creates:
-- `claim-verification.json` - Structured verification results
-- `claim-verification-report.md` - Human-readable report
+**Workflow:**
+1. Run basic verification to get prompts for claims needing LLM matching
+2. Send prompts to LLM (Gemini 3 Pro recommended)
+3. Save responses as JSON array: `[{index: 0, response: "..."}, ...]`
+4. Run with `--responses` to process and get final results
 
 ### `claims/migrate-sources.js`
 
@@ -109,7 +117,7 @@ node scripts/claims/capture-integration.js cases/[case-id] list-pending
 |--------|---------|
 | `registry.js` | CRUD for claims.json |
 | `extract.js` | Generate LLM prompts for claim extraction |
-| `match.js` | Match article claims to registry |
+| `match.js` | LLM-based semantic matching of article claims to registry |
 | `report.js` | Generate verification reports |
 | `index.js` | Module exports |
 

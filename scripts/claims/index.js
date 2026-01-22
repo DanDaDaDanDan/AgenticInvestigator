@@ -42,12 +42,14 @@ module.exports = {
   verifyQuoteInSource: extract.verifyQuoteInSource,
   prepareExtraction: extract.prepareExtraction,
   postProcessClaims: extract.postProcessClaims,
-  extractNumbersFromText: extract.extractNumbersFromText,
 
-  // Matching
+  // Matching (LLM-based)
   extractArticleClaims: match.extractArticleClaims,
-  matchClaim: match.matchClaim,
-  matchAllClaims: match.matchAllClaims,
+  generateMatchPrompt: match.generateMatchPrompt,
+  parseMatchResponse: match.parseMatchResponse,
+  getCandidates: match.getCandidates,
+  prepareMatching: match.prepareMatching,
+  processLLMResponse: match.processLLMResponse,
   getMatchSummary: match.getMatchSummary,
 
   // Capture integration
@@ -56,9 +58,12 @@ module.exports = {
   getSourcesNeedingExtraction: captureIntegration.getSourcesNeedingExtraction,
   getExtractionStatus: captureIntegration.getExtractionStatus,
 
-  // Article verification
+  // Article verification (LLM-based)
+  prepareVerification: verifyArticle.prepareVerification,
+  processVerificationResponses: verifyArticle.processVerificationResponses,
   verifyArticle: verifyArticle.verifyArticle,
   verifyAndFix: verifyArticle.verifyAndFix,
   generateFixSuggestions: verifyArticle.generateFixSuggestions,
-  prepareSourceSearch: verifyArticle.prepareSourceSearch
+  prepareSourceSearch: verifyArticle.prepareSourceSearch,
+  generateReport: verifyArticle.generateReport
 };

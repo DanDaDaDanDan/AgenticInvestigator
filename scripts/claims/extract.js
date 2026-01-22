@@ -135,69 +135,6 @@ function parseNumbers(numbers) {
 }
 
 /**
- * Extract numbers from text using regex patterns
- *
- * Used by match.js to compare claims by their numerical values.
- *
- * @param {string} text - Text to extract numbers from
- * @returns {array} - Array of {value, unit, context}
- */
-function extractNumbersFromText(text) {
-  const numbers = [];
-
-  // Percentages: "62%" or "62 percent"
-  const percentMatch = text.matchAll(/(\d+(?:\.\d+)?)\s*(?:percent|%)/gi);
-  for (const match of percentMatch) {
-    numbers.push({
-      value: parseFloat(match[1]),
-      unit: 'percent',
-      context: extractContext(text, match.index)
-    });
-  }
-
-  // Dollar amounts: "$50 million" or "$2,000"
-  const dollarMatch = text.matchAll(/\$\s*(\d+(?:,\d{3})*(?:\.\d+)?)\s*(million|billion|thousand|M|B|K)?/gi);
-  for (const match of dollarMatch) {
-    let value = parseFloat(match[1].replace(/,/g, ''));
-    const multiplier = match[2]?.toLowerCase();
-    if (multiplier === 'thousand' || multiplier === 'k') value *= 1000;
-    if (multiplier === 'million' || multiplier === 'm') value *= 1000000;
-    if (multiplier === 'billion' || multiplier === 'b') value *= 1000000000;
-
-    numbers.push({
-      value,
-      unit: 'dollars',
-      context: extractContext(text, match.index)
-    });
-  }
-
-  // Plain numbers with context: "2,000 agents" or "15 studies"
-  const plainMatch = text.matchAll(/(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s+(\w+)/gi);
-  for (const match of plainMatch) {
-    // Skip if already captured as percent or dollar
-    if (text.substring(match.index - 1, match.index) === '$') continue;
-    if (/percent|%/i.test(match[2])) continue;
-
-    numbers.push({
-      value: parseFloat(match[1].replace(/,/g, '')),
-      unit: match[2].toLowerCase(),
-      context: extractContext(text, match.index)
-    });
-  }
-
-  return numbers;
-}
-
-/**
- * Extract context around a match position
- */
-function extractContext(text, index, windowSize = 30) {
-  const start = Math.max(0, index - windowSize);
-  const end = Math.min(text.length, index + windowSize);
-  return text.substring(start, end).trim();
-}
-
-/**
  * Verify that a quote exists in the source content
  *
  * @param {string} quote - The supporting quote
@@ -274,6 +211,5 @@ module.exports = {
   parseExtractionResponse,
   verifyQuoteInSource,
   prepareExtraction,
-  postProcessClaims,
-  extractNumbersFromText
+  postProcessClaims
 };

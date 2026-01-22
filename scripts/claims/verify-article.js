@@ -2,9 +2,14 @@
  * verify-article.js - Verify Article Claims Against Registry
  *
  * The main verification entry point. Extracts claims from an article,
- * matches them against the claim registry, and reports results.
+ * matches them against the claim registry using LLM semantic matching,
+ * and reports results.
  *
- * Unverified claims can optionally trigger source search and capture.
+ * Architecture:
+ * 1. prepareVerification() extracts claims and generates LLM prompts
+ * 2. Caller makes LLM calls (Gemini 3 Pro recommended)
+ * 3. processVerificationResponses() updates results with LLM responses
+ * 4. generateReport() produces human-readable output
  */
 
 'use strict';
@@ -12,19 +17,26 @@
 const fs = require('fs');
 const path = require('path');
 const { loadRegistry } = require('./registry');
-const { matchAllClaims, getMatchSummary, extractArticleClaims } = require('./match');
-const { prepareSourceForExtraction, registerExtractedClaims } = require('./capture-integration');
+const {
+  prepareMatching,
+  processLLMResponse,
+  getMatchSummary
+} = require('./match');
 
 /**
- * Verify all claims in an article
+ * Prepare verification for an article
+ *
+ * Returns match data with LLM prompts. The caller should:
+ * 1. Take items with status='PENDING' and prompt!=null
+ * 2. Send each prompt to an LLM (Gemini 3 Pro recommended)
+ * 3. Call processVerificationResponses() with the LLM responses
  *
  * @param {string} caseDir - Case directory
  * @param {object} options - Options
  * @param {string} options.articlePath - Path to article (default: articles/full.md)
- * @param {boolean} options.verbose - Verbose output
- * @returns {object} - Verification results
+ * @returns {object} - {matchData, prompts, stats, error?}
  */
-function verifyArticle(caseDir, options = {}) {
+function prepareVerification(caseDir, options = {}) {
   const articlePath = options.articlePath || path.join(caseDir, 'articles', 'full.md');
 
   // Check article exists
@@ -38,17 +50,64 @@ function verifyArticle(caseDir, options = {}) {
   // Read article
   const articleText = fs.readFileSync(articlePath, 'utf-8');
 
-  // Match all claims
-  const results = matchAllClaims(caseDir, articleText);
-  const summary = getMatchSummary(results);
+  // Prepare matching (extracts claims, generates prompts)
+  const { articleClaims, matchData, registry, stats } = prepareMatching(caseDir, articleText);
+
+  // Extract just the prompts for LLM calls
+  const prompts = matchData
+    .filter(m => m.prompt)
+    .map((m, idx) => ({
+      index: idx,
+      prompt: m.prompt,
+      articleClaim: m.articleClaim.text,
+      line: m.articleClaim.line
+    }));
+
+  return {
+    articlePath,
+    preparedAt: new Date().toISOString(),
+    matchData,
+    prompts,
+    stats,
+    registry
+  };
+}
+
+/**
+ * Process LLM responses and update verification results
+ *
+ * @param {object} prepared - Output from prepareVerification()
+ * @param {array} llmResponses - Array of {index, response} where response is the LLM output
+ * @returns {object} - Final verification results
+ */
+function processVerificationResponses(prepared, llmResponses) {
+  const { matchData, articlePath } = prepared;
+
+  // Create a map of index -> response for quick lookup
+  const responseMap = new Map(
+    llmResponses.map(r => [r.index, r.response])
+  );
+
+  // Process each pending item
+  const updatedMatchData = matchData.map((item, idx) => {
+    if (item.status === 'PENDING' && responseMap.has(idx)) {
+      return processLLMResponse(item, responseMap.get(idx));
+    }
+    return item;
+  });
+
+  // Calculate summary
+  const summary = getMatchSummary(updatedMatchData);
 
   // Categorize results
-  const verified = results.filter(r => r.status === 'VERIFIED');
-  const unverified = results.filter(r => r.status === 'UNVERIFIED');
-  const mismatched = results.filter(r => r.status === 'SOURCE_MISMATCH');
+  const verified = updatedMatchData.filter(r => r.status === 'VERIFIED');
+  const unverified = updatedMatchData.filter(r => r.status === 'UNVERIFIED');
+  const mismatched = updatedMatchData.filter(r => r.status === 'MISMATCH');
+  const pending = updatedMatchData.filter(r => r.status === 'PENDING');
 
   // Determine overall status
   let status = 'VERIFIED';
+  if (pending.length > 0) status = 'INCOMPLETE';
   if (unverified.length > 0) status = 'UNVERIFIED_CLAIMS';
   if (mismatched.length > 0) status = 'MISMATCHED_CLAIMS';
   if (unverified.length > 0 && mismatched.length > 0) status = 'MULTIPLE_ISSUES';
@@ -61,7 +120,46 @@ function verifyArticle(caseDir, options = {}) {
     verified,
     unverified,
     mismatched,
-    allResults: results
+    pending,
+    allResults: updatedMatchData
+  };
+}
+
+/**
+ * Simple one-shot verification (for direct matches only)
+ *
+ * This returns immediate results for claims with direct CL### references.
+ * Claims requiring LLM verification will have status='PENDING'.
+ *
+ * @param {string} caseDir - Case directory
+ * @param {object} options - Options
+ * @returns {object} - Partial verification results
+ */
+function verifyArticle(caseDir, options = {}) {
+  const prepared = prepareVerification(caseDir, options);
+
+  if (prepared.error) {
+    return prepared;
+  }
+
+  // Return partial results (direct matches resolved, LLM matches pending)
+  const summary = getMatchSummary(prepared.matchData);
+
+  // Categorize current state
+  const verified = prepared.matchData.filter(r => r.status === 'VERIFIED');
+  const unverified = prepared.matchData.filter(r => r.status === 'UNVERIFIED');
+  const pending = prepared.matchData.filter(r => r.status === 'PENDING');
+
+  return {
+    status: pending.length > 0 ? 'PENDING_LLM' : (unverified.length > 0 ? 'UNVERIFIED_CLAIMS' : 'VERIFIED'),
+    articlePath: prepared.articlePath,
+    verifiedAt: new Date().toISOString(),
+    summary,
+    verified,
+    unverified,
+    pending,
+    prompts: prepared.prompts,
+    allResults: prepared.matchData
   };
 }
 
@@ -83,7 +181,7 @@ function generateFixSuggestions(unverifiedClaims, caseDir) {
       options: []
     };
 
-    // Option 1: Check if there's a similar claim in registry (maybe just needs rewording)
+    // Option 1: Check if there's a similar claim in registry
     const similarClaims = registry.claims
       .map(regClaim => {
         const score = fuzzyScore(claim.normalized, regClaim.normalized);
@@ -143,11 +241,7 @@ function fuzzyScore(text1, text2) {
  * Generate search query from claim
  */
 function generateSearchQuery(claim) {
-  // Extract key terms (nouns, numbers, proper nouns)
   const text = claim.text;
-
-  // Get numbers
-  const numbers = claim.numbers.map(n => `${n.value} ${n.unit || ''}`).join(' ');
 
   // Get key words (longer words, likely meaningful)
   const words = text.split(/\s+/)
@@ -155,17 +249,11 @@ function generateSearchQuery(claim) {
     .slice(0, 5)
     .join(' ');
 
-  return `${numbers} ${words}`.trim();
+  return words.trim();
 }
 
 /**
- * Handle unverified claim by searching for a source
- *
- * This function prepares search parameters. The caller should:
- * 1. Use these parameters to search (MCP tools)
- * 2. Capture promising sources
- * 3. Extract claims from new sources
- * 4. Re-run verification
+ * Prepare source search for an unverified claim
  *
  * @param {object} claim - Unverified article claim
  * @returns {object} - Search parameters and guidance
@@ -178,32 +266,26 @@ function prepareSourceSearch(claim) {
     searchQuery,
     searchGuidance: `Search for sources containing: "${searchQuery}"`,
     verificationGuidance: `After capturing a source, extract claims and check if any match: "${claim.text}"`,
-    mcp_search_prompt: `Find authoritative sources that contain information about: ${searchQuery}. Look for official reports, news articles, or academic sources that specifically mention these figures or facts.`
+    mcp_search_prompt: `Find authoritative sources that contain information about: ${searchQuery}. Look for official reports, news articles, or academic sources that specifically mention these facts.`
   };
 }
 
 /**
- * Verify and attempt to fix unverified claims
- *
- * This is an orchestration function that:
- * 1. Verifies the article
- * 2. For each unverified claim, provides fix guidance
- * 3. Returns actionable results
+ * Verify and generate fix suggestions
  *
  * @param {string} caseDir - Case directory
  * @param {object} options - Options
  * @returns {object} - Verification results with fix guidance
  */
 function verifyAndFix(caseDir, options = {}) {
-  // Step 1: Verify article
   const verification = verifyArticle(caseDir, options);
 
   if (verification.error) {
     return verification;
   }
 
-  // Step 2: Generate fix suggestions for unverified
-  if (verification.unverified.length > 0) {
+  // Generate fix suggestions for unverified
+  if (verification.unverified && verification.unverified.length > 0) {
     verification.fixSuggestions = generateFixSuggestions(
       verification.unverified,
       caseDir
@@ -214,18 +296,72 @@ function verifyAndFix(caseDir, options = {}) {
     );
   }
 
-  // Step 3: Generate fix suggestions for mismatched
-  if (verification.mismatched.length > 0) {
-    verification.mismatchFixes = verification.mismatched.map(m => ({
-      claim: m.articleClaim,
-      registryClaim: m.registryClaim,
-      action: 'UPDATE_CITATION',
-      description: `Article cites ${m.articleClaim.sourceIds.join(', ')} but claim is from ${m.registryClaim.sourceId}`,
-      fix: `Change citation to [${m.registryClaim.sourceId}] or find alternate source`
-    }));
+  return verification;
+}
+
+/**
+ * Generate human-readable report
+ */
+function generateReport(results) {
+  const lines = [];
+
+  lines.push('='.repeat(60));
+  lines.push('ARTICLE VERIFICATION RESULTS');
+  lines.push('='.repeat(60));
+
+  if (results.error) {
+    lines.push(`\nERROR: ${results.error}`);
+    lines.push(results.message);
+    return lines.join('\n');
   }
 
-  return verification;
+  lines.push(`\nStatus: ${results.status}`);
+  lines.push(`Article: ${results.articlePath}`);
+  lines.push(`Verified at: ${results.verifiedAt}`);
+
+  lines.push('\nSummary:');
+  lines.push(`  Total claims: ${results.summary.total}`);
+  lines.push(`  Verified: ${results.summary.verified}`);
+  lines.push(`  Unverified: ${results.summary.unverified}`);
+  lines.push(`  Mismatch: ${results.summary.mismatch || 0}`);
+  lines.push(`  Pending LLM: ${results.summary.pending || 0}`);
+
+  if (results.pending && results.pending.length > 0) {
+    lines.push('\n' + '-'.repeat(60));
+    lines.push('PENDING LLM VERIFICATION:');
+    lines.push('-'.repeat(60));
+    lines.push(`\n${results.pending.length} claims require LLM semantic matching.`);
+    lines.push('Run with LLM responses to complete verification.');
+  }
+
+  if (results.unverified && results.unverified.length > 0) {
+    lines.push('\n' + '-'.repeat(60));
+    lines.push('UNVERIFIED CLAIMS:');
+    lines.push('-'.repeat(60));
+
+    for (const u of results.unverified) {
+      const text = u.articleClaim.text.substring(0, 80);
+      lines.push(`\n  Line ${u.articleClaim.line}: "${text}${text.length >= 80 ? '...' : ''}"`);
+      lines.push(`    Sources cited: ${u.articleClaim.sourceIds.join(', ') || 'none'}`);
+      lines.push(`    Reason: ${u.reason || 'No matching claim in registry'}`);
+    }
+  }
+
+  if (results.mismatched && results.mismatched.length > 0) {
+    lines.push('\n' + '-'.repeat(60));
+    lines.push('MISMATCHED CLAIMS:');
+    lines.push('-'.repeat(60));
+
+    for (const m of results.mismatched) {
+      const text = m.articleClaim.text.substring(0, 80);
+      lines.push(`\n  Line ${m.articleClaim.line}: "${text}${text.length >= 80 ? '...' : ''}"`);
+      lines.push(`    Reason: ${m.reason || 'Claim contradicts or misrepresents source'}`);
+    }
+  }
+
+  lines.push('\n' + '='.repeat(60));
+
+  return lines.join('\n');
 }
 
 /**
@@ -239,10 +375,11 @@ async function main() {
     console.log('  node verify-article.js <case-dir> [options]');
     console.log('');
     console.log('Options:');
-    console.log('  --article <path>  Path to article (default: articles/full.md)');
-    console.log('  --json            Output JSON');
-    console.log('  --verbose         Verbose output');
-    console.log('  --fix             Include fix suggestions');
+    console.log('  --article <path>     Path to article (default: articles/full.md)');
+    console.log('  --json               Output JSON');
+    console.log('  --fix                Include fix suggestions');
+    console.log('  --prompts-only       Output only LLM prompts (for batch processing)');
+    console.log('  --responses <file>   JSON file with LLM responses to process');
     process.exit(1);
   }
 
@@ -257,8 +394,9 @@ async function main() {
   const options = {
     articlePath: null,
     json: false,
-    verbose: false,
-    fix: false
+    fix: false,
+    promptsOnly: false,
+    responsesFile: null
   };
 
   for (let i = 1; i < args.length; i++) {
@@ -266,14 +404,51 @@ async function main() {
       options.articlePath = args[++i];
     } else if (args[i] === '--json') {
       options.json = true;
-    } else if (args[i] === '--verbose') {
-      options.verbose = true;
     } else if (args[i] === '--fix') {
       options.fix = true;
+    } else if (args[i] === '--prompts-only') {
+      options.promptsOnly = true;
+    } else if (args[i] === '--responses' && args[i + 1]) {
+      options.responsesFile = args[++i];
     }
   }
 
-  // Run verification
+  // Mode 1: Just output prompts for LLM processing
+  if (options.promptsOnly) {
+    const prepared = prepareVerification(caseDir, options);
+    if (prepared.error) {
+      console.error(JSON.stringify(prepared, null, 2));
+      process.exit(1);
+    }
+    console.log(JSON.stringify({
+      prompts: prepared.prompts,
+      stats: prepared.stats
+    }, null, 2));
+    return;
+  }
+
+  // Mode 2: Process LLM responses
+  if (options.responsesFile) {
+    const prepared = prepareVerification(caseDir, options);
+    if (prepared.error) {
+      console.error(JSON.stringify(prepared, null, 2));
+      process.exit(1);
+    }
+
+    const responses = JSON.parse(fs.readFileSync(options.responsesFile, 'utf-8'));
+    const result = processVerificationResponses(prepared, responses);
+
+    if (options.json) {
+      console.log(JSON.stringify(result, null, 2));
+    } else {
+      console.log(generateReport(result));
+    }
+
+    process.exit(result.status === 'VERIFIED' ? 0 : 1);
+    return;
+  }
+
+  // Mode 3: Standard verification (returns partial results, pending items need LLM)
   const result = options.fix
     ? verifyAndFix(caseDir, options)
     : verifyArticle(caseDir, options);
@@ -283,63 +458,7 @@ async function main() {
     return;
   }
 
-  // Human-readable output
-  console.log('\n' + '='.repeat(60));
-  console.log('ARTICLE VERIFICATION RESULTS');
-  console.log('='.repeat(60));
-
-  if (result.error) {
-    console.log(`\nERROR: ${result.error}`);
-    console.log(result.message);
-    process.exit(1);
-  }
-
-  console.log(`\nStatus: ${result.status}`);
-  console.log(`Article: ${result.articlePath}`);
-  console.log(`Verified at: ${result.verifiedAt}`);
-
-  console.log('\nSummary:');
-  console.log(`  Total claims: ${result.summary.total}`);
-  console.log(`  Verified: ${result.summary.verified}`);
-  console.log(`  Unverified: ${result.summary.unverified}`);
-  console.log(`  Source mismatch: ${result.summary.sourceMismatch}`);
-
-  if (result.summary.unverified > 0) {
-    console.log('\n' + '-'.repeat(60));
-    console.log('UNVERIFIED CLAIMS:');
-    console.log('-'.repeat(60));
-
-    for (const u of result.unverified) {
-      console.log(`\n  Line ${u.articleClaim.line}: "${u.articleClaim.text.substring(0, 80)}..."`);
-      console.log(`    Sources cited: ${u.articleClaim.sourceIds.join(', ') || 'none'}`);
-
-      if (options.fix && result.fixSuggestions) {
-        const suggestion = result.fixSuggestions.find(
-          s => s.claim.line === u.articleClaim.line
-        );
-        if (suggestion) {
-          console.log('    Fix options:');
-          for (const opt of suggestion.options) {
-            console.log(`      - ${opt.action}: ${opt.description}`);
-          }
-        }
-      }
-    }
-  }
-
-  if (result.summary.sourceMismatch > 0) {
-    console.log('\n' + '-'.repeat(60));
-    console.log('SOURCE MISMATCHES:');
-    console.log('-'.repeat(60));
-
-    for (const m of result.mismatched) {
-      console.log(`\n  Line ${m.articleClaim.line}: "${m.articleClaim.text.substring(0, 80)}..."`);
-      console.log(`    Cites: ${m.articleClaim.sourceIds.join(', ')}`);
-      console.log(`    But matched claim is from: ${m.registryClaim.sourceId}`);
-    }
-  }
-
-  console.log('\n' + '='.repeat(60));
+  console.log(generateReport(result));
 
   // Exit code based on status
   if (result.status === 'VERIFIED') {
@@ -358,8 +477,11 @@ if (require.main === module) {
 }
 
 module.exports = {
+  prepareVerification,
+  processVerificationResponses,
   verifyArticle,
   verifyAndFix,
   generateFixSuggestions,
-  prepareSourceSearch
+  prepareSourceSearch,
+  generateReport
 };

@@ -2,13 +2,12 @@
  * match.js - Match Article Claims to Registry Claims
  *
  * Matches claims extracted from an article against the claim registry.
- * Uses multiple matching strategies: exact, number-based, and semantic.
+ * Uses LLM for semantic matching - simple and accurate.
  */
 
 'use strict';
 
 const { loadRegistry, normalizeClaim } = require('./registry');
-const { extractNumbersFromText } = require('./extract');
 
 /**
  * Extract claims from article text
@@ -16,7 +15,7 @@ const { extractNumbersFromText } = require('./extract');
  * Finds sentences/passages that contain citations [S###] or [CL###]
  *
  * @param {string} articleText - Article content
- * @returns {array} - Array of {text, sourceId, line, numbers}
+ * @returns {array} - Array of {text, sourceId, line}
  */
 function extractArticleClaims(articleText) {
   const claims = [];
@@ -63,16 +62,12 @@ function extractArticleClaims(articleText) {
         .map(m => m[1])
         .filter(id => id.startsWith('CL'));
 
-      // Extract numbers from the claim
-      const numbers = extractNumbersFromText(claimText);
-
       claims.push({
         text: claimText,
         normalized: normalizeClaim(claimText),
         line: lineNum + 1,
         sourceIds,
         claimIds,
-        numbers,
         raw: sentence.trim()
       });
     }
@@ -92,281 +87,229 @@ function splitIntoSentences(text) {
 }
 
 /**
- * Match a single article claim to registry claims
+ * Generate LLM prompt for semantic claim matching
  *
  * @param {object} articleClaim - Claim from article
- * @param {array} registryClaims - All registry claims
- * @returns {object} - {match: claim|null, score: number, matchType: string}
+ * @param {array} candidates - Candidate registry claims (filtered by source if possible)
+ * @returns {string} - Prompt for LLM
  */
-function matchClaim(articleClaim, registryClaims) {
-  let bestMatch = null;
-  let bestScore = 0;
-  let bestMatchType = 'none';
-
-  for (const regClaim of registryClaims) {
-    // Strategy 1: Exact normalized text match
-    const exactScore = exactMatch(articleClaim.normalized, regClaim.normalized);
-    if (exactScore > bestScore) {
-      bestScore = exactScore;
-      bestMatch = regClaim;
-      bestMatchType = 'exact';
-    }
-
-    // Strategy 2: Number-based match (same numbers = likely same claim)
-    if (articleClaim.numbers.length > 0 && regClaim.numbers.length > 0) {
-      const numberScore = numberMatch(articleClaim.numbers, regClaim.numbers);
-      if (numberScore > bestScore) {
-        bestScore = numberScore;
-        bestMatch = regClaim;
-        bestMatchType = 'number';
-      }
-    }
-
-    // Strategy 3: Keyword overlap (semantic similarity proxy)
-    const keywordScore = keywordMatch(articleClaim.normalized, regClaim.normalized);
-    if (keywordScore > bestScore) {
-      bestScore = keywordScore;
-      bestMatch = regClaim;
-      bestMatchType = 'keyword';
-    }
-
-    // Strategy 4: Source-constrained match (if article cites a source, only match claims from that source)
-    if (articleClaim.sourceIds.length > 0) {
-      const sourceScore = sourceConstrainedMatch(articleClaim, regClaim);
-      if (sourceScore > bestScore) {
-        bestScore = sourceScore;
-        bestMatch = regClaim;
-        bestMatchType = 'source_constrained';
-      }
-    }
+function generateMatchPrompt(articleClaim, candidates) {
+  if (candidates.length === 0) {
+    return null;
   }
 
-  // Threshold for accepting a match
-  const threshold = 0.5;
+  const candidateList = candidates
+    .slice(0, 10) // Limit to top 10 candidates to keep prompt reasonable
+    .map((c, i) => `${i + 1}. [${c.id}] "${c.text}"\n   Source: ${c.sourceId}\n   Quote: "${c.supporting_quote?.substring(0, 100)}..."`)
+    .join('\n\n');
 
-  if (bestScore >= threshold) {
-    return { match: bestMatch, score: bestScore, matchType: bestMatchType };
-  }
+  return `Verify if any registered claim supports this article claim.
 
-  return { match: null, score: bestScore, matchType: 'none' };
+ARTICLE CLAIM: "${articleClaim.text}"
+${articleClaim.sourceIds.length > 0 ? `Cited sources: ${articleClaim.sourceIds.join(', ')}` : ''}
+
+REGISTERED CLAIMS:
+${candidateList}
+
+Instructions:
+1. Check if any registered claim conveys the SAME factual information as the article claim
+2. Numbers must match exactly (62% ≠ 60%, $50M ≠ $5M)
+3. The meaning must be equivalent, not just similar words
+4. If the article claim cites a source, prefer matches from that source
+
+Respond in JSON:
+{
+  "match": <number 1-${Math.min(candidates.length, 10)}> or null,
+  "confidence": <0.0-1.0>,
+  "status": "VERIFIED" | "UNVERIFIED" | "MISMATCH",
+  "reason": "<brief explanation>"
+}
+
+- VERIFIED: A registered claim supports the article claim
+- UNVERIFIED: No registered claim supports this (claim may need a source)
+- MISMATCH: Article claim contradicts or misrepresents a registered claim`;
 }
 
 /**
- * Exact text match scoring
- */
-function exactMatch(text1, text2) {
-  if (text1 === text2) return 1.0;
-
-  // Check if one contains the other
-  if (text1.includes(text2) || text2.includes(text1)) {
-    const shorter = Math.min(text1.length, text2.length);
-    const longer = Math.max(text1.length, text2.length);
-    return shorter / longer;
-  }
-
-  return 0;
-}
-
-/**
- * Number-based match scoring
+ * Parse LLM match response
  *
- * Claims with the same specific numbers are likely the same claim
+ * @param {string} response - LLM response
+ * @param {array} candidates - Original candidate claims
+ * @returns {object} - {match, confidence, status, reason}
  */
-function numberMatch(nums1, nums2) {
-  if (nums1.length === 0 || nums2.length === 0) return 0;
+function parseMatchResponse(response, candidates) {
+  try {
+    let jsonStr = response;
 
-  let matches = 0;
+    // Remove markdown code blocks if present
+    const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[1];
+    }
 
-  for (const n1 of nums1) {
-    for (const n2 of nums2) {
-      // Check if values match (with small tolerance for rounding)
-      const tolerance = 0.01;
-      const diff = Math.abs(n1.value - n2.value) / Math.max(n1.value, n2.value, 1);
+    const parsed = JSON.parse(jsonStr.trim());
 
-      if (diff <= tolerance) {
-        // Same value
-        matches++;
+    const matchIndex = parsed.match;
+    const matchedClaim = matchIndex && matchIndex >= 1 && matchIndex <= candidates.length
+      ? candidates[matchIndex - 1]
+      : null;
 
-        // Bonus if same unit
-        if (n1.unit === n2.unit) {
-          matches += 0.5;
-        }
-      }
+    return {
+      match: matchedClaim,
+      confidence: parsed.confidence || 0,
+      status: parsed.status || (matchedClaim ? 'VERIFIED' : 'UNVERIFIED'),
+      reason: parsed.reason || ''
+    };
+  } catch (err) {
+    return {
+      match: null,
+      confidence: 0,
+      status: 'UNVERIFIED',
+      reason: `Failed to parse LLM response: ${err.message}`
+    };
+  }
+}
+
+/**
+ * Get candidate claims for matching
+ *
+ * If article claim cites specific sources, prioritize claims from those sources.
+ *
+ * @param {object} articleClaim - Claim from article
+ * @param {array} allClaims - All registry claims
+ * @returns {array} - Candidate claims to check
+ */
+function getCandidates(articleClaim, allClaims) {
+  if (articleClaim.sourceIds.length > 0) {
+    // First try claims from cited sources
+    const fromCitedSources = allClaims.filter(c =>
+      articleClaim.sourceIds.includes(c.sourceId)
+    );
+
+    if (fromCitedSources.length > 0) {
+      return fromCitedSources;
     }
   }
 
-  // Score based on proportion of numbers matched
-  const maxPossible = Math.max(nums1.length, nums2.length);
-  return Math.min(1.0, matches / maxPossible);
+  // Fall back to all claims
+  return allClaims;
 }
 
 /**
- * Keyword overlap scoring (Jaccard similarity)
- */
-function keywordMatch(text1, text2) {
-  const stopWords = new Set([
-    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-    'of', 'with', 'by', 'from', 'is', 'are', 'was', 'were', 'been', 'be',
-    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
-    'should', 'may', 'might', 'must', 'that', 'this', 'these', 'those'
-  ]);
-
-  const words1 = new Set(
-    text1.split(/\s+/)
-      .map(w => w.replace(/[^a-z0-9]/g, ''))
-      .filter(w => w.length > 2 && !stopWords.has(w))
-  );
-
-  const words2 = new Set(
-    text2.split(/\s+/)
-      .map(w => w.replace(/[^a-z0-9]/g, ''))
-      .filter(w => w.length > 2 && !stopWords.has(w))
-  );
-
-  if (words1.size === 0 || words2.size === 0) return 0;
-
-  const intersection = new Set([...words1].filter(w => words2.has(w)));
-  const union = new Set([...words1, ...words2]);
-
-  return intersection.size / union.size;
-}
-
-/**
- * Source-constrained match
+ * Match all article claims to registry (returns data for LLM verification)
  *
- * If article cites source S027, only consider registry claims from S027
- */
-function sourceConstrainedMatch(articleClaim, regClaim) {
-  if (!articleClaim.sourceIds.includes(regClaim.sourceId)) {
-    return 0;
-  }
-
-  // Within the same source, use keyword matching
-  const keywordScore = keywordMatch(articleClaim.normalized, regClaim.normalized);
-
-  // Boost score since source already matches
-  return Math.min(1.0, keywordScore * 1.5);
-}
-
-/**
- * Match all article claims to registry
+ * This function prepares the matching data. The actual LLM calls
+ * should be made by the caller (verify-article.js) to allow for
+ * proper async handling and progress reporting.
  *
  * @param {string} caseDir - Case directory
  * @param {string} articleText - Article content
- * @returns {array} - Array of {articleClaim, registryClaim, score, matchType, status}
+ * @returns {object} - {articleClaims, prompts, registry}
  */
-function matchAllClaims(caseDir, articleText) {
+function prepareMatching(caseDir, articleText) {
   const registry = loadRegistry(caseDir);
   const articleClaims = extractArticleClaims(articleText);
 
-  const results = [];
+  const matchData = [];
 
   for (const articleClaim of articleClaims) {
-    // If article already references a claim ID, look it up directly
+    // If article already references a claim ID, it's a direct match
     if (articleClaim.claimIds.length > 0) {
       const directMatch = registry.claims.find(
         c => articleClaim.claimIds.includes(c.id)
       );
 
       if (directMatch) {
-        results.push({
+        matchData.push({
           articleClaim,
-          registryClaim: directMatch,
-          score: 1.0,
-          matchType: 'direct_reference',
-          status: 'VERIFIED'
+          directMatch,
+          candidates: [],
+          prompt: null, // No LLM needed
+          status: 'VERIFIED',
+          confidence: 1.0,
+          reason: 'Direct claim reference'
         });
         continue;
       }
     }
 
-    // Otherwise, try to match
-    const { match, score, matchType } = matchClaim(articleClaim, registry.claims);
+    // Get candidate claims
+    const candidates = getCandidates(articleClaim, registry.claims);
 
-    if (match) {
-      // Check if the match is from the cited source
-      const sourceMatch = articleClaim.sourceIds.length === 0 ||
-        articleClaim.sourceIds.includes(match.sourceId);
+    // Generate prompt for LLM
+    const prompt = generateMatchPrompt(articleClaim, candidates);
 
-      results.push({
-        articleClaim,
-        registryClaim: match,
-        score,
-        matchType,
-        status: sourceMatch ? 'VERIFIED' : 'SOURCE_MISMATCH'
-      });
-    } else {
-      results.push({
-        articleClaim,
-        registryClaim: null,
-        score,
-        matchType: 'none',
-        status: 'UNVERIFIED'
-      });
-    }
+    matchData.push({
+      articleClaim,
+      directMatch: null,
+      candidates,
+      prompt,
+      status: prompt ? 'PENDING' : 'UNVERIFIED',
+      confidence: 0,
+      reason: prompt ? 'Awaiting LLM verification' : 'No candidates found'
+    });
   }
 
-  return results;
+  return {
+    articleClaims,
+    matchData,
+    registry,
+    stats: {
+      total: articleClaims.length,
+      directMatches: matchData.filter(m => m.directMatch).length,
+      pendingLLM: matchData.filter(m => m.prompt).length,
+      noCandidates: matchData.filter(m => !m.prompt && !m.directMatch).length
+    }
+  };
+}
+
+/**
+ * Process LLM response and update match data
+ *
+ * @param {object} matchItem - Single item from matchData
+ * @param {string} llmResponse - Response from LLM
+ * @returns {object} - Updated match item
+ */
+function processLLMResponse(matchItem, llmResponse) {
+  const result = parseMatchResponse(llmResponse, matchItem.candidates);
+
+  return {
+    ...matchItem,
+    registryClaim: result.match,
+    status: result.status,
+    confidence: result.confidence,
+    reason: result.reason
+  };
 }
 
 /**
  * Get verification summary
  */
-function getMatchSummary(results) {
+function getMatchSummary(matchData) {
   const summary = {
-    total: results.length,
+    total: matchData.length,
     verified: 0,
     unverified: 0,
-    sourceMismatch: 0,
-    byMatchType: {}
+    mismatch: 0,
+    pending: 0
   };
 
-  for (const result of results) {
-    if (result.status === 'VERIFIED') summary.verified++;
-    else if (result.status === 'UNVERIFIED') summary.unverified++;
-    else if (result.status === 'SOURCE_MISMATCH') summary.sourceMismatch++;
-
-    const type = result.matchType;
-    summary.byMatchType[type] = (summary.byMatchType[type] || 0) + 1;
+  for (const item of matchData) {
+    if (item.status === 'VERIFIED') summary.verified++;
+    else if (item.status === 'UNVERIFIED') summary.unverified++;
+    else if (item.status === 'MISMATCH') summary.mismatch++;
+    else if (item.status === 'PENDING') summary.pending++;
   }
 
   return summary;
 }
 
-/**
- * Generate prompt for LLM-based semantic matching (for difficult cases)
- */
-function generateSemanticMatchPrompt(articleClaim, candidates) {
-  const candidateList = candidates
-    .map((c, i) => `${i + 1}. [${c.id}] "${c.text}" (from ${c.sourceId})`)
-    .join('\n');
-
-  return `Does any of these registered claims support the following article claim?
-
-ARTICLE CLAIM: "${articleClaim.text}"
-
-REGISTERED CLAIMS:
-${candidateList}
-
-If one of the registered claims supports the article claim, respond with the claim number (1, 2, etc.).
-If none support it, respond with "NONE".
-If the article claim says something different than the registered claim, respond with "MISMATCH" and explain the difference.
-
-Response format:
-{
-  "match": 1 or "NONE" or "MISMATCH",
-  "confidence": 0.0-1.0,
-  "explanation": "brief explanation"
-}`;
-}
-
 module.exports = {
   extractArticleClaims,
-  matchClaim,
-  matchAllClaims,
-  getMatchSummary,
-  generateSemanticMatchPrompt,
-  exactMatch,
-  numberMatch,
-  keywordMatch
+  generateMatchPrompt,
+  parseMatchResponse,
+  getCandidates,
+  prepareMatching,
+  processLLMResponse,
+  getMatchSummary
 };
