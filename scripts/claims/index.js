@@ -42,6 +42,7 @@ module.exports = {
   verifyQuoteInSource: extract.verifyQuoteInSource,
   prepareExtraction: extract.prepareExtraction,
   postProcessClaims: extract.postProcessClaims,
+  extractNumbersFromText: extract.extractNumbersFromText,
 
   // Matching
   extractArticleClaims: match.extractArticleClaims,
