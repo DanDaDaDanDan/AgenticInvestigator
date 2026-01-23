@@ -14,8 +14,80 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const CASES_DIR = path.join(__dirname, '..', 'cases');
+
+/**
+ * Compute SHA256 hash of a file
+ */
+function computeHash(filePath) {
+  const content = fs.readFileSync(filePath);
+  return 'sha256:' + crypto.createHash('sha256').update(content).digest('hex');
+}
+
+/**
+ * Recompute and update hash in metadata.json for a source
+ * This ensures hash integrity after copying files during merge
+ */
+function recomputeSourceHash(evidenceDir) {
+  const metaPath = path.join(evidenceDir, 'metadata.json');
+  if (!fs.existsSync(metaPath)) return;
+
+  const metadata = loadJson(metaPath);
+  if (!metadata) return;
+
+  // Determine verification file (prefer raw.html, then PDF, then content.md)
+  let verificationFile = null;
+  let computedHash = null;
+
+  const rawHtmlPath = path.join(evidenceDir, 'raw.html');
+  const contentMdPath = path.join(evidenceDir, 'content.md');
+
+  // Check for PDF files
+  const files = fs.readdirSync(evidenceDir);
+  const pdfFile = files.find(f => f.endsWith('.pdf'));
+
+  if (fs.existsSync(rawHtmlPath)) {
+    verificationFile = 'raw.html';
+    computedHash = computeHash(rawHtmlPath);
+  } else if (pdfFile) {
+    verificationFile = pdfFile;
+    computedHash = computeHash(path.join(evidenceDir, pdfFile));
+  } else if (fs.existsSync(contentMdPath)) {
+    verificationFile = 'content.md';
+    computedHash = computeHash(contentMdPath);
+  } else {
+    return; // No verifiable file found
+  }
+
+  const hashWithoutPrefix = computedHash.replace('sha256:', '');
+
+  // Update sha256 field
+  metadata.sha256 = hashWithoutPrefix;
+
+  // Ensure files field exists
+  if (!metadata.files) {
+    metadata.files = {};
+  }
+
+  // Map verification file to files field
+  if (verificationFile === 'raw.html') {
+    metadata.files.raw_html = 'raw.html';
+  }
+  if (fs.existsSync(contentMdPath)) {
+    metadata.files.content = 'content.md';
+  }
+
+  // Add/update verification block
+  metadata.verification = {
+    raw_file: verificationFile,
+    computed_hash: computedHash,
+    verified_at: new Date().toISOString()
+  };
+
+  saveJson(metaPath, metadata);
+}
 
 function slugify(text) {
   return text
@@ -167,6 +239,9 @@ async function mergeCases(sourceCases, topic) {
             saveJson(metaPath, meta);
           }
         }
+
+        // Recompute hash to ensure integrity after copy
+        recomputeSourceHash(newEvidence);
       }
 
       // Add to merged sources
