@@ -75,12 +75,28 @@ function verifySource(sourceId, caseDir) {
   // Check 4: Required fields (flexible - source_id can come from directory)
   // mcp-osint format: url, captured_at, files (or sha256 + files.raw_html)
   // osint-save format: source_id, url, captured_at, files, verification
+  // Internal analysis types: research_synthesis, methodology_note, internal_analysis
+  const INTERNAL_ANALYSIS_TYPES = ['research_synthesis', 'methodology_note', 'internal_analysis', 'methodological_analysis'];
+  const isInternalAnalysis = INTERNAL_ANALYSIS_TYPES.includes(metadata.type);
+
   const hasUrl = !!metadata.url;
   const hasCapturedAt = !!metadata.captured_at;
   const hasFiles = !!metadata.files;
   const hasSha256 = !!metadata.sha256;
 
-  if (!hasUrl) result.errors.push('Required field missing: url');
+  // Internal analysis sources don't require URL but must have sources_synthesized or methodology field
+  if (!hasUrl) {
+    if (isInternalAnalysis) {
+      if (!metadata.sources_synthesized && !metadata.methodology && !metadata.methodological_sources) {
+        result.errors.push('Internal analysis requires sources_synthesized, methodology, or methodological_sources field');
+      } else {
+        result.warnings.push('Internal analysis source (no URL, verified via methodology documentation)');
+        result.checks.push('internal_analysis_type');
+      }
+    } else {
+      result.errors.push('Required field missing: url');
+    }
+  }
   if (!hasCapturedAt) result.errors.push('Required field missing: captured_at');
   if (!hasFiles && !hasSha256) result.errors.push('Required field missing: files or sha256');
 
