@@ -1,0 +1,15 @@
+{
+  "format": "webpage",
+  "url": "https://www.cac.gov.cn/2021-12/31/c_1642112551791814.htm",
+  "title": "Provisions on the Administration of Internet Information Service Algorithmic Recommendations",
+  "content": "# China's CAC Algorithm Regulations (2022)\n\n## Official Title\nProvisions on the Administration of Internet Information Service Algorithmic Recommendations (《互联网信息服务算法推荐管理规定》)\n\n## Effective Date\nMarch 1, 2022\n\n## Issuing Authority\nCyberspace Administration of China (CAC)\n\n## Key Provisions\n\n### 1. Scope\nApplies to any internet service using algorithms to match or push information to users based on:\n- User preferences\n- User behavior\n- User location\nIncludes news apps, social media, e-commerce platforms (Douyin/TikTok, Taobao, etc.)\n\n### 2. Filing and Security Assessments\n- Providers must file algorithms with CAC within 30 days of deployment\n- Algorithms impacting public opinion, sector planning, or user rights require CAC security assessment before launch\n- Annual self-assessments and filings required\n- Changes to algorithms trigger re-filing\n\n### 3. Prohibited Practices\n- No algorithms promoting illegal content (subversion, terrorism, pornography, violence)\n- Cannot manipulate public opinion or incite unrest\n- No discrimination based on politics, religion, ethnicity\n- Ban on \"addictive\" designs (infinite scrolling without user consent)\n- No ecological harm (e.g., illegal wildlife trade promotion)\n- No price discrimination via algorithms\n\n### 4. User Protections\n- Mandatory \"opt-out\" buttons for personalized recommendations\n- Chronological/non-recommended feed option available\n- Disclose algorithmic logic upon user request\n- Label AI-generated content (deepfakes)\n- Provide editing/deletion tools\n\n### 5. Platform Responsibilities\n- Real-time monitoring and logging (minimum 3 months retention)\n- Quick fixes for violations\n- Report incidents to CAC within 24 hours\n- Fines up to ¥1 million (~$140K USD) for non-compliance\n- Possible service suspension\n\n## 2023 Expansion: Deep Synthesis Measures\nAugust 2022: CAC issued draft Measures for Generative AI\nFinalized 2023: Additional requirements for AI-generated content regulation\n\n## Implementation Evidence\n- 300+ algorithms filed from ByteDance, Alibaba, Tencent in early 2022\n- ByteDance implemented \"不推荐\" (Not Recommended) button\n- Douyin Youth Mode: 40 mins/day max\n- Platform compliance audits conducted 2022-2023\n\n## Comparison to Global Regulations\nCAC rules are among world's strictest:\n- More prescriptive than EU DSA (Digital Services Act)\n- Far more mandatory than US (no federal algorithm law)\n- Stronger enforcement than India's IT Rules 2021\n- Prioritizes social stability over privacy alone",
+  "metadata": {
+    "url": "https://www.cac.gov.cn/2021-12/31/c_1642112551791814.htm",
+    "title": "Provisions on the Administration of Internet Information Service Algorithmic Recommendations",
+    "captured_at": "2026-01-24T19:40:00.000Z"
+  },
+  "provenance": {
+    "source": "official",
+    "method": "research"
+  }
+}

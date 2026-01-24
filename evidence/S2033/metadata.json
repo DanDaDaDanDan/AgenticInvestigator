@@ -1,0 +1,18 @@
+{
+  "url": "https://www.billboard.com/business/streaming/wsj-spotify-playlist-payola-labels-1235445123/",
+  "title": "Christian Alicea, Alejo, & More Join 2025 Latin Music Week Lineup",
+  "sha256": "5d7a705e49b9dc036af14e7894ef4692b8fba424c6b12bcf6806359c05218eee",
+  "size_bytes": 84198,
+  "content_type": "text/html",
+  "captured_at": "2026-01-24T17:49:23.507Z",
+  "provenance": {
+    "source": "firecrawl",
+    "method": "scrape",
+    "cache_hit": false
+  },
+  "files": {
+    "raw_html": "raw.html",
+    "content": "content.md",
+    "links": "links.json"
+  }
+}

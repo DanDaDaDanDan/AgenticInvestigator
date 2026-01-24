@@ -1,0 +1,18 @@
+{
+  "url": "https://www.klobuchar.senate.gov/public/index.cfm/2023/7/klobuchar-cruz-lee-blackburn-urge-ftc-doj-to-investigate-payola-in-music-streaming-services",
+  "title": "Error - U.S. Senator Amy Klobuchar",
+  "sha256": "ebd7fd81cc96d62207fdcc097bd8205a4b22d9aa5d4915aa7ceac206c9321dd3",
+  "size_bytes": 3874,
+  "content_type": "text/html",
+  "captured_at": "2026-01-24T17:28:12.860Z",
+  "provenance": {
+    "source": "firecrawl",
+    "method": "scrape",
+    "cache_hit": false
+  },
+  "files": {
+    "raw_html": "raw.html",
+    "content": "content.md",
+    "links": "links.json"
+  }
+}

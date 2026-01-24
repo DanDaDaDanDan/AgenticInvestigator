@@ -1,0 +1,18 @@
+{
+  "url": "https://www.billboard.com/business/legal/ted-cruz-amy-klobuchar-mike-lee-marsha-blackburn-ftc-doj-payola-letter-1235380583/",
+  "title": "Page not found – Billboard",
+  "sha256": "03a79afcf864ec1326f5057437bd4e30d5c43274adff543aa97b90a2c4067cad",
+  "size_bytes": 54958,
+  "content_type": "text/html",
+  "captured_at": "2026-01-24T17:29:16.547Z",
+  "provenance": {
+    "source": "firecrawl",
+    "method": "scrape",
+    "cache_hit": false
+  },
+  "files": {
+    "raw_html": "raw.html",
+    "content": "content.md",
+    "links": "links.json"
+  }
+}

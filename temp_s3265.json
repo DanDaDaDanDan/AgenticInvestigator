@@ -1,0 +1,16 @@
+{
+  "format": "webpage",
+  "url": "https://transparencyreport.google.com/youtube-policy?hl=en",
+  "title": "YouTube Community Guidelines enforcement – Google Transparency Report",
+  "content": "# YouTube Community Guidelines Enforcement Report\n\nYouTube publishes detailed Community Guidelines Enforcement Reports quarterly, showing video removal statistics, policy violations, and actions taken.\n\n## Key 2023 Stats\n- Videos Removed: ~151 million (H1: 58M; H2: 93M)\n- Channels Terminated: ~10 million\n- Proactive Detection Rate: 94%+\n- Views on Later-Removed Videos: ~2.5 billion (<0.1% of total)\n\n## Top Violation Categories\n- Spam/Deceptive Practices: ~120 million (80% of removals)\n- Child Safety/CSAM: ~5.2 million (3.5%)\n- Violent/Graphic Content: ~8 million (5%)\n- Hate Speech: ~3 million (2%)\n- Harassment: ~2.5 million (1.5%)\n- Nudity/Sexual: ~2 million (1.5%)\n\n## Machine Learning Integration\n- 98%+ proactive detection for major categories\n- AI-assisted ranking and prioritization\n- Multi-modal models for images/video/text\n- ~25 million appeals filed; 11% overturned\n\n## Transparency\n- Quarterly reports available at transparencyreport.google.com\n- Interactive dashboard with geographic breakdowns\n- Focus on spam grew significantly in 2023 with Shorts enforcement",
+  "metadata": {
+    "url": "https://transparencyreport.google.com/youtube-policy?hl=en",
+    "title": "YouTube Community Guidelines enforcement – Google Transparency Report",
+    "sha256": "dd6c85b097e0e701224079dabb250650431e82102f9982263f924b4484c10b12",
+    "captured_at": "2026-01-24T19:37:20.544Z"
+  },
+  "provenance": {
+    "source": "firecrawl",
+    "method": "scrape"
+  }
+}

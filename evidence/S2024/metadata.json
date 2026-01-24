@@ -1,0 +1,18 @@
+{
+  "url": "https://www.judiciary.senate.gov/committee-activity/hearings/modern-day-payola-the-new-economics-of-the-music-industry",
+  "title": "404 | United States Senate Committee on the Judiciary",
+  "sha256": "daa4c181d5e118c17ae3fd72bd6d2093f7a7356610c336498a0e2d661bcda9f7",
+  "size_bytes": 32137,
+  "content_type": "text/html",
+  "captured_at": "2026-01-24T17:33:34.830Z",
+  "provenance": {
+    "source": "firecrawl",
+    "method": "scrape",
+    "cache_hit": false
+  },
+  "files": {
+    "raw_html": "raw.html",
+    "content": "content.md",
+    "links": "links.json"
+  }
+}

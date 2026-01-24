@@ -1,0 +1,18 @@
+{
+  "url": "https://www.c-span.org/video/?525082-1/senate-hearing-modern-payola-new-economics-music-industry",
+  "title": "Washington Today | Video | C-SPAN.org",
+  "sha256": "4e871aa24b11b224299dfc1f84242281ddddde5ffdca25d1cf610beba448c819",
+  "size_bytes": 100530,
+  "content_type": "text/html",
+  "captured_at": "2026-01-24T17:31:53.309Z",
+  "provenance": {
+    "source": "firecrawl",
+    "method": "scrape",
+    "cache_hit": false
+  },
+  "files": {
+    "raw_html": "raw.html",
+    "content": "content.md",
+    "links": "links.json"
+  }
+}

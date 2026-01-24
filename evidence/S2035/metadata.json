@@ -1,0 +1,18 @@
+{
+  "url": "https://newsroom.spotify.com/2023-10-17/our-playlists-are-not-for-sale/",
+  "title": "Page not found — Spotify",
+  "sha256": "384053c97f06f49ad5399a186b86e3869e500d0a9dd9fd14a531158acba84bdc",
+  "size_bytes": 11004,
+  "content_type": "text/html",
+  "captured_at": "2026-01-24T17:50:19.897Z",
+  "provenance": {
+    "source": "firecrawl",
+    "method": "scrape",
+    "cache_hit": false
+  },
+  "files": {
+    "raw_html": "raw.html",
+    "content": "content.md",
+    "links": "links.json"
+  }
+}

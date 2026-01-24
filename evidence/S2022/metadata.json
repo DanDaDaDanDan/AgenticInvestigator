@@ -1,0 +1,18 @@
+{
+  "url": "https://www.blackburn.senate.gov/2023/7/sens-blackburn-cruz-lee-klobuchar-demand-answers-from-spotify-ceo-on-payola-concerns",
+  "title": "Not Found - U.S. Senator Marsha Blackburn of Tennessee",
+  "sha256": "dcaec3776a99767acdd88598854ff2a82e4bf0c344200eb41e4aafeeebc55313",
+  "size_bytes": 1722,
+  "content_type": "text/html",
+  "captured_at": "2026-01-24T17:32:44.605Z",
+  "provenance": {
+    "source": "firecrawl",
+    "method": "scrape",
+    "cache_hit": false
+  },
+  "files": {
+    "raw_html": "raw.html",
+    "content": "content.md",
+    "links": null
+  }
+}

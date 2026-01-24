@@ -1,0 +1,18 @@
+{
+  "url": "https://www.musicbusinessworldwide.com/spotify-responds-to-us-senators-over-payola-allegations-no-evidence-whatsoever-of-criminal-activity/",
+  "title": "Page not found - Music Business Worldwide",
+  "sha256": "6273abb73142e49f7f09e88a3ae9c98a913b74a57d18939ec4fa6cb66c6d1252",
+  "size_bytes": 6772,
+  "content_type": "text/html",
+  "captured_at": "2026-01-24T17:45:36.881Z",
+  "provenance": {
+    "source": "firecrawl",
+    "method": "scrape",
+    "cache_hit": false
+  },
+  "files": {
+    "raw_html": "raw.html",
+    "content": "content.md",
+    "links": "links.json"
+  }
+}

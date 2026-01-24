@@ -1,0 +1,18 @@
+{
+  "url": "https://www.musicbusinessworldwide.com/us-senators-accuse-spotify-of-payola-schemes-in-playlists-and-demand-answers/",
+  "title": "Page not found - Music Business Worldwide",
+  "sha256": "121c56ad6ea425eea626b2cb4e7e1f4fd0bcbce4ea1e61ae1a3173e4e8e43dd0",
+  "size_bytes": 6701,
+  "content_type": "text/html",
+  "captured_at": "2026-01-24T17:45:02.055Z",
+  "provenance": {
+    "source": "firecrawl",
+    "method": "scrape",
+    "cache_hit": false
+  },
+  "files": {
+    "raw_html": "raw.html",
+    "content": "content.md",
+    "links": "links.json"
+  }
+}

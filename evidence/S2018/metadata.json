@@ -1,0 +1,18 @@
+{
+  "url": "https://www.lee.senate.gov/2023/7/lee-joins-cruz-klobuchar-blackburn-in-calling-on-ftc-doj-to-investigate-payola-in-music-streaming-services",
+  "title": "Not Found - Mike Lee US Senator for Utah",
+  "sha256": "054a2ec7cb095e9d852cfbe29edad74351dbc845b5ddddc3ad6c117de61d3092",
+  "size_bytes": 5761,
+  "content_type": "text/html",
+  "captured_at": "2026-01-24T17:28:59.629Z",
+  "provenance": {
+    "source": "firecrawl",
+    "method": "scrape",
+    "cache_hit": false
+  },
+  "files": {
+    "raw_html": "raw.html",
+    "content": "content.md",
+    "links": null
+  }
+}

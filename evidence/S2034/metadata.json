@@ -1,0 +1,18 @@
+{
+  "url": "https://www.reuters.com/business/media-telecom/wall-street-journal-reports-music-labels-pay-spotify-staff-promote-songs-2023-10-17/",
+  "title": "We can't find that page",
+  "sha256": "de2d566c7b7c7ae5b4ec528943c0b4a804f74366022c27237fdcbe57dc982a12",
+  "size_bytes": 2122,
+  "content_type": "text/html",
+  "captured_at": "2026-01-24T17:49:49.689Z",
+  "provenance": {
+    "source": "firecrawl",
+    "method": "scrape",
+    "cache_hit": false
+  },
+  "files": {
+    "raw_html": "raw.html",
+    "content": "content.md",
+    "links": "links.json"
+  }
+}

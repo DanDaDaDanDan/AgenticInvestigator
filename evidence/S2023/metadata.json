@@ -1,0 +1,18 @@
+{
+  "url": "https://newsroom.spotify.com/2023-08-10/spotify-responds-to-senators-on-playlist-editorial-process/",
+  "title": "Page not found — Spotify",
+  "sha256": "c17994afa9bfe3ffcfdc959cefd4c6218d79c304babc7962a28f1302d569c7d2",
+  "size_bytes": 11032,
+  "content_type": "text/html",
+  "captured_at": "2026-01-24T17:33:12.001Z",
+  "provenance": {
+    "source": "firecrawl",
+    "method": "scrape",
+    "cache_hit": false
+  },
+  "files": {
+    "raw_html": "raw.html",
+    "content": "content.md",
+    "links": "links.json"
+  }
+}

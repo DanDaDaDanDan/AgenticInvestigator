@@ -1,0 +1,18 @@
+{
+  "url": "https://musicworkersalliance.org/playlist-payola-report/",
+  "title": "MWA",
+  "sha256": "70545c814246ed08e8c5d1d1d78ed2747ad0676e9bfdf985e50818b512ec14ee",
+  "size_bytes": 14967,
+  "content_type": "text/html",
+  "captured_at": "2026-01-24T17:37:27.465Z",
+  "provenance": {
+    "source": "firecrawl",
+    "method": "scrape",
+    "cache_hit": false
+  },
+  "files": {
+    "raw_html": "raw.html",
+    "content": "content.md",
+    "links": "links.json"
+  }
+}

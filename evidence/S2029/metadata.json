@@ -1,0 +1,18 @@
+{
+  "url": "https://www.rollingstone.com/music/music-features/spotify-playlist-payola-spotify-for-artists-1234826776/",
+  "title": "Page not found – Rolling Stone",
+  "sha256": "e40c057a1d53117ed96e688898cf71aa9fe190e01b58adfbc65942975b3f6f40",
+  "size_bytes": 18105,
+  "content_type": "text/html",
+  "captured_at": "2026-01-24T17:38:52.811Z",
+  "provenance": {
+    "source": "firecrawl",
+    "method": "scrape",
+    "cache_hit": false
+  },
+  "files": {
+    "raw_html": "raw.html",
+    "content": "content.md",
+    "links": "links.json"
+  }
+}

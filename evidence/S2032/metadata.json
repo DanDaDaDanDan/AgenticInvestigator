@@ -1,0 +1,18 @@
+{
+  "url": "https://www.musicbusinessworldwide.com/wsj-labels-are-paying-spotify-employees-and-intermediaries-to-get-songs-onto-the-streaming-services-playlists/",
+  "title": "Page not found - Music Business Worldwide",
+  "sha256": "66bb82a0aa06c9ae5c6800cd52b54cf495b22be927753773214fa322db66e564",
+  "size_bytes": 6802,
+  "content_type": "text/html",
+  "captured_at": "2026-01-24T17:46:13.056Z",
+  "provenance": {
+    "source": "firecrawl",
+    "method": "scrape",
+    "cache_hit": false
+  },
+  "files": {
+    "raw_html": "raw.html",
+    "content": "content.md",
+    "links": "links.json"
+  }
+}
