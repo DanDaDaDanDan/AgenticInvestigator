@@ -1,23 +1,24 @@
 ---
 name: integrity
-description: Journalistic integrity check with two-stage review
+description: Journalistic integrity check with two-stage review and multi-agent debate
 context: fork
 agent: general-purpose
 user-invocable: false
-argument-hint: [case-id] [--stage-1-only] [--stage-2-only --flags <json>]
+argument-hint: [case-id] [--stage-1-only] [--stage-2-only --flags <json>] [--no-debate]
 ---
 
 # /integrity - Journalistic Integrity Check
 
-Two-stage review: context-free detection, then contextual evaluation.
+Two-stage review with multi-agent debate: context-free detection, then adversarial deliberation for flag resolution.
 
 ## Usage
 
 ```
-/integrity              # Full review (Stage 1 + Stage 2)
+/integrity              # Full review (Stage 1 + Stage 2 with debate)
 /integrity [case-id]    # Full review for specific case
 /integrity --stage-1-only [case-id]   # Context-free scan only (for parallel execution)
-/integrity --stage-2-only [case-id] --flags <json>  # Contextual evaluation only
+/integrity --stage-2-only [case-id] --flags <json>  # Contextual evaluation with debate
+/integrity --no-debate [case-id]      # Skip debate, single-pass Stage 2 (faster but less robust)
 ```
 
 ## Split-Phase Modes (for Parallel Execution)
@@ -29,7 +30,7 @@ Each flag: `{id, quote, location, issue, to_clear}`
 
 ### `--stage-2-only --flags <json>`
 
-Read full context. For each flag, return resolution:
+Run multi-agent debate for each flag, then return resolutions:
 - `CLEARED` - with evidence (S###) and quote
 - `FIX_REQUIRED` - with specific fix text
 - `ESCALATE` - with reason
@@ -80,49 +81,73 @@ FLAG-001:
 
 ---
 
-## Stage 2: Contextual Evaluation
+## Stage 2: Multi-Agent Debate
 
-Now read full case materials:
+For each flag, run adversarial debate to determine resolution.
+
+### Debate Participants
+
+1. **CRITIC** - Argues why the flag indicates a real integrity problem
+2. **DEFENDER** - Argues why the flag can be cleared with evidence
+3. **ARBITER** - Decides final resolution based on debate
+
+### Debate Process
+
+**Round 1: Initial Positions**
+
+Read full case materials:
 - `questions/*.md` — For perspective coverage
 - `sources.json` — Source registry
 - `summary.md` — Investigation findings
 - `evidence/S###/` — As needed
 
-For EACH flag, determine resolution:
-
-### Resolution: CLEARED
-
-The article meets integrity standards. **Must provide:**
-1. Evidence showing the concern is addressed
-2. Where in sources/investigation this is covered
-
+**CRITIC argues for FIX:**
 ```
-FLAG-001: CLEARED
-  Evidence: [what proves this is okay]
-  Source: S### or questions/XX-framework.md
+This flag indicates a real problem because:
+- [Specific concern]
+- [Evidence gap identified]
+- [Standard violated]
 ```
 
-### Resolution: FIX REQUIRED
-
-Integrity gap confirmed. **Must provide:**
-1. What's missing
-2. Where it should be added
-3. Suggested fix
-
+**DEFENDER argues for CLEAR:**
 ```
-FLAG-001: FIX REQUIRED
-  Gap: [what's missing]
-  Fix: [specific change needed]
+This flag should be cleared because:
+- Evidence: S### contains [quote]
+- Standard met: [how]
+- Context: [why acceptable]
 ```
 
-### Resolution: ESCALATE
+**Round 2: Rebuttals** (if positions differ)
 
-Judgment call needed.
+Each agent responds to the other's arguments with counter-evidence or concessions.
+
+**Round 3: Arbiter Decision**
+
+ARBITER evaluates both positions and decides:
+- Which agent provided stronger evidence?
+- Is the evidence directly relevant to the flag?
+- Does the resolution meet journalistic standards?
+
+### Fast-Path (Skip Debate)
+
+Skip full debate when clear-cut:
+- **CLEARED fast-path**: Defender finds S### with exact quote that directly addresses flag
+- **FIX fast-path**: Critic finds no relevant source exists in entire evidence set
+- **Agreement fast-path**: Critic and Defender agree in initial positions
+
+### Debate Output Per Flag
 
 ```
-FLAG-001: ESCALATE
-  Reason: [why ambiguous]
-  Options: [possible resolutions]
+FLAG-001:
+  Debate:
+    Critic: "Article has one-sided sourcing. Only pro-project sources quoted."
+    Defender: "S007 quotes opponent: '[exact quote]'. Defense cited in para 7."
+    Convergence: Round 1 (Critic concedes after seeing evidence)
+
+  Resolution: CLEARED
+  Evidence: S007
+  Quote: "[opponent's exact quote from source]"
+  Arbiter note: "Defender showed opposing view is represented. Critic's concern addressed."
 ```
 
 ---
@@ -134,27 +159,39 @@ Write `integrity-review.md` containing:
 ### 1. Scan Summary
 ```
 Flags identified: X
+Debate rounds: Y (total across all flags)
 ```
 
 ### 2. Resolution Table
 
-| Flag | Issue | Resolution | Notes |
-|------|-------|------------|-------|
-| 001 | One-sided sourcing | CLEARED | Defense quoted in para 7 |
-| 002 | Missing response | FIX | Add "X declined to comment" |
+| Flag | Issue | Resolution | Debate | Notes |
+|------|-------|------------|--------|-------|
+| 001 | One-sided sourcing | CLEARED | Fast-path | Defense quoted in para 7 |
+| 002 | Missing response | FIX | 2 rounds | Add "X declined to comment" |
+| 003 | Vague attribution | CLEARED | 1 round | S012 provides specific source |
 
-### 3. Required Changes
+### 3. Debate Summaries (for non-fast-path flags)
+
+```
+FLAG-002 Debate:
+  Critic: No response from Mayor Johnson in article. Right of reply violated.
+  Defender: Searched all sources. No evidence of contact attempt or response.
+  Arbiter: Critic is correct. No response found. Standard requires "declined to comment".
+  Decision: FIX_REQUIRED (add decline statement or attempt contact)
+```
+
+### 4. Required Changes
 
 ```
 1. Para 4: Add defendant's response or "declined to comment"
 2. Para 9: Add source citation for statistic
 ```
 
-### 4. Status
+### 5. Status
 
-- **READY**: All flags cleared
+- **READY**: All flags cleared or fixed
 - **READY WITH CHANGES**: Fixes needed (list above)
-- **NOT READY**: Major integrity issues
+- **NOT READY**: Major integrity issues or escalated flags
 
 Update `gates.integrity` in state.json.
 
@@ -173,7 +210,7 @@ Update `gates.integrity` in state.json.
 
 ---
 
-## Example
+## Example with Debate
 
 ### Stage 1 (article only)
 ```
@@ -188,30 +225,51 @@ FLAG-002:
   Location: Throughout
   Issue: No response from Mayor Johnson included
   To clear: Johnson's response or "declined to comment"
-
-FLAG-003:
-  Quote: "67% of residents oppose the project"
-  Location: Para 8
-  Issue: Statistic without source
-  To clear: Citation for poll/survey
 ```
 
-### Stage 2 (with context)
-```
-FLAG-001: CLEARED
-  Evidence: S012 is government audit calling program "failed to meet objectives"
-  Fix: Add citation → "a complete failure, according to the state audit [S012]"
+### Stage 2 (with debate)
 
-FLAG-002: FIX REQUIRED
-  Searched: All sources for Johnson response
-  Gap: No source contains Johnson's response; no evidence of contact attempt
-  Fix: Add "Mayor Johnson did not respond to requests for comment"
-
-FLAG-003: CLEARED
-  Evidence: S008 is Pew poll with this exact figure
-  Fix: Add citation → "67% of residents oppose the project [S008]"
+**FLAG-001 Debate:**
 ```
+CRITIC: Strong evaluative claim stated as fact. No citation. Reader can't verify.
+
+DEFENDER: S012 is government audit stating "program failed to meet 7 of 9 objectives."
+         This supports "failure" characterization. Recommend add citation.
+
+CONVERGENCE: Round 1. Both agree citation needed. Not substantive change.
+
+ARBITER: CLEARED with minor fix. Evidence exists, just needs citation.
+```
+Resolution: Add citation → "a complete failure, according to the state audit [S012]"
+
+**FLAG-002 Debate:**
+```
+CRITIC: Right of reply fundamental. Johnson criticized but never quoted or given
+        opportunity to respond. Searched all sources - no Johnson statement.
+
+DEFENDER: Searched S001-S024. No response from Johnson found. No evidence of
+         contact attempt. Cannot provide clearing evidence.
+
+CONVERGENCE: Round 1. Both agree evidence doesn't exist.
+
+ARBITER: FIX_REQUIRED. Standard requires response or "declined to comment."
+```
+Resolution: Add "Mayor Johnson did not respond to requests for comment"
 
 ---
 
-*Journalistic standards, not legal advice.*
+## Why Debate Matters
+
+Single-pass evaluation can miss issues due to:
+1. **Confirmation bias**: Reviewer who "knows" the case may not notice gaps
+2. **Authority bias**: Accepting claims because source seems authoritative
+3. **Completeness illusion**: Missing that evidence doesn't actually support claim
+
+Multi-agent debate forces:
+1. **Adversarial testing**: Critic actively looks for problems
+2. **Evidence citation**: Defender must provide specific S### quotes
+3. **Neutral arbitration**: Arbiter weighs arguments objectively
+
+---
+
+*Journalistic standards enforced through adversarial review.*

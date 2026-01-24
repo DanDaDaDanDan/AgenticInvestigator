@@ -27,9 +27,9 @@ Verify investigation readiness for publication.
 | 2 | Curiosity | `/curiosity` returns SATISFIED |
 | 3 | Reconciliation | All lead results reconciled with summary.md |
 | 4 | Article | `articles/full.md` + `full.pdf` exist with [S###] citations |
-| 5 | Sources | **Claim Registry Verification** - Match article claims to registry |
-| 6 | Integrity | `/integrity` returns READY |
-| 7 | Legal | `/legal-review` returns READY |
+| 5 | Sources | **Claim Verification** - Semantic + Computational verification |
+| 6 | Integrity | `/integrity` returns READY (with multi-agent debate) |
+| 7 | Legal | `/legal-review` returns READY (with multi-agent debate) |
 
 ## Gate Details
 
@@ -55,82 +55,84 @@ Verify:
 - `articles/full.pdf` exists
 - Sources Consulted section lists uncited sources
 
-### Gate 5: Sources - Claim Registry Verification
+### Gate 5: Sources - Two-Part Verification
 
-**Run claim-based verification:**
+Gate 5 now has TWO verification steps:
+
+#### Step 5A: Semantic Claim Verification (existing)
 
 ```bash
-node scripts/claims/verify-article.js cases/<case-id>/ --fix
+node scripts/claims/verify-article.js cases/<case-id>/ --generate-batches
+# Process batches with LLM
+node scripts/claims/verify-article.js cases/<case-id>/ --merge-batches N
 ```
 
-This matches every factual claim in the article against the claim registry.
-
-#### How It Works
-
-1. **Extract claims from article** - Finds sentences with citations
-2. **Match to registry** - Multiple strategies:
-   - Exact text match
-   - Number matching (same statistics)
-   - Keyword overlap
-   - Source-constrained matching
-3. **Report results** - Verified, unverified, or mismatched
-
-#### Verification States
+Matches every factual claim against source content using LLM semantic understanding.
 
 | Status | Meaning | Action |
 |--------|---------|--------|
-| VERIFIED | Claim matched registry entry from cited source | None |
-| UNVERIFIED | No matching claim in registry | Find source or remove claim |
-| SOURCE_MISMATCH | Claim found but from different source | Update citation |
+| VERIFIED | Claim matched source content | None |
+| UNVERIFIED | Source doesn't support claim | Find source or remove claim |
+| SOURCE_MISSING | Evidence file missing | Re-capture or remove |
 
-#### Handling Unverified Claims
-
-For each unverified claim:
-
-1. **Search for supporting source:**
-   ```
-   mcp__mcp-xai__research or mcp__mcp-osint__osint_search
-   ```
-
-2. **Capture source** (which extracts and registers claims):
-   ```
-   /capture-source <url>
-   ```
-
-3. **Re-run verification** - Newly registered claims should match
-
-4. **If no source found:**
-   - Add caveat ("reportedly", "according to...")
-   - Or remove the claim
-
-#### Pre-requisite: Claim Registry Populated
-
-Before running verification, ensure claims have been extracted from sources:
+#### Step 5B: Computational Fact-Checking (NEW)
 
 ```bash
-# Check status
-node scripts/claims/migrate-sources.js cases/<case-id> status
-
-# Generate extraction prompt for one source
-node scripts/claims/capture-integration.js cases/<case-id> prepare S001
-
-# Send prompt to LLM (Gemini 3 Pro recommended)
-mcp__mcp-gemini__generate_text prompt=<extraction_prompt> model=gemini-3-pro
-
-# Register extracted claims
-node scripts/claims/migrate-sources.js cases/<case-id> register S001 response.json
+node scripts/claims/compute-verify.js cases/<case-id>/ --generate-prompts
+# Process prompts with LLM (include code execution)
+node scripts/claims/compute-verify.js cases/<case-id>/ --responses <file>
 ```
+
+Verifies numerical claims computationally:
+- Percentages and percentage changes
+- Dollar amounts and financial figures
+- Ratios and rankings
+- Growth multiples (doubled, tripled)
+- Counts (employees, cases, etc.)
+
+| Status | Meaning | Action |
+|--------|---------|--------|
+| VERIFIED | Computed value matches claim (within 5%) | None |
+| DISCREPANCY | Computed value differs significantly | Investigate and correct |
+| DATA_NOT_FOUND | Source lacks verifiable numbers | Flag for manual review |
+
+#### Combining Results
+
+Gate 5 passes when BOTH:
+- Step 5A: No UNVERIFIED claims (or all have caveats)
+- Step 5B: No DISCREPANCY items (or all explained/corrected)
 
 #### Outputs
 
-- `claim-verification.json` - Structured verification results
-- `claim-verification-report.md` - Human-readable report with fix suggestions
+- `claim-verification.json` - Semantic verification results
+- `claim-verification-report.md` - Human-readable semantic report
+- `compute-verification.json` - Computational verification results
 
-### Gate 6: Integrity
-Invoke `/integrity` if not already run.
+### Gate 6: Integrity (with Multi-Agent Debate)
 
-### Gate 7: Legal
-Invoke `/legal-review` if not already run.
+Invoke `/integrity` which now uses **Critic/Defender/Arbiter debate** for flag resolution:
+
+1. **Stage 1**: Context-free scan (reads ONLY article)
+2. **Stage 2**: Multi-agent debate for each flag
+   - CRITIC argues for FIX
+   - DEFENDER argues for CLEAR with evidence
+   - ARBITER decides final resolution
+3. **Stage 3**: Output `integrity-review.md`
+
+Use `--no-debate` for faster single-pass review (less robust).
+
+### Gate 7: Legal (with Multi-Agent Debate)
+
+Invoke `/legal-review` which now uses **Critic/Defender/Arbiter debate** for flag resolution:
+
+1. **Stage 1**: Context-free scan (reads ONLY article)
+2. **Stage 2**: Multi-agent debate for each flag
+   - CRITIC argues for FIX (identifies legal risk)
+   - DEFENDER argues for CLEAR with evidence
+   - ARBITER decides final resolution
+3. **Stage 3**: Output `legal-review.md`
+
+Use `--no-debate` for faster single-pass review (less robust).
 
 ### Gates 6+7: Parallel Review Optimization
 
@@ -138,6 +140,8 @@ When Gate 5 passes and both Gates 6 and 7 need to run:
 ```
 /action parallel-review
 ```
+
+This runs both reviews in parallel, each with their own multi-agent debate.
 
 ## Output
 
@@ -188,6 +192,62 @@ If the article is ready for publication, say so explicitly.
 
 - **If feedback:** Set `ai_review_complete = true`, invoke `/case-feedback`
 - **If no feedback:** Set `ai_review_complete = true`, complete
+
+## Verification Workflow Summary
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│  GATE 5: TWO-PART VERIFICATION                                 │
+│                                                                │
+│  Step 5A: Semantic Verification                               │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │ 1. Extract claims with [S###] citations                  │ │
+│  │ 2. Generate LLM prompts for each claim                   │ │
+│  │ 3. LLM checks: "Does source support this claim?"         │ │
+│  │ 4. Report: VERIFIED / UNVERIFIED / SOURCE_MISSING        │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                          ↓                                     │
+│  Step 5B: Computational Verification                          │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │ 1. Extract numerical claims (%, $, ratios, counts)       │ │
+│  │ 2. Generate Python verification code                     │ │
+│  │ 3. Execute code (compute actual values)                  │ │
+│  │ 4. Compare: claimed vs computed (5% tolerance)           │ │
+│  │ 5. Report: VERIFIED / DISCREPANCY / DATA_NOT_FOUND       │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                          ↓                                     │
+│  PASS when: 5A clean AND 5B clean                             │
+└────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────┐
+│  GATES 6+7: MULTI-AGENT DEBATE REVIEW                         │
+│                                                                │
+│  Stage 1: Context-Free Scan (reads ONLY article)              │
+│  ┌────────────────────┐     ┌────────────────────┐           │
+│  │ /integrity scan    │     │ /legal-review scan │           │
+│  └─────────┬──────────┘     └─────────┬──────────┘           │
+│            ↓                          ↓                        │
+│       flags[]                    flags[]                       │
+│                                                                │
+│  Stage 2: Multi-Agent Debate (for each flag)                  │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │  ┌─────────┐   ┌──────────┐   ┌─────────┐              │ │
+│  │  │ CRITIC  │ ← │  DEBATE  │ → │DEFENDER │              │ │
+│  │  │(find    │   │ (rounds) │   │(find    │              │ │
+│  │  │ issues) │   └────┬─────┘   │evidence)│              │ │
+│  │  └─────────┘        │         └─────────┘              │ │
+│  │                     ↓                                   │ │
+│  │              ┌─────────────┐                           │ │
+│  │              │   ARBITER   │                           │ │
+│  │              │ (decides)   │                           │ │
+│  │              └──────┬──────┘                           │ │
+│  │                     ↓                                   │ │
+│  │  Resolution: CLEARED / FIX_REQUIRED / ESCALATE         │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                                                                │
+│  Stage 3: Apply fixes, write review files                     │
+└────────────────────────────────────────────────────────────────┘
+```
 
 ## Next Steps
 

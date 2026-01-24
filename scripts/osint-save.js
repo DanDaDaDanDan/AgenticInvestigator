@@ -46,6 +46,80 @@ const logger = require('./logger').create('osint-save');
 // Capture signature generation for evidence verification
 const CAPTURE_SALT = 'osint-capture-2026';
 
+/**
+ * Normalize URL for comparison (remove tracking params, trailing slashes, etc.)
+ *
+ * @param {string} url - URL to normalize
+ * @returns {string} - Normalized URL
+ */
+function normalizeUrl(url) {
+  if (!url) return '';
+
+  try {
+    const parsed = new URL(url);
+
+    // Remove common tracking parameters
+    const trackingParams = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+      'fbclid', 'gclid', 'ref', 'source', 'mc_cid', 'mc_eid'];
+    trackingParams.forEach(param => parsed.searchParams.delete(param));
+
+    // Remove trailing slashes from pathname
+    let pathname = parsed.pathname.replace(/\/+$/, '') || '/';
+
+    // Normalize to lowercase hostname
+    const normalized = `${parsed.protocol}//${parsed.hostname.toLowerCase()}${pathname}`;
+
+    // Add back non-tracking query params if any
+    const queryString = parsed.searchParams.toString();
+    return queryString ? `${normalized}?${queryString}` : normalized;
+  } catch (e) {
+    // If URL parsing fails, return lowercase trimmed version
+    return url.toLowerCase().trim().replace(/\/+$/, '');
+  }
+}
+
+/**
+ * Check if URL already exists in sources.json
+ *
+ * @param {string} caseDir - Case directory
+ * @param {string} url - URL to check
+ * @returns {object} - {isDuplicate: boolean, existingSource?: object}
+ */
+function checkDuplicateUrl(caseDir, url) {
+  const sourcesPath = path.join(caseDir, 'sources.json');
+
+  if (!fs.existsSync(sourcesPath)) {
+    return { isDuplicate: false };
+  }
+
+  try {
+    const sourcesData = JSON.parse(fs.readFileSync(sourcesPath, 'utf-8'));
+    const sources = sourcesData.sources || [];
+
+    const normalizedNew = normalizeUrl(url);
+
+    for (const source of sources) {
+      const normalizedExisting = normalizeUrl(source.url);
+
+      if (normalizedNew === normalizedExisting) {
+        return {
+          isDuplicate: true,
+          existingSource: {
+            id: source.id,
+            title: source.title,
+            url: source.url
+          }
+        };
+      }
+    }
+
+    return { isDuplicate: false };
+  } catch (e) {
+    logger.warn(`Could not check for duplicate URL: ${e.message}`);
+    return { isDuplicate: false };
+  }
+}
+
 function hashBuffer(buffer) {
   return crypto.createHash('sha256').update(buffer).digest('hex');
 }
@@ -100,9 +174,32 @@ async function readStdin() {
   });
 }
 
-async function saveEvidence(sourceId, caseDir, osintData) {
+async function saveEvidence(sourceId, caseDir, osintData, options = {}) {
+  const { warnDuplicates = true, blockDuplicates = false } = options;
   const op = logger.operation('saveEvidence', { sourceId, url: osintData.url?.substring(0, 50) });
   const startTime = Date.now();
+
+  // Check for duplicate URL
+  if (osintData.url && warnDuplicates) {
+    const duplicateCheck = checkDuplicateUrl(caseDir, osintData.url);
+
+    if (duplicateCheck.isDuplicate) {
+      const msg = `Duplicate URL detected: ${osintData.url} already captured as ${duplicateCheck.existingSource.id}`;
+      logger.warn(msg);
+
+      if (blockDuplicates) {
+        return {
+          success: false,
+          sourceId,
+          error: 'DUPLICATE_URL',
+          message: msg,
+          existingSource: duplicateCheck.existingSource
+        };
+      }
+
+      console.warn(`WARNING: ${msg}`);
+    }
+  }
 
   const evidenceDir = path.join(caseDir, 'evidence', sourceId);
   fs.mkdirSync(evidenceDir, { recursive: true });
@@ -333,7 +430,7 @@ async function main() {
 }
 
 // Export for programmatic use
-module.exports = { saveEvidence };
+module.exports = { saveEvidence, normalizeUrl, checkDuplicateUrl };
 
 if (require.main === module) {
   main().catch(err => {

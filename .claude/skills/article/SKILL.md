@@ -101,6 +101,10 @@ For each, pass:
 - `system_prompt`: The writing rules and safety checklists from this document
 - `prompt`: The source material + that article's specific requirements (length, inclusions, exclusions)
 
+**Content Coverage Guidance:**
+
+The model has editorial discretion to skip sections orthogonal to the main story. However, sections that rebut central claims from subjects (e.g., expert analysis contradicting official characterizations) should not be omitted.
+
 **During revision cycles** (when `state.json` contains a `revision` block):
 
 Include the **full `## Article Changes` section** from the feedback file in each prompt. Structure the prompt as:
@@ -241,10 +245,14 @@ Adapt subheads as needed. Keep paragraphs short. Make the piece skimmable.
 
 ## Methodology (full.md only)
 
-[Brief description of approach:
-- Types of sources consulted (academic research, government data, court records, news reports, etc.)
-- How claims were selected for inclusion
-- Key limitations and what was not examined]
+Must be auditable, not performative. Include:
+
+- **Scope:** What was examined, what was excluded
+- **Sources:** Count, types (primary/secondary), anonymous source handling
+- **Verification:** Define "verified"; list gates used; describe cross-checking
+- **Leads:** Define what counts as a lead; how tracked to resolution
+- **Limitations:** What wasn't examined, pending FOIA, unavailable records
+- **Disclosure:** Who produced the report
 
 ---
 
@@ -274,11 +282,23 @@ Adapt subheads as needed. Keep paragraphs short. Make the piece skimmable.
 - When evidence is mixed, say so. When evidence is strong, say how you know
 - Translate jargon. Define acronyms on first use
 
+### Tone: Investigation vs Prosecution
+
+- No novelistic scene-setting (weather, atmosphere) — stick to evidence
+- Present facts neutrally; attribute characterizations to speakers
+- Loaded adjectives ("stormed," "militarized") must be attributed, not stated as fact
+
 ### Evidence Handling
 
 - **Do not imply causation** unless evidence is causal (RCTs)
 - State limitations for observational results (confounding, selection)
 - Distinguish: efficacy vs effectiveness, universal vs targeted, short-term vs long-term
+
+### Epistemic Language for Forensic/Video Evidence
+
+- Never "shows" or "proves" for contested interpretations — use "appears to show," "consistent with," "analysis indicates"
+- Attribute conclusions to the analyst, not the medium: "[Analyst] found..." not "Video shows..."
+- Preserve uncertainty from source analysis
 
 ### Citations
 
@@ -287,6 +307,12 @@ Adapt subheads as needed. Keep paragraphs short. Make the piece skimmable.
 - **Do not cite every sentence** — prefer 1-3 citations per paragraph at end of claim
 - When multiple claims use same source, cite once at paragraph end
 
+### Citation Quality
+
+- **Primary over secondary:** Cite original source; if unavailable, attribute: "X reported that Y found..."
+- **Quantitative claims:** Cite specific tables/pages when possible
+- **High-salience statistics:** Require primary source OR two independent secondary sources; caveat single-source claims
+
 ### Readability
 
 - Paragraphs: 2-5 sentences
@@ -294,6 +320,14 @@ Adapt subheads as needed. Keep paragraphs short. Make the piece skimmable.
 - No ALL CAPS emphasis. Use narrative emphasis
 - No "thesis dump" intros. Earn complexity step by step
 - Avoid vague phrases ("many," "experts say") unless you specify who and cite it
+
+### Temporal Markers
+
+Add "as of [date]" to evolving legal/procedural claims (lawsuit status, injunctions, pending investigations).
+
+### Timeline Tables
+
+For fast-moving events or contested sequences, consider a timeline table (`| Time | Event | Source |`) to strengthen verifiability.
 
 ### Prohibited
 
@@ -321,6 +355,12 @@ Adapt subheads as needed. Keep paragraphs short. Make the piece skimmable.
 - [ ] Damaging claims attributed to sources, not stated as fact
 - [ ] Alleged vs charged vs convicted clearly distinguished
 - [ ] No stigmatizing or deterministic language about individuals
+
+### Legal Precision
+
+- Distinguish legal definitions from criminal charges (definitions ≠ standalone offenses)
+- Note colloquial vs legal usage of terms
+- Include expert disagreement on legal characterizations
 
 ---
 

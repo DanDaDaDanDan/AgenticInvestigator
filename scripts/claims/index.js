@@ -1,69 +1,49 @@
 /**
- * claims/index.js - Claim Registry System Entry Point
+ * claims/index.js - Article Claim Verification
  *
- * The claim registry is the single source of truth for verified claims.
+ * Verification flow:
+ * 1. Extract claims from article (sentences with [S###] citations)
+ * 2. For each claim, load the cited source content
+ * 3. Ask LLM: "Does this source support this claim?"
+ * 4. Report results
  *
- * Architecture:
- * 1. Sources are captured → claims extracted via LLM → registered in claims.json
- * 2. Article writing uses registered claims
- * 3. Verification = matching article claims to registry
- *
- * Modules:
- * - registry.js: CRUD for claims.json
- * - extract.js: Extract claims from source content (LLM-based)
- * - match.js: Match article claims to registry
- * - capture-integration.js: Integrate extraction into capture flow
- * - verify-article.js: Main verification entry point
+ * Additionally:
+ * - Cross-check authoritative claims (bestplacestowork.org, etc.)
+ * - Computational verification for numerical claims
  */
 
 'use strict';
 
-const registry = require('./registry');
-const extract = require('./extract');
-const match = require('./match');
-const captureIntegration = require('./capture-integration');
 const verifyArticle = require('./verify-article');
+const crossCheck = require('./cross-check');
+const computeVerify = require('./compute-verify');
 
 module.exports = {
-  // Registry operations
-  loadRegistry: registry.loadRegistry,
-  addClaim: registry.addClaim,
-  findClaimById: registry.findClaimById,
-  findClaimsBySource: registry.findClaimsBySource,
-  findClaimsByNumber: registry.findClaimsByNumber,
-  searchClaims: registry.searchClaims,
-  updateClaim: registry.updateClaim,
-  removeClaim: registry.removeClaim,
-  getRegistryStats: registry.getStats,
+  // Article claim extraction
+  extractArticleClaims: verifyArticle.extractArticleClaims,
+  isSourceReference: verifyArticle.isSourceReference,
 
-  // Extraction (LLM-based)
-  generateExtractionPrompt: extract.generateExtractionPrompt,
-  parseExtractionResponse: extract.parseExtractionResponse,
-  verifyQuoteInSource: extract.verifyQuoteInSource,
-  prepareExtraction: extract.prepareExtraction,
-  postProcessClaims: extract.postProcessClaims,
-
-  // Matching (LLM-based)
-  extractArticleClaims: match.extractArticleClaims,
-  generateMatchPrompt: match.generateMatchPrompt,
-  parseMatchResponse: match.parseMatchResponse,
-  getCandidates: match.getCandidates,
-  prepareMatching: match.prepareMatching,
-  processLLMResponse: match.processLLMResponse,
-  getMatchSummary: match.getMatchSummary,
-
-  // Capture integration
-  prepareSourceForExtraction: captureIntegration.prepareSourceForExtraction,
-  registerExtractedClaims: captureIntegration.registerExtractedClaims,
-  getSourcesNeedingExtraction: captureIntegration.getSourcesNeedingExtraction,
-  getExtractionStatus: captureIntegration.getExtractionStatus,
-
-  // Article verification (LLM-based)
+  // Verification (LLM-based)
   prepareVerification: verifyArticle.prepareVerification,
   processVerificationResponses: verifyArticle.processVerificationResponses,
-  verifyArticle: verifyArticle.verifyArticle,
-  verifyAndFix: verifyArticle.verifyAndFix,
-  generateFixSuggestions: verifyArticle.generateFixSuggestions,
-  prepareSourceSearch: verifyArticle.prepareSourceSearch,
-  generateReport: verifyArticle.generateReport
+
+  // Reporting
+  generateReport: verifyArticle.generateReport,
+
+  // Authoritative source cross-checking
+  crossCheck: {
+    detectCrossCheckClaims: crossCheck.detectCrossCheckClaims,
+    generateCrossCheckPrompts: crossCheck.generateCrossCheckPrompts,
+    formatReport: crossCheck.formatReport,
+    AUTHORITATIVE_SOURCES: crossCheck.AUTHORITATIVE_SOURCES
+  },
+
+  // Computational fact-checking for numerical claims
+  computeVerify: {
+    extractNumericalClaims: computeVerify.extractNumericalClaims,
+    prepareVerification: computeVerify.prepareVerification,
+    processVerificationResponses: computeVerify.processVerificationResponses,
+    generateReport: computeVerify.generateReport,
+    NUMERICAL_PATTERNS: computeVerify.NUMERICAL_PATTERNS
+  }
 };

@@ -1,0 +1,11 @@
+# Large accidental file causing crash
+nul
+
+# Raw HTML evidence (not needed for indexing - content.md is the readable version)
+cases/*/evidence/*/raw.html
+
+# Git pack files (already indexed)
+.git/objects/pack/
+
+# PDF binaries (content extracted to content.md)
+cases/*/evidence/*/*.pdf

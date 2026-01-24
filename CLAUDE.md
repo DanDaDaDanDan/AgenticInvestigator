@@ -165,9 +165,9 @@ Only `--new` creates a new case. All other `/investigate` calls operate on exist
 | 2 | Curiosity | `/curiosity` judgment | ALL leads resolved + HIGH priority complete + `<!-- LEAD:` markers tracked + planning_todos addressed |
 | 3 | Reconciliation | `/reconcile` | Lead results reconciled with summary.md, contradictions resolved |
 | 4 | Article | `articles/*.md` + PDFs | short/medium/full.md exist with [S###] citations + PDFs + full.md has Sources Consulted section |
-| 5 | Sources | Evidence verification | All [S###] captured + semantically verified + lead results have sources |
-| 6 | Integrity | `/integrity` review | Status: READY |
-| 7 | Legal | `/legal-review` | Status: READY |
+| 5 | Sources | **Two-part verification** | Semantic (LLM) + Computational (Python) verification both pass |
+| 6 | Integrity | `/integrity` review | Status: READY (with **multi-agent debate**) |
+| 7 | Legal | `/legal-review` | Status: READY (with **multi-agent debate**) |
 
 **Termination:** All 8 gates pass + AI self-review complete (or no feedback generated).
 
@@ -178,30 +178,51 @@ The curiosity gate has automatic failures that cannot be overridden:
 - **Any verification leads pending** - Leads with "Verify" in description must be resolved
 - **More than 40% of leads pending** - Insufficient investigation coverage
 
-### Gate 5 (Sources) - Claim Registry Verification
+### Gate 5 (Sources) - Two-Part Verification
 
-Gate 5 uses **claim-based verification** - matching article claims to the claim registry:
+Gate 5 now has **two verification steps** for maximum robustness:
+
+#### Step 5A: Semantic Claim Verification
 
 ```bash
-node scripts/claims/verify-article.js cases/<case-id>/ --fix
+node scripts/claims/verify-article.js cases/<case-id>/ --generate-batches
+# Process batches with LLM
+node scripts/claims/verify-article.js cases/<case-id>/ --merge-batches N
 ```
 
 | Status | Meaning | Action |
 |--------|---------|--------|
-| VERIFIED | Claim matched registry entry | None |
-| UNVERIFIED | No matching claim in registry | Find source or caveat |
-| SOURCE_MISMATCH | Claim found but from different source | Update citation |
+| VERIFIED | Claim matched source content | None |
+| UNVERIFIED | Source doesn't support claim | Find source or caveat |
+| SOURCE_MISSING | Evidence file missing | Re-capture or remove |
 
-**Key principle:** Claims are verified at CAPTURE time, not after writing. When a source is captured, factual claims are extracted and registered with supporting quotes. Article verification is just matching - not re-verifying.
+#### Step 5B: Computational Fact-Checking (NEW)
 
-**Pre-requisite:** Ensure claims are extracted from sources. Check status:
 ```bash
-node scripts/claims/migrate-sources.js cases/<case-id> status
+node scripts/claims/compute-verify.js cases/<case-id>/ --generate-prompts
+# Process prompts with LLM + code execution
+node scripts/claims/compute-verify.js cases/<case-id>/ --responses <file>
 ```
 
+Verifies numerical claims computationally:
+- Percentages and percentage changes
+- Dollar amounts and financial figures
+- Ratios and rankings
+- Growth multiples (doubled, tripled)
+- Counts (employees, cases, etc.)
+
+| Status | Meaning | Action |
+|--------|---------|--------|
+| VERIFIED | Computed value matches claim (within 5%) | None |
+| DISCREPANCY | Computed value differs significantly | Investigate and correct |
+| DATA_NOT_FOUND | Source lacks verifiable numbers | Flag for manual review |
+
+**Gate 5 passes when BOTH steps pass.**
+
 **Outputs:**
-- `claim-verification.json` - Structured verification results
-- `claim-verification-report.md` - Human-readable report with fix suggestions
+- `claim-verification.json` - Semantic verification results
+- `claim-verification-report.md` - Human-readable semantic report
+- `compute-verification.json` - Computational verification results
 
 ---
 
@@ -233,9 +254,10 @@ Skills are defined in `.claude/skills/*/SKILL.md` with YAML frontmatter controll
 | `/capture-source` | Capture evidence | Any agent | None |
 | `/verify` | Check 8 gates | Orchestrator | `context: fork` |
 | `/article` | Write publication | Orchestrator | `context: fork` |
-| `/integrity` | Journalistic check | Orchestrator | `context: fork` |
-| `/legal-review` | Legal risk check | Orchestrator | `context: fork` |
+| `/integrity` | Journalistic check (**with debate**) | Orchestrator | `context: fork` |
+| `/legal-review` | Legal risk check (**with debate**) | Orchestrator | `context: fork` |
 | `/parallel-review` | Integrity + Legal in parallel | Orchestrator | `context: fork` |
+| `/debate` | **Multi-agent flag resolution** | `/integrity`, `/legal-review` | `context: fork` |
 | `/merge-cases` | Combine multiple investigations | Orchestrator | `context: fork` |
 
 ---
@@ -296,7 +318,8 @@ Uses three-phase pattern: parallel context-free scans → parallel contextual ev
 | `scripts/allocate-sources.js` | Pre-allocate source ID ranges |
 | `scripts/merge-batch-results.js` | Merge parallel follow results |
 | `scripts/merge-question-batches.js` | Merge parallel question results |
-| **`scripts/claims/verify-article.js`** | **Claim-based article verification (Gate 5)** |
+| **`scripts/claims/verify-article.js`** | **Semantic claim verification (Gate 5A)** |
+| **`scripts/claims/compute-verify.js`** | **Computational fact-checking (Gate 5B)** |
 | `scripts/claims/registry.js` | CRUD for claims.json |
 | `scripts/claims/extract.js` | LLM prompt generation for claim extraction |
 | `scripts/claims/match.js` | Match article claims to registry |
@@ -369,23 +392,53 @@ Skills that read large amounts of data use `context: fork` to automatically run 
 
 ---
 
-## Two-Stage Review Pattern
+## Two-Stage Review Pattern with Multi-Agent Debate
 
-`/legal-review` and `/integrity` use a two-stage pattern to prevent context bias:
+`/legal-review` and `/integrity` use a two-stage pattern with adversarial debate:
 
 **Stage 1: Context-Free Scan**
 - Read ONLY the article
 - Flag potential issues as a reader with no case knowledge
 - Output structured flags with "what would clear this"
 
-**Stage 2: Contextual Evaluation**
-- For each flag, search evidence to clear OR mark for fix
-- Must cite specific source (S###) with quote to clear
-- Cannot dismiss flags without evidence
+**Stage 2: Multi-Agent Debate (NEW)**
 
-**Why:** An LLM that "knows" the case may not notice "the man who killed her" as problematic because it has internalized the facts. Fresh-eyes detection catches what biased review misses.
+For each flag, three agents debate the resolution:
 
-**Output:** Flags that are CLEARED (with evidence), FIX REQUIRED (with specific change), or ESCALATE (needs human).
+```
+┌─────────────────────────────────────────────────────────────┐
+│  CRITIC        DEBATE         DEFENDER                      │
+│  (finds        (rounds)       (finds                        │
+│   issues)  ←──────────────→   evidence)                     │
+│                   │                                         │
+│                   ▼                                         │
+│              ARBITER                                        │
+│              (decides)                                      │
+│                   │                                         │
+│                   ▼                                         │
+│  Resolution: CLEARED / FIX_REQUIRED / ESCALATE             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+| Agent | Role | Must Provide |
+|-------|------|--------------|
+| **CRITIC** | Argues why flag indicates real problem | Specific concerns, evidence gaps |
+| **DEFENDER** | Argues why flag can be cleared | S### citations with verbatim quotes |
+| **ARBITER** | Decides final resolution | Reasoning based on debate |
+
+**Fast-Path (skip debate):**
+- Defender finds S### with exact quote → CLEARED
+- Critic finds no source exists → FIX_REQUIRED
+- Both agree in initial positions → Use agreed resolution
+
+**Why debate matters:**
+1. **Adversarial testing** - Critic actively looks for problems
+2. **Evidence citation** - Defender must provide specific S### quotes
+3. **Neutral arbitration** - Arbiter weighs arguments objectively
+
+**Output:** Resolution table with debate summaries, required changes, final status.
+
+**Skip debate:** Use `--no-debate` for faster single-pass review (less robust).
 
 ---
 
