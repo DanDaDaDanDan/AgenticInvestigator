@@ -37,7 +37,7 @@ CREATE CASE → PLAN → BOOTSTRAP → QUESTION → FOLLOW → WRITE → VERIFY 
 | 2 | Curiosity | All leads pursued to conclusion |
 | 3 | Reconciliation | Lead results sync with summary |
 | 4 | Article | Publication-ready article exists |
-| 5 | Sources | All citations verified against claim registry |
+| 5 | Sources | All citations verified (semantic + computational) |
 | 6 | Integrity | Journalistic standards met |
 | 7 | Legal | Legal risk assessment passed |
 
@@ -55,7 +55,6 @@ Each case creates `cases/[topic-slug]/` with:
 | `evidence/S###/` | Captured sources with metadata, content, raw HTML |
 | `leads.json` | Lead tracking with depth and parent relationships |
 | `sources.json` | Source registry with capture status |
-| `claims.json` | Verified claims registry (extracted from sources) |
 | `removed-points.md` | Auto-removed unverifiable claims (for review) |
 | `future_research.md` | Leads beyond max depth (for future work) |
 
@@ -83,9 +82,10 @@ Skills are defined in `.claude/skills/*/SKILL.md` with YAML frontmatter for conf
 | `/capture-source` | Capture web evidence | - |
 | `/article` | Generate articles | `context: fork` |
 | `/verify` | Check 8 gates | `context: fork` |
-| `/integrity` | Journalistic standards check | `context: fork` |
-| `/legal-review` | Legal risk assessment | `context: fork` |
+| `/integrity` | Journalistic standards check (with debate) | `context: fork` |
+| `/legal-review` | Legal risk assessment (with debate) | `context: fork` |
 | `/parallel-review` | Integrity + Legal in parallel | `context: fork` |
+| `/debate` | Multi-agent flag resolution | `context: fork` |
 | `/merge-cases` | Combine multiple investigations | `context: fork` |
 
 Skills with `context: fork` automatically run in isolated sub-agents for context management.

@@ -320,10 +320,7 @@ Uses three-phase pattern: parallel context-free scans → parallel contextual ev
 | `scripts/merge-question-batches.js` | Merge parallel question results |
 | **`scripts/claims/verify-article.js`** | **Semantic claim verification (Gate 5A)** |
 | **`scripts/claims/compute-verify.js`** | **Computational fact-checking (Gate 5B)** |
-| `scripts/claims/registry.js` | CRUD for claims.json |
-| `scripts/claims/extract.js` | LLM prompt generation for claim extraction |
-| `scripts/claims/match.js` | Match article claims to registry |
-| `scripts/claims/migrate-sources.js` | Batch extract claims from existing sources (LLM-based) |
+| `scripts/claims/cross-check.js` | Cross-check against authoritative sources |
 | `scripts/osint-save.js` | Save osint_get output as evidence |
 | `scripts/verify-source.js` | Hash verification for source integrity |
 
@@ -442,80 +439,57 @@ For each flag, three agents debate the resolution:
 
 ---
 
-## Claim Registry Architecture
+## Claim Verification Architecture
 
-Claims are verified at **capture time**, not after article writing. This eliminates hallucination risk.
+Claims are verified at **article time** by checking each citation against its source content.
 
 ### Flow
 
 ```
-Source Capture → Extract Claims → Register in claims.json (verified by definition)
-                                           ↓
-                              Article Writing uses Registry
-                                           ↓
-                              Verification = Match Article to Registry
+Article Writing → Extract cited claims → Load source content → LLM verification
+                                                                    ↓
+                                              VERIFIED / UNVERIFIED / SOURCE_MISSING
 ```
 
-### claims.json Structure
+### Two-Part Verification
 
-```json
-{
-  "version": 1,
-  "claims": [
-    {
-      "id": "CL0001",
-      "text": "62% of brand payments went to top 10% of creators",
-      "type": "statistic",
-      "numbers": [{"value": 62, "unit": "percent", "context": "brand payments"}],
-      "entities": ["brand payments", "creators"],
-      "sourceId": "S027",
-      "sourceUrl": "https://...",
-      "supporting_quote": "The top 10 percent of creators received 62 percent...",
-      "quote_location": {"line": 42},
-      "extracted_at": "2026-01-21T..."
-    }
-  ]
-}
-```
+| Step | What | How |
+|------|------|-----|
+| **5A: Semantic** | Does source support claim? | LLM reads source, checks if claim is supported |
+| **5B: Computational** | Are numbers correct? | Python code verifies calculations |
 
 ### Claim Modules (`scripts/claims/`)
 
 | Module | Purpose |
 |--------|---------|
-| `registry.js` | CRUD for claims.json |
-| `extract.js` | Generate LLM prompts for claim extraction |
-| `match.js` | Match article claims to registry |
-| `capture-integration.js` | Integrate extraction into capture flow |
-| `verify-article.js` | Main verification entry point |
-| `migrate-sources.js` | Batch extraction for existing cases |
-| `report.js` | Generate verification reports |
+| `verify-article.js` | Extract claims from article, verify against source content |
+| `cross-check.js` | Cross-check claims against authoritative sources |
+| `compute-verify.js` | Computational verification for numerical claims |
+| `index.js` | Module exports |
 
 ### Verification Process
 
-1. **Extract claims from article** - Find sentences with citations
-2. **Match to registry** - Multiple strategies: exact text, number matching, keyword overlap
-3. **For unverified claims:**
-   - Search for supporting source
-   - Capture source (which extracts and registers new claims)
-   - Re-match article claim to newly registered claim
-   - Or flag for manual review
+1. **Extract claims from article** - Find sentences with [S###] citations
+2. **Load source content** - Read the cited evidence file
+3. **LLM verification** - Ask: "Does this source support this claim?"
+4. **Report results** - VERIFIED / UNVERIFIED / SOURCE_MISSING
 
 ### Usage
 
 ```bash
-# Check extraction status
-node scripts/claims/capture-integration.js cases/<case-id> status
+# Generate verification batches
+node scripts/claims/verify-article.js cases/<case-id>/ --generate-batches
 
-# Prepare extraction prompt for a source
-node scripts/claims/capture-integration.js cases/<case-id> prepare S001
+# Process LLM responses
+node scripts/claims/verify-article.js cases/<case-id>/ --merge-batches N
 
-# Verify article against registry
-node scripts/claims/verify-article.js cases/<case-id> --fix
+# Computational verification
+node scripts/claims/compute-verify.js cases/<case-id>/ --generate-prompts
 ```
 
 ### Key Principle
 
-**Claims are verified by construction.** A claim in the registry came directly from a captured source, with the exact supporting quote recorded. Article verification is just matching - not re-verifying.
+**Claims are verified against source content at article time.** Each cited claim is checked by loading the source and asking an LLM if the source supports the claim.
 
 ---
 
@@ -535,7 +509,6 @@ cases/                           ← DATA REPOSITORY ROOT
     ├── summary.md               # Living document, always current
     ├── leads.json               # Leads with depth tracking (max_depth: 3)
     ├── sources.json             # Source registry
-    ├── claims.json              # CLAIM REGISTRY - verified claims from sources
     ├── removed-points.md        # Auto-removed points (human review)
     ├── future_research.md       # Leads beyond max_depth
     ├── claim-verification.json  # Article verification results
