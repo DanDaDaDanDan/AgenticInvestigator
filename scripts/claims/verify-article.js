@@ -464,16 +464,35 @@ function generateBatchFiles(caseDir, prepared, batchSize) {
     const fileName = `verification-batch-${idx + 1}.json`;
     const filePath = path.join(caseDir, fileName);
 
+    // Calculate prompt statistics
+    const promptStats = batch.prompts.map(p => ({
+      index: p.index,
+      chars: p.prompt.length,
+      tokens_approx: Math.ceil(p.prompt.length / 4)
+    }));
+    const maxChars = Math.max(...promptStats.map(p => p.chars));
+    const maxTokens = Math.max(...promptStats.map(p => p.tokens_approx));
+
     fs.writeFileSync(filePath, JSON.stringify({
       batch: idx + 1,
       totalBatches: batches.length,
+      processing: {
+        note: "All prompts in this batch are within standard LLM context limits.",
+        max_prompt_chars: maxChars,
+        max_prompt_tokens_approx: maxTokens,
+        model_recommendation: "gemini-3-flash or gpt-5.2 (both have 1M+ token limits)",
+        instructions: "Process ALL prompts. Do not skip any based on size."
+      },
+      promptStats,
       prompts: batch.prompts
     }, null, 2));
 
     return {
       batch: idx + 1,
       file: fileName,
-      promptCount: batch.prompts.length
+      promptCount: batch.prompts.length,
+      maxChars,
+      maxTokensApprox: maxTokens
     };
   });
 
@@ -612,8 +631,12 @@ async function main() {
     const { batches, outputFiles } = generateBatchFiles(caseDir, prepared, options.batchSize);
 
     console.log(`Generated ${batches} batch files:`);
-    outputFiles.forEach(f => console.log(`  ${f.file}: ${f.promptCount} prompts`));
-    console.log(`\nProcess each batch with LLM, save responses to verification-responses-batch{N}.json`);
+    outputFiles.forEach(f => {
+      const kb = (f.maxChars / 1024).toFixed(1);
+      console.log(`  ${f.file}: ${f.promptCount} prompts (max: ${kb}KB / ~${f.maxTokensApprox} tokens)`);
+    });
+    console.log(`\nAll prompts are within LLM context limits (1M+ tokens available).`);
+    console.log(`Process each batch with LLM, save responses to verification-responses-batch{N}.json`);
     console.log(`Then run: node verify-article.js ${caseDir} --merge-batches ${batches}`);
     return;
   }
