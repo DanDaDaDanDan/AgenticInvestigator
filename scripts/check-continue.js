@@ -122,6 +122,20 @@ function countLeadsByStatus(leads) {
   return counts;
 }
 
+/**
+ * Update state.json with new phase
+ * @param {string} casePath - Path to case directory
+ * @param {object} state - Current state object (will be mutated)
+ * @param {string} newPhase - New phase to set
+ */
+function updatePhase(casePath, state, newPhase) {
+  const oldPhase = state.phase;
+  state.phase = newPhase;
+  const statePath = path.join(casePath, 'state.json');
+  fs.writeFileSync(statePath, JSON.stringify(state, null, 2));
+  console.log(`Phase transition: ${oldPhase} → ${newPhase}`);
+}
+
 function determineNextAction(state, casePath, options = {}) {
   const { phase, gates } = state;
   const { batchMode = false, batchSize = 4 } = options;
@@ -148,12 +162,9 @@ function determineNextAction(state, casePath, options = {}) {
           leadInfo: null
         };
       }
-      return {
-        status: 'CONTINUE',
-        next: 'Update phase to BOOTSTRAP',
-        reason: 'Planning complete, move to BOOTSTRAP phase',
-        leadInfo: null
-      };
+      // Auto-transition to BOOTSTRAP and return next action
+      updatePhase(casePath, state, 'BOOTSTRAP');
+      return determineNextAction(state, casePath, options);
 
     case 'BOOTSTRAP':
       return {
@@ -172,12 +183,9 @@ function determineNextAction(state, casePath, options = {}) {
           leadInfo: null
         };
       }
-      return {
-        status: 'CONTINUE',
-        next: 'Update phase to FOLLOW',
-        reason: 'Questions complete, move to FOLLOW phase',
-        leadInfo: null
-      };
+      // Auto-transition to FOLLOW and return next action
+      updatePhase(casePath, state, 'FOLLOW');
+      return determineNextAction(state, casePath, options);
 
     case 'FOLLOW':
       // Check for pending leads - MUST pursue ALL before reconcile/curiosity
@@ -271,12 +279,9 @@ function determineNextAction(state, casePath, options = {}) {
         };
       }
 
-      return {
-        status: 'CONTINUE',
-        next: 'Update phase to WRITE',
-        reason: 'Curiosity satisfied, move to WRITE phase',
-        leadInfo: null
-      };
+      // Auto-transition to WRITE and return next action
+      updatePhase(casePath, state, 'WRITE');
+      return determineNextAction(state, casePath, options);
 
     case 'WRITE':
       // SAFETY CHECK: Verify prerequisites before article generation
@@ -305,12 +310,9 @@ function determineNextAction(state, casePath, options = {}) {
           leadInfo: null
         };
       }
-      return {
-        status: 'CONTINUE',
-        next: 'Update phase to VERIFY',
-        reason: 'Article complete, move to VERIFY phase',
-        leadInfo: null
-      };
+      // Auto-transition to VERIFY and return next action
+      updatePhase(casePath, state, 'VERIFY');
+      return determineNextAction(state, casePath, options);
 
     case 'VERIFY':
       // Check which gates are failing
