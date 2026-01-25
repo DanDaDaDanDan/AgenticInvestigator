@@ -81,9 +81,19 @@ function verifySource(sourceId, caseDir) {
   const hasSha256 = !!metadata.sha256;
 
   // Check for forbidden source types (synthesis sources are fabrication)
-  const FORBIDDEN_TYPES = ['research_synthesis', 'synthesis', 'compilation', 'internal_analysis', 'methodology_note', 'methodological_analysis'];
+  const FORBIDDEN_TYPES = [
+    'research_synthesis', 'synthesis', 'compilation',
+    'internal_analysis', 'methodology_note', 'methodological_analysis',
+    'academic_research_synthesis', 'literature_review_synthesis'
+  ];
   if (FORBIDDEN_TYPES.includes(metadata.type)) {
     result.errors.push(`Forbidden source type: ${metadata.type} - One Source = One URL. No synthesis/compilation sources allowed.`);
+  }
+  // Also catch any type containing "synthesis" or "compilation"
+  if (metadata.type && (metadata.type.includes('synthesis') || metadata.type.includes('compilation'))) {
+    if (!FORBIDDEN_TYPES.includes(metadata.type)) {
+      result.errors.push(`Forbidden source type pattern: ${metadata.type} - types containing 'synthesis' or 'compilation' are not allowed`);
+    }
   }
 
   // URL is REQUIRED for all sources
@@ -106,12 +116,39 @@ function verifySource(sourceId, caseDir) {
   if (result.errors.length > 0) return result;
   result.checks.push('required_fields');
 
-  // Check 5: Capture signature (optional for direct mcp-osint captures)
+  // Check 5: Capture signature validation
+  // Legitimate signatures from osint-save.js: sig_v2_[32 hex chars] or sig_v2_osint_[method]_[timestamp]
+  // Fabricated signatures are human-readable: sig_v2_synthesis_topic_name
   if (metadata._capture_signature) {
-    if (metadata._capture_signature.startsWith('sig_v2_')) {
-      result.checks.push('capture_signature');
+    const sig = metadata._capture_signature;
+
+    // Must start with sig_v2_
+    if (!sig.startsWith('sig_v2_')) {
+      result.errors.push(`Invalid capture signature format: "${sig}" - must start with sig_v2_`);
     } else {
-      result.warnings.push('Invalid capture signature format');
+      const sigSuffix = sig.slice(7); // After "sig_v2_"
+
+      // Check for fabrication indicators in signature
+      const fabricationWords = ['synthesis', 'compilation', 'aggregat', 'summary', 'overview', 'multiple'];
+      const hasFabricationWord = fabricationWords.some(word => sigSuffix.toLowerCase().includes(word));
+
+      if (hasFabricationWord) {
+        result.errors.push(`Fabricated capture signature: "${sig}" - signatures cannot contain synthesis/compilation words`);
+      } else {
+        // Valid signature patterns:
+        // 1. 32 hex chars: sig_v2_8cb2516b48e77f82f560e7966d6ab5fb
+        // 2. osint prefix: sig_v2_osint_[method]_[something]
+        // 3. Contains timestamp-like pattern
+        const isHexHash = /^[a-f0-9]{32}$/.test(sigSuffix);
+        const isOsintFormat = sigSuffix.startsWith('osint');
+        const hasTimestamp = /\d{4}[-T]\d{2}/.test(sigSuffix); // YYYY-MM or YYYYTMM pattern
+
+        if (isHexHash || isOsintFormat || hasTimestamp) {
+          result.checks.push('capture_signature');
+        } else {
+          result.warnings.push(`Unusual capture signature format: "${sig}" - may be manually created`);
+        }
+      }
     }
   } else {
     // Not an error for direct mcp-osint captures
