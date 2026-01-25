@@ -83,12 +83,42 @@ function isSourceReference(text, line, articleText) {
  *
  * Finds sentences/passages that contain citations [S###]
  */
+/**
+ * Validate citation URL format
+ * Returns null if valid, error message if invalid
+ */
+function validateCitationUrl(url) {
+  if (!url) return null; // No URL is ok (plain [S001] format)
+
+  // Must be http or https
+  if (!/^https?:\/\/.+/i.test(url)) {
+    return `Invalid URL: "${url}" - must start with http:// or https://`;
+  }
+
+  // Check for fabrication indicators
+  const fabricationPatterns = [
+    /synthesis/i,
+    /compilation/i,
+    /multiple_sources/i,
+    /aggregat/i,
+    /internal_analysis/i
+  ];
+  for (const pattern of fabricationPatterns) {
+    if (pattern.test(url)) {
+      return `Fabricated URL detected: "${url}" - URLs cannot contain synthesis/compilation indicators`;
+    }
+  }
+
+  return null; // Valid
+}
+
 function extractArticleClaims(articleText) {
   const claims = [];
   const lines = articleText.split('\n');
+  const citationUrlErrors = []; // Track invalid citation URLs
 
-  // Pattern for citations: [S001], [S001](url)
-  const citationPattern = /\[(S\d{3})\](?:\([^)]+\))?/g;
+  // Pattern for citations: [S001], [S001](url) - capture URL part too
+  const citationPattern = /\[(S\d{3})\](?:\(([^)]+)\))?/g;
 
   for (let lineNum = 0; lineNum < lines.length; lineNum++) {
     const line = lines[lineNum];
@@ -110,6 +140,21 @@ function extractArticleClaims(articleText) {
     for (const sentence of sentences) {
       const sentenceMatches = [...sentence.matchAll(citationPattern)];
       if (sentenceMatches.length === 0) continue;
+
+      // Validate citation URLs
+      for (const match of sentenceMatches) {
+        const sourceId = match[1];
+        const url = match[2]; // May be undefined if plain [S001] format
+        const urlError = validateCitationUrl(url);
+        if (urlError) {
+          citationUrlErrors.push({
+            line: lineNum + 1,
+            sourceId,
+            url,
+            error: urlError
+          });
+        }
+      }
 
       // Extract the claim text (sentence without citation markup)
       const claimText = sentence
@@ -136,7 +181,7 @@ function extractArticleClaims(articleText) {
     }
   }
 
-  return claims;
+  return { claims, citationUrlErrors };
 }
 
 /**
@@ -250,7 +295,21 @@ function prepareVerification(caseDir, options = {}) {
   }
 
   const articleText = fs.readFileSync(articlePath, 'utf-8');
-  const articleClaims = extractArticleClaims(articleText);
+  const { claims: articleClaims, citationUrlErrors } = extractArticleClaims(articleText);
+
+  // Fail fast if there are citation URL errors (fabricated sources)
+  if (citationUrlErrors.length > 0) {
+    console.error('CRITICAL: Invalid citation URLs detected (fabricated sources):');
+    for (const err of citationUrlErrors) {
+      console.error(`  Line ${err.line}: [${err.sourceId}](${err.url}) - ${err.error}`);
+    }
+    return {
+      articlePath,
+      error: 'CITATION_URL_ERRORS',
+      citationUrlErrors,
+      message: `${citationUrlErrors.length} invalid citation URL(s) found. Sources must have valid http/https URLs.`
+    };
+  }
 
   const verificationData = [];
 

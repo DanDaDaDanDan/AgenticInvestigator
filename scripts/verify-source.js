@@ -72,29 +72,32 @@ function verifySource(sourceId, caseDir) {
   }
   result.checks.push('metadata_valid_json');
 
-  // Check 4: Required fields (flexible - source_id can come from directory)
-  // mcp-osint format: url, captured_at, files (or sha256 + files.raw_html)
-  // osint-save format: source_id, url, captured_at, files, verification
-  // Internal analysis types: research_synthesis, methodology_note, internal_analysis
-  const INTERNAL_ANALYSIS_TYPES = ['research_synthesis', 'methodology_note', 'internal_analysis', 'methodological_analysis'];
-  const isInternalAnalysis = INTERNAL_ANALYSIS_TYPES.includes(metadata.type);
-
+  // Check 4: Required fields
+  // STRICT: Every source MUST have a valid URL (http/https)
+  // No "synthesis" or "internal analysis" sources allowed - One Source = One URL
   const hasUrl = !!metadata.url;
   const hasCapturedAt = !!metadata.captured_at;
   const hasFiles = !!metadata.files;
   const hasSha256 = !!metadata.sha256;
 
-  // Internal analysis sources don't require URL but must have sources_synthesized or methodology field
+  // Check for forbidden source types (synthesis sources are fabrication)
+  const FORBIDDEN_TYPES = ['research_synthesis', 'synthesis', 'compilation', 'internal_analysis', 'methodology_note', 'methodological_analysis'];
+  if (FORBIDDEN_TYPES.includes(metadata.type)) {
+    result.errors.push(`Forbidden source type: ${metadata.type} - One Source = One URL. No synthesis/compilation sources allowed.`);
+  }
+
+  // URL is REQUIRED for all sources
   if (!hasUrl) {
-    if (isInternalAnalysis) {
-      if (!metadata.sources_synthesized && !metadata.methodology && !metadata.methodological_sources) {
-        result.errors.push('Internal analysis requires sources_synthesized, methodology, or methodological_sources field');
-      } else {
-        result.warnings.push('Internal analysis source (no URL, verified via methodology documentation)');
-        result.checks.push('internal_analysis_type');
-      }
-    } else {
-      result.errors.push('Required field missing: url');
+    result.errors.push('Required field missing: url - every source must have a URL');
+  } else {
+    // Validate URL format - must be http or https
+    const urlPattern = /^https?:\/\/.+/i;
+    if (!urlPattern.test(metadata.url)) {
+      result.errors.push(`Invalid URL format: "${metadata.url}" - must start with http:// or https://`);
+    }
+    // Check for suspicious URLs that indicate fabrication
+    if (metadata.url.includes('synthesis') || metadata.url.includes('compilation') || metadata.url.includes('multiple_sources')) {
+      result.errors.push(`Fabricated URL detected: "${metadata.url}" - URLs cannot contain synthesis/compilation indicators`);
     }
   }
   if (!hasCapturedAt) result.errors.push('Required field missing: captured_at');

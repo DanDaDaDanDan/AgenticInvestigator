@@ -43,7 +43,7 @@ D:/Personal/AgenticInvestigator/           ← CODE REPOSITORY (.git here)
     ├── .active                            # DATA REPO
     └── [case-slug]/                       # DATA REPO - each case folder
         ├── state.json
-        ├── summary.md
+        ├── findings/              # Decomposed findings (replaces summary.md)
         ├── evidence/
         └── ...
 ```
@@ -111,7 +111,7 @@ Only `--new` creates a new case. All other `/investigate` calls operate on exist
          ▼
 ┌─────────────────┐
 │ BOOTSTRAP       │  /action research (guided by investigation_plan.md)
-│                 │  Capture sources, draft summary.md
+│                 │  Capture sources, create initial findings
 └────────┬────────┘
          │
          ▼
@@ -131,7 +131,7 @@ Only `--new` creates a new case. All other `/investigate` calls operate on exist
          ▼
 ┌─────────────────┐
 │ RECONCILE       │  /action reconcile
-│                 │  Update summary.md with lead results
+│                 │  Update findings with lead results
 │                 │  Caveat unverified claims
 └────────┬────────┘
          │
@@ -339,7 +339,7 @@ Skills are defined in `.claude/skills/*/SKILL.md` with YAML frontmatter controll
 | `/research` | Broad topic research | Orchestrator | `context: fork` |
 | `/question` | Answer framework batch | Orchestrator | None |
 | `/follow` | Pursue single lead | Orchestrator | None |
-| `/reconcile` | Sync lead results with summary.md | Orchestrator | `context: fork` |
+| `/reconcile` | Sync lead results with findings | Orchestrator | `context: fork` |
 | `/curiosity` | Check lead exhaustion | Orchestrator | `context: fork` |
 | `/capture-source` | Capture evidence | Any agent | None |
 | `/verify` | Check 8 gates | Orchestrator | `context: fork` |
@@ -435,7 +435,7 @@ Uses three-phase pattern: parallel context-free scans → parallel contextual ev
 
 ### Orchestrator CANNOT Read
 
-- `summary.md` - Content file
+- `findings/*.md` - Content files
 - `questions/*.md` - Content files
 - `evidence/` - Raw content
 - Any content files
@@ -674,6 +674,14 @@ related_leads: [L001, L015]
 - **Clear provenance:** Each finding tracks sources and leads
 - **Easy pruning:** `status: stale` findings excluded from articles
 - **Parallelization:** Multiple agents can update different findings
+
+**Always Updating Principle:**
+Findings must ALWAYS reflect the latest evidence. Never let findings become stale:
+- When a lead resolves, immediately update affected findings
+- When new evidence contradicts a finding, mark it `status: stale` and create superseding finding
+- When a source is invalidated, mark dependent findings for re-verification
+- The `updated` timestamp must change whenever content changes
+- Articles are generated from findings, so stale findings = stale articles
 
 **RECONCILE behavior:**
 1. For each lead result, identify affected findings
@@ -920,7 +928,7 @@ If PDF capture fails, note the URL but do NOT synthesize content.
 When `/verify` finds unverifiable source:
 1. Try re-capture
 2. Search for alternate
-3. If none found → auto-remove from summary.md
+3. If none found → mark finding as stale or remove claim
 4. Log to `removed-points.md`:
 
 ```markdown
