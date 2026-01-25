@@ -329,6 +329,71 @@ Add "as of [date]" to evolving legal/procedural claims (lawsuit status, injuncti
 
 For fast-moving events or contested sequences, consider a timeline table (`| Time | Event | Source |`) to strengthen verifiability.
 
+### CRITICAL: No Verdict Language
+
+**NEVER use courtroom/verdict terminology for probabilistic evidence:**
+
+| Prohibited | Use Instead |
+|------------|-------------|
+| CONFIRMED | "supported by multiple studies" |
+| VALIDATED | "consistent with available evidence" |
+| RESOLVED | "strongest evidence suggests" |
+| REFUTED | "contradicted by [specific evidence]" |
+| PROVEN | "demonstrated in [context]" |
+| DEFINITIVE | "robust evidence in [specific context]" |
+
+Evidence is rarely definitive. Use language that reflects actual epistemic status:
+- "supported in multiple large studies"
+- "mixed evidence; strongest support in X context"
+- "plausible mechanism; causal evidence limited"
+- "consistent with theory but not directly tested"
+
+### CRITICAL: Separate Levels of Analysis
+
+When discussing concentration, inequality, or effects, explicitly state which level:
+
+| Level | What It Measures | Example |
+|-------|------------------|---------|
+| **Item-level** | Hits vs long tail (CR1, top-X% share) | "Top 1% of songs = 90% of streams" |
+| **User-level** | Shared cultural commons (Jaccard overlap) | "Users share only 15% of their feeds" |
+| **Creator-level** | Income/attention distribution | "Top 10% of creators = 62% of brand payments" |
+| **Market-level** | Industry concentration (HHI) | "Three platforms control 80% of traffic" |
+| **Belief-level** | Attitude polarization | "Partisan gap increased 15%" |
+
+**Each section must explicitly state which level it addresses.** Never slide between levels to support a thesis.
+
+### CRITICAL: Evidence vs Inference Separation
+
+Structure claims in two parts:
+
+1. **What the evidence shows:** Direct findings from cited sources
+2. **What we infer:** Interpretations, implications, synthesis
+
+Example:
+```
+The Meta study found that removing reshared content reduced exposure to
+political news by 23% [S015]. This suggests that resharing amplifies
+political content, though the study did not measure whether this
+affected users' political beliefs.
+```
+
+NOT:
+```
+Meta's study proves that resharing causes political polarization.
+```
+
+### Regulatory/Legal Accuracy
+
+**Legal and regulatory claims require exact verification:**
+
+- Cite specific statute/article numbers
+- Verify the provision actually says what you claim
+- Distinguish between what a law requires vs what it's popularly believed to require
+- Include effective dates for regulations
+
+**Before publication, verify every regulatory reference** against official sources.
+An EU AI Act misstatement, for example, will undermine credibility with expert readers.
+
 ### Prohibited
 
 - Facts not in summary.md
@@ -337,6 +402,9 @@ For fast-moving events or contested sequences, consider a timeline table (`| Tim
 - "Clearly," "obviously," "it's clear that"
 - Single study presented as definitive when evidence is mixed
 - CORRECTION, UPDATE, REVISION, or any revision language
+- **Verdict language (CONFIRMED, VALIDATED, RESOLVED, REFUTED, PROVEN)**
+- **Sliding between analytical levels without explicit transition**
+- **Stating inferences as if they were direct evidence**
 
 ---
 
@@ -348,6 +416,16 @@ For fast-moving events or contested sequences, consider a timeline table (`| Tim
 - [ ] Uncertainty stated where evidence is limited or contested
 - [ ] Numbers match across short/medium/full (no drift)
 - [ ] All `[S###](url)` citations present and correct
+- [ ] **No verdict language (CONFIRMED, VALIDATED, RESOLVED, REFUTED)**
+- [ ] **Each section states which analytical level it addresses**
+- [ ] **Inferences clearly distinguished from direct evidence**
+
+### Regulatory/Legal Accuracy
+
+- [ ] Every statute/article number verified against official source
+- [ ] Provisions actually say what article claims they say
+- [ ] Effective dates included for time-sensitive regulations
+- [ ] Legal terminology matches actual legal meaning (not colloquial)
 
 ### Legal Safety (for investigations involving named individuals)
 

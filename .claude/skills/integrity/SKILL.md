@@ -67,6 +67,30 @@ You are a reader with NO knowledge of this case. Scan for journalistic integrity
 - Limitations not acknowledged
 - Conflicts of interest not disclosed
 
+**CRITICAL: Epistemic Over-Reach (Verdict Language)**
+- "CONFIRMED", "VALIDATED", "RESOLVED", "REFUTED", "PROVEN" for probabilistic evidence
+- Courtroom-style conclusions for scientific/statistical findings
+- Treating observational studies as if they established causation
+- Presenting contested findings as settled
+
+**CRITICAL: Level-of-Analysis Conflation**
+- Sliding between individual/catalog/market/creator levels without explicit transition
+- Using one level's evidence to support claims about another level
+- Mixing income concentration with consumption concentration without distinction
+- Conflating "exposure" effects with "belief" effects
+
+**CRITICAL: Advocacy Framing**
+- Article reads like "persuasive advocacy dressed as scholarship"
+- Evidence selectively presented to support predetermined conclusion
+- Counterevidence minimized or dismissed without engagement
+- Rhetorical structure designed to win argument rather than inform
+
+**CRITICAL: Regulatory/Legal Accuracy**
+- Statute/article citations that don't match what the law actually says
+- Legal claims that would be obvious to domain experts as wrong
+- Colloquial interpretation stated as legal fact
+- Missing effective dates or jurisdictional limits
+
 ### Stage 1 Output Format
 
 ```
@@ -207,6 +231,12 @@ Update `gates.integrity` in state.json.
 | One-sided quotes | Balance | Add opposing perspective |
 | "The corrupt official" | Loaded language | Remove or attribute |
 | Statistic without source | Accuracy | Add [S###] citation |
+| **"CONFIRMED by studies"** | Verdict language | "supported by multiple studies" |
+| **"VALIDATED/RESOLVED"** | Over-certainty | "consistent with evidence" / "strongest evidence suggests" |
+| **Mixing individual/market claims** | Level conflation | Add explicit "at the [X] level" qualifier |
+| **"Article 50 requires X"** | Regulatory accuracy | Verify against official text; correct if wrong |
+| **Evidence → strong conclusion** | Advocacy framing | Add "this suggests" / limitations caveat |
+| **Causal claim from correlation** | Epistemic over-reach | "associated with" not "causes" |
 
 ---
 

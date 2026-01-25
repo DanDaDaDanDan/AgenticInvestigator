@@ -635,6 +635,16 @@ cases/                           ← DATA REPOSITORY ROOT
 
 ### Findings Architecture (replaces monolithic summary.md)
 
+> **⚠️ IMPLEMENTATION STATUS: DESIGNED BUT NOT YET IMPLEMENTED**
+>
+> This architecture is the target design but skills still use `summary.md`.
+> Current state: All skills reference `summary.md`. Migration to findings/ requires:
+> - Update `/research`, `/reconcile`, `/article` skills to use findings/
+> - Update `init-case.js` to create findings/ and manifest.json
+> - Create findings management scripts
+>
+> Until implemented, continue using `summary.md` as the single source of truth.
+
 Each finding is an independent file with lifecycle metadata:
 
 ```markdown

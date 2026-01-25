@@ -7,7 +7,7 @@ user-invocable: false
 argument-hint: [case-id]
 ---
 
-# /verify - Check 8 Gates
+# /verify - Check 11 Gates
 
 Verify investigation readiness for publication.
 
@@ -18,7 +18,9 @@ Verify investigation readiness for publication.
 /verify [case-id]    # Verify specific case
 ```
 
-## The 8 Gates
+## The 11 Gates
+
+### Process Gates (0-7)
 
 | # | Gate | Pass Criteria |
 |---|------|---------------|
@@ -30,6 +32,17 @@ Verify investigation readiness for publication.
 | 5 | Sources | **Claim Verification** - Semantic + Computational verification |
 | 6 | Integrity | `/integrity` returns READY (with multi-agent debate) |
 | 7 | Legal | `/legal-review` returns READY (with multi-agent debate) |
+
+### Quality Gates (8-10)
+
+| # | Gate | Pass Criteria |
+|---|------|---------------|
+| 8 | Balance | All stakeholders represented; counterarguments addressed |
+| 9 | Completeness | Framework insights reflected; no obvious gaps |
+| 10 | Significance | Clear takeaway; novel findings identified |
+
+**Note:** Quality gates (8-10) are currently checked within the AI self-review step.
+Future enhancement: dedicated `/balance-audit`, `/completeness-audit`, `/significance-audit` skills.
 
 ## Gate Details
 
@@ -149,13 +162,14 @@ Update `state.json` gates with results.
 
 ## Result
 
-**ALL PASS:** Check if AI self-review is needed
+**ALL PASS (Gates 0-7):** Check if AI self-review is needed (which covers quality gates 8-10)
 
 **ANY FAIL:** Return specific failures and fixes
 
 ## AI Self-Review (First Iteration Only)
 
-After all 8 gates pass for the first time, trigger automatic AI review.
+After all process gates (0-7) pass for the first time, trigger automatic AI review.
+The self-review covers quality gates (8-10): Balance, Completeness, Significance.
 
 ### When to Trigger
 
@@ -175,17 +189,49 @@ Use **GPT 5.2 Pro** via `mcp__mcp-openai__generate_text`:
 
 Prompt:
 ```
-Review this investigative article as a senior editor. Identify:
+Review this investigative article as a critical senior editor who will be blamed
+if readers find errors. Focus on these SPECIFIC issues:
 
-1. CLARITY: Passages that are confusing
-2. EVIDENCE: Claims needing stronger support
-3. BALANCE: Missing perspectives
-4. STRUCTURE: Flow issues
-5. GAPS: Unanswered questions
-6. TONE: Advocacy or excessive hedging
+1. VERDICT LANGUAGE: Flag any use of CONFIRMED, VALIDATED, RESOLVED, REFUTED,
+   PROVEN, or similar courtroom terminology for probabilistic evidence.
+   Replace with: "supported by", "consistent with", "strongest evidence suggests"
 
-Be specific. Quote problematic text and suggest improvements.
-If the article is ready for publication, say so explicitly.
+2. LEVEL-OF-ANALYSIS MIXING: Check if the article slides between different
+   analytical levels (individual behavior, catalog concentration, market
+   concentration, creator income, belief formation) without explicit transitions.
+   Each section should state which level it addresses.
+
+3. EVIDENCE vs INFERENCE: Flag places where the article states inferences as
+   if they were direct findings. Pattern: "Study shows X" when study actually
+   showed Y and X is the author's interpretation.
+
+4. REGULATORY/LEGAL ACCURACY: Verify any statute or article citations.
+   Would a lawyer or policy expert immediately see an error? Example: citing
+   "EU AI Act Article 50" for something Article 50 doesn't actually address.
+
+5. ADVOCACY FRAMING: Does this read like journalism or "persuasive advocacy
+   dressed as scholarship"? Is evidence presented to inform or to win an argument?
+
+6. SYNTHESIS CITATIONS: Flag any citations to "multiple_sources_synthesis" or
+   similar non-URL sources. These are fabricated and must be replaced.
+
+7. CAUSAL OVER-REACH: Flag causal claims that outrun study designs. Example:
+   7-day experiment → "directly reduces" is too strong.
+
+8. BALANCE (Gate 8): Are all major stakeholders represented? Are counterarguments
+   addressed substantively or dismissed?
+
+9. COMPLETENESS (Gate 9): Do the 35 frameworks' insights appear in the article?
+   Any obvious gaps in coverage?
+
+10. SIGNIFICANCE (Gate 10): Is there a clear takeaway? Novel findings?
+
+For each issue found:
+- Quote the problematic text
+- Explain why it's problematic
+- Provide specific replacement text
+
+If article is ready for publication as-is, say "READY FOR PUBLICATION" explicitly.
 ```
 
 ### After Self-Review
@@ -251,6 +297,16 @@ If the article is ready for publication, say so explicitly.
 
 ## Next Steps
 
-- If PASS + ai_review_complete: Investigation complete
-- If PASS + needs self-review: AI review → /case-feedback
-- If FAIL: Route to appropriate phase based on which gate failed
+- If PASS (Gates 0-7) + ai_review_complete: Investigation complete
+- If PASS (Gates 0-7) + needs self-review: AI review (covers Gates 8-10) → /case-feedback if issues found
+- If FAIL (Gates 0-7): Route to appropriate phase based on which gate failed
+
+## Quality Gates Coverage
+
+The AI self-review explicitly checks:
+- **Gate 8 (Balance):** Stakeholder representation, counterargument handling
+- **Gate 9 (Completeness):** Framework coverage, obvious gaps
+- **Gate 10 (Significance):** Clear takeaway, novel findings
+
+These are evaluated within the self-review rather than as separate automated gates.
+Future enhancement: dedicated quality audit skills for independent verification.
