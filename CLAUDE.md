@@ -193,7 +193,7 @@ Only `--new` creates a new case. All other `/investigate` calls operate on exist
 | 6 | Integrity | `/integrity` review | Status: READY (with **multi-agent debate**) |
 | 7 | Legal | `/legal-review` | Status: READY (with **multi-agent debate**) |
 
-### Quality Gates (8-10) — NEW
+### Quality Gates (8-10) — PLANNED (not yet implemented)
 
 | # | Gate | Check | Pass Criteria |
 |---|------|-------|---------------|
@@ -201,7 +201,7 @@ Only `--new` creates a new case. All other `/investigate` calls operate on exist
 | 9 | Completeness | `/completeness-audit` | Framework questions reflected in article; "what's missing" review passes |
 | 10 | Significance | `/significance-audit` | Clear takeaway articulated; novel findings identified; "so what?" test passes |
 
-**Termination:** All 11 gates pass + AI self-review complete (or no feedback generated).
+**Termination:** All 8 gates pass + AI self-review complete (or no feedback generated).
 
 ### Gate 2 (Curiosity) Hard Blocks
 

@@ -48,9 +48,9 @@ Find the active case directory (read `cases/.active` or most recent in `cases/`)
 
 ### 2. Execute Command
 
-Route to the specified skill. Skills with `context: fork` automatically handle isolation.
+Route to the specified skill based on the command.
 
-**Skills with automatic isolation (context: fork):**
+**Heavy skills (require Task tool dispatch):**
 - `/action plan-investigation <topic>` → invoke `/plan-investigation` (3 sequential steps)
 - `/action research <topic>` → invoke `/research`
 - `/action reconcile` → invoke `/reconcile`
@@ -175,7 +175,7 @@ After the signal outputs, check `Status:` and act:
 - **Error** → Return error to user for guidance
 
 **The loop must continue autonomously.** Only return to user when:
-1. Status is COMPLETE (all 8 gates pass)
+1. Status is COMPLETE (all gates pass)
 2. An unrecoverable error occurs
 3. User intervention is explicitly needed (scope change, ethical concern)
 
