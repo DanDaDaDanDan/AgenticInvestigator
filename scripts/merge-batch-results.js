@@ -3,7 +3,7 @@
  * merge-batch-results.js - Merge results from parallel follow agents
  *
  * Merges temp files from parallel agents into main case files:
- * - summary-batch-{id}.md fragments → summary.md
+ * - findings-batch-{id}.md fragments → findings/
  * - leads-batch-{id}.json new leads → leads.json
  * - sources-batch-{id}.json entries → sources.json
  *
@@ -24,32 +24,68 @@ function readJsonFile(filePath, defaultValue = {}) {
 }
 
 /**
- * Append content to summary.md
+ * Get the next finding ID
  */
-function mergeSummaryFragments(casePath, batchId, fragments) {
-  const summaryPath = path.join(casePath, 'summary.md');
-  let summary = '';
-  if (fs.existsSync(summaryPath)) {
-    summary = fs.readFileSync(summaryPath, 'utf-8');
+function getNextFindingId(findingsDir) {
+  const files = fs.readdirSync(findingsDir)
+    .filter(f => f.match(/^F\d{3}\.md$/))
+    .sort();
+
+  if (files.length === 0) return 'F001';
+  const lastNum = parseInt(files[files.length - 1].slice(1, 4));
+  return `F${String(lastNum + 1).padStart(3, '0')}`;
+}
+
+/**
+ * Create findings from batch fragments
+ */
+function mergeFindings(casePath, batchId, fragments) {
+  const findingsDir = path.join(casePath, 'findings');
+  const manifestPath = path.join(findingsDir, 'manifest.json');
+
+  if (!fs.existsSync(findingsDir)) {
+    fs.mkdirSync(findingsDir, { recursive: true });
   }
 
-  // Add findings section if fragments exist
-  if (fragments && fragments.length > 0) {
-    // Check if we already have a "Findings from Leads" section
-    if (!summary.includes('## Findings from Leads')) {
-      summary += '\n\n## Findings from Leads\n';
-    }
+  const now = new Date().toISOString().split('T')[0];
+  let manifest = { version: 1, assembly_order: [], sections: {} };
+  if (fs.existsSync(manifestPath)) {
+    manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+  }
 
+  let added = 0;
+  if (fragments && fragments.length > 0) {
     fragments.forEach(fragment => {
       if (fragment.content && fragment.content.trim()) {
-        summary += `\n### ${fragment.lead_id}: ${fragment.lead_title || 'Result'}\n`;
-        summary += fragment.content + '\n';
+        const id = getNextFindingId(findingsDir);
+        const title = fragment.lead_title || `Lead ${fragment.lead_id} Result`;
+
+        const content = `---
+id: ${id}
+status: draft
+created: ${now}
+updated: ${now}
+sources: ${JSON.stringify(fragment.sources || [])}
+supersedes: null
+superseded_by: null
+confidence: medium
+related_leads: ["${fragment.lead_id}"]
+---
+
+# Finding: ${title}
+
+${fragment.content}
+`;
+
+        fs.writeFileSync(path.join(findingsDir, `${id}.md`), content);
+        manifest.assembly_order.push(id);
+        added++;
       }
     });
   }
 
-  fs.writeFileSync(summaryPath, summary);
-  return { success: true, fragments_merged: fragments.length };
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+  return { success: true, findings_created: added };
 }
 
 /**
@@ -212,9 +248,13 @@ function mergeBatchResults(casePath, batchId, results) {
     mergeResults.operations.sources = mergeSources(casePath, results.new_sources);
   }
 
-  // 4. Merge summary fragments
+  // 4. Merge findings fragments
+  if (results.findings_fragments && results.findings_fragments.length > 0) {
+    mergeResults.operations.findings = mergeFindings(casePath, batchId, results.findings_fragments);
+  }
+  // Legacy support: also check summary_fragments
   if (results.summary_fragments && results.summary_fragments.length > 0) {
-    mergeResults.operations.summary = mergeSummaryFragments(casePath, batchId, results.summary_fragments);
+    mergeResults.operations.findings = mergeFindings(casePath, batchId, results.summary_fragments);
   }
 
   // 5. Update question files
@@ -268,8 +308,8 @@ Results JSON format:
   "new_sources": [
     { "id": "S001", "url": "...", "captured": true }
   ],
-  "summary_fragments": [
-    { "lead_id": "L001", "lead_title": "...", "content": "..." }
+  "findings_fragments": [
+    { "lead_id": "L001", "lead_title": "...", "content": "...", "sources": ["S001"] }
   ],
   "framework_findings": [
     { "lead_id": "L001", "framework_file": "01-follow-the-money.md", "content": "..." }
@@ -316,7 +356,7 @@ module.exports = {
   mergeNewLeads,
   updateLeadStatus,
   mergeSources,
-  mergeSummaryFragments,
+  mergeFindings,
   updateQuestionFiles,
   updateState,
   cleanupBatchFiles

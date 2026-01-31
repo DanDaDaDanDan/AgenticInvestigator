@@ -41,7 +41,7 @@ Used by `/parallel-review` for concurrent execution.
 
 ## Stage 1: Context-Free Scan
 
-**CRITICAL: Read ONLY `articles/full.md` first. Do NOT read summary.md, sources.json, or evidence files until Stage 2.**
+**CRITICAL: Read ONLY `articles/full.md` first. Do NOT read findings/, sources.json, or evidence files until Stage 2.**
 
 You are a reader with NO knowledge of this case. Scan the article for potential legal issues.
 
@@ -142,7 +142,7 @@ Skip full debate when clear-cut:
 ### What CANNOT Clear a Flag
 
 - Asserting "it's fine" without citing evidence
-- Pointing to summary.md (may contain same error)
+- Pointing to findings (may contain same error)
 - General knowledge ("everyone knows he did it")
 - Your memory of the case
 

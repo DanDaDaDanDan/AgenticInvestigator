@@ -200,18 +200,17 @@ Leads about a person/org need their primary source (actual interview, statement,
    - Add under a `## Findings from Leads` section
    - Format: `### L### Result\n[Finding with [S###] citation]`
 
-8. **Update summary.md** - Add ALL findings with `[S###](url)` citations
+8. **Create/update findings** - Add noteworthy discoveries to `findings/`
+   - Create new finding: `node scripts/findings.js add cases/<case-id> "Finding Title"`
+   - Or update existing finding if this lead relates to one
+   - Use `[S###](url)` citations in finding content
+   - Update finding status to `sourced` when evidence supports it
    - Low bar for inclusion: anything of interest, unique insight, or noteworthy
-   - Filtering happens later during article generation
-   - When in doubt, include it
 
-   **Writing style for summary.md:**
+   **Writing style for findings:**
    - Write findings as **standalone facts**, not corrections/revisions
    - NEVER use: "CORRECTION:", "UPDATE:", "REVISION:", "Initial assumption was wrong"
-   - NEVER reference previous iterations or drafts
    - Simply state the correct information with citation
-   - Bad: "CORRECTION: Study was actually published in 2023, not 2022"
-   - Good: "The study was published in 2023 [S045]"
 
 9. **Generate new leads** if discovered:
    - Set `depth` = parent lead's depth + 1
@@ -301,7 +300,7 @@ A lead is NOT a dead end if:
 - Updated `leads.json` with result
 - Sources captured to `evidence/S###/` (each with metadata.json)
 - Updated `questions/*.md` with findings (under `## Findings from Leads` section)
-- Updated `summary.md` with ALL findings (low bar - include everything noteworthy)
+- New/updated findings in `findings/F###.md` with `[S###](url)` citations
 
 ## Next Step
 

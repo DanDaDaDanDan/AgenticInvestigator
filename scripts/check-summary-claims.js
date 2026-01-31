@@ -3,7 +3,7 @@
 /**
  * check-summary-claims.js
  *
- * Validates claims in summary.md against sources and lead investigation results.
+ * Validates claims in findings/ against sources and lead investigation results.
  *
  * Usage:
  *   node scripts/check-summary-claims.js cases/case-id/
@@ -12,8 +12,8 @@
  *
  * Checks:
  * 1. All cited sources have captured: true
- * 2. Lead results don't contradict summary claims
- * 3. Statistics in summary appear in cited source
+ * 2. Lead results don't contradict finding claims
+ * 3. Statistics in findings appear in cited source
  * 4. Investigated leads with specific results have sources
  */
 
@@ -31,7 +31,7 @@ if (!casePath) {
     process.exit(1);
 }
 
-const summaryPath = path.join(casePath, 'summary.md');
+const findingsDir = path.join(casePath, 'findings');
 const sourcesPath = path.join(casePath, 'sources.json');
 const leadsPath = path.join(casePath, 'leads.json');
 const evidencePath = path.join(casePath, 'evidence');
@@ -138,9 +138,9 @@ function checkSourceCapture(summary, sources) {
     }
 }
 
-// Check 2: Verify lead results don't contradict summary
-function checkLeadContradictions(summary, leads) {
-    const summaryLower = summary.toLowerCase();
+// Check 2: Verify lead results don't contradict findings
+function checkLeadContradictions(findings, leads) {
+    const findingsLower = findings.toLowerCase();
 
     for (const lead of leads.leads) {
         if (lead.status !== 'dead_end' && lead.status !== 'investigated') continue;
@@ -157,18 +157,18 @@ function checkLeadContradictions(summary, leads) {
 
         for (const { pattern, type } of contradictionPatterns) {
             if (pattern.test(lead.result)) {
-                // Check if the lead topic is still stated as fact in summary
+                // Check if the lead topic is still stated as fact in findings
                 const leadKeywords = lead.lead.toLowerCase().split(/\s+/).filter(w => w.length > 4);
-                const keywordInSummary = leadKeywords.some(kw => summaryLower.includes(kw));
+                const keywordInFindings = leadKeywords.some(kw => findingsLower.includes(kw));
 
-                if (keywordInSummary && lead.status === 'dead_end') {
+                if (keywordInFindings && lead.status === 'dead_end') {
                     issues.leadContradictions.push({
                         leadId: lead.id,
                         lead: lead.lead,
                         result: lead.result,
                         type: type,
                         severity: 'HIGH',
-                        suggestion: `Review summary for claims about "${lead.lead}" - lead found ${type}`
+                        suggestion: `Review findings for claims about "${lead.lead}" - lead found ${type}`
                     });
                 }
             }
@@ -203,7 +203,7 @@ function checkLeadSources(leads) {
 }
 
 // Check 4: Check for temporal context (dated evidence without dates)
-function checkTemporalContext(summary) {
+function checkTemporalContext(findings) {
     // Look for statistics that might be time-sensitive
     const timeSensitivePatterns = [
         /(\d+%)\s+of\s+(?:Americans|voters|workers|people)/gi,
@@ -214,8 +214,8 @@ function checkTemporalContext(summary) {
 
     for (const pattern of timeSensitivePatterns) {
         let match;
-        while ((match = pattern.exec(summary)) !== null) {
-            const context = summary.substring(Math.max(0, match.index - 100), Math.min(summary.length, match.index + match[0].length + 100));
+        while ((match = pattern.exec(findings)) !== null) {
+            const context = findings.substring(Math.max(0, match.index - 100), Math.min(findings.length, match.index + match[0].length + 100));
 
             // Check if temporal context is present
             const hasDate = /\b(20\d{2}|January|February|March|April|May|June|July|August|September|October|November|December)\b/i.test(context);
@@ -232,20 +232,38 @@ function checkTemporalContext(summary) {
     }
 }
 
+// Load all findings as a single string
+function loadFindings(findingsDir) {
+    if (!fs.existsSync(findingsDir)) {
+        return null;
+    }
+    const files = fs.readdirSync(findingsDir)
+        .filter(f => f.match(/^F\d{3}\.md$/))
+        .sort();
+
+    if (files.length === 0) return null;
+
+    let content = '';
+    for (const file of files) {
+        content += fs.readFileSync(path.join(findingsDir, file), 'utf8') + '\n';
+    }
+    return content;
+}
+
 // Main execution
 function main() {
     console.log('='.repeat(70));
-    console.log('SUMMARY CLAIMS VERIFICATION');
+    console.log('FINDINGS CLAIMS VERIFICATION');
     console.log('='.repeat(70));
     console.log(`Case: ${casePath}`);
     console.log('');
 
     // Load files
-    const summary = loadFile(summaryPath);
+    const findings = loadFindings(findingsDir);
     const sources = loadFile(sourcesPath, 'json');
     const leads = loadFile(leadsPath, 'json');
 
-    if (!summary || !sources || !leads) {
+    if (!findings || !sources || !leads) {
         console.error('Failed to load required files');
         process.exit(1);
     }
@@ -253,10 +271,10 @@ function main() {
     // Run checks
     console.log('Running checks...\n');
 
-    checkSourceCapture(summary, sources);
-    checkLeadContradictions(summary, leads);
+    checkSourceCapture(findings, sources);
+    checkLeadContradictions(findings, leads);
     checkLeadSources(leads);
-    checkTemporalContext(summary);
+    checkTemporalContext(findings);
 
     // Report results
     let totalIssues = 0;

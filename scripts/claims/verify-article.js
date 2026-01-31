@@ -410,7 +410,7 @@ function processVerificationResponses(prepared, llmResponses) {
 
     return {
       ...item,
-      status: parsed.supported ? 'VERIFIED' : 'UNVERIFIED',
+      status: parsed.supported ? 'SUPPORTED' : 'UNSOURCED',
       confidence: parsed.confidence,
       supportingQuote: parsed.supportingQuote,
       reason: parsed.reason
@@ -420,8 +420,8 @@ function processVerificationResponses(prepared, llmResponses) {
   // Calculate summary
   const summary = {
     total: results.length,
-    verified: results.filter(r => r.status === 'VERIFIED').length,
-    unverified: results.filter(r => r.status === 'UNVERIFIED').length,
+    verified: results.filter(r => r.status === 'SUPPORTED').length,
+    unverified: results.filter(r => r.status === 'UNSOURCED').length,
     skipped: results.filter(r => r.status === 'SKIPPED').length,
     noSource: results.filter(r => r.status === 'NO_SOURCE').length,
     sourceMissing: results.filter(r => r.status === 'SOURCE_MISSING').length,
@@ -429,8 +429,8 @@ function processVerificationResponses(prepared, llmResponses) {
   };
 
   // Determine overall status
-  let overallStatus = 'VERIFIED';
-  if (summary.unverified > 0) overallStatus = 'HAS_UNVERIFIED';
+  let overallStatus = 'SUPPORTED';
+  if (summary.unverified > 0) overallStatus = 'HAS_UNSOURCED';
   if (summary.sourceMissing > 0) overallStatus = 'HAS_MISSING_SOURCES';
 
   return {
@@ -439,8 +439,8 @@ function processVerificationResponses(prepared, llmResponses) {
     verifiedAt: new Date().toISOString(),
     summary,
     results,
-    verified: results.filter(r => r.status === 'VERIFIED'),
-    unverified: results.filter(r => r.status === 'UNVERIFIED'),
+    verified: results.filter(r => r.status === 'SUPPORTED'),
+    unverified: results.filter(r => r.status === 'UNSOURCED'),
     skipped: results.filter(r => r.status === 'SKIPPED')
   };
 }
@@ -462,20 +462,20 @@ function generateReport(results) {
   }
 
   lines.push(`\nArticle: ${results.articlePath}`);
-  lines.push(`Verified at: ${results.verifiedAt}`);
+  lines.push(`Checked at: ${results.verifiedAt}`);
   lines.push(`Status: ${results.status}`);
 
   lines.push('\n--- SUMMARY ---');
   lines.push(`Total claims: ${results.summary.total}`);
-  lines.push(`  Verified: ${results.summary.verified}`);
-  lines.push(`  Unverified: ${results.summary.unverified}`);
+  lines.push(`  Source-supported: ${results.summary.verified}`);
+  lines.push(`  Needs source: ${results.summary.unverified}`);
   lines.push(`  Skipped (source refs): ${results.summary.skipped}`);
   if (results.summary.sourceMissing > 0) {
     lines.push(`  Missing sources: ${results.summary.sourceMissing}`);
   }
 
   if (results.unverified && results.unverified.length > 0) {
-    lines.push('\n--- UNVERIFIED CLAIMS ---');
+    lines.push('\n--- CLAIMS NEEDING SOURCE ---');
     for (const item of results.unverified) {
       const text = item.claim.text.substring(0, 70);
       lines.push(`\n  Line ${item.claim.line}: "${text}${text.length >= 70 ? '...' : ''}"`);
@@ -485,7 +485,7 @@ function generateReport(results) {
   }
 
   if (results.verified && results.verified.length > 0 && results.verified.length <= 20) {
-    lines.push('\n--- VERIFIED CLAIMS ---');
+    lines.push('\n--- SOURCE-SUPPORTED CLAIMS ---');
     for (const item of results.verified) {
       const text = item.claim.text.substring(0, 70);
       lines.push(`\n  Line ${item.claim.line}: "${text}${text.length >= 70 ? '...' : ''}"`);

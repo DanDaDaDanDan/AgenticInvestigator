@@ -24,6 +24,51 @@ Generate three publication-ready articles with **top-tier narrative clarity**, *
 
 ---
 
+## CRITICAL: Prohibited Language (Must Include in System Prompt)
+
+**The following MUST be passed to the article generation model as part of the system prompt.**
+
+These prohibitions prevent common LLM failure modes in investigative writing:
+
+### 1. NO VERDICT LANGUAGE
+
+Never use courtroom/verdict terminology for probabilistic evidence:
+
+| PROHIBITED | USE INSTEAD |
+|------------|-------------|
+| CONFIRMED | "supported by multiple studies" |
+| VALIDATED | "consistent with available evidence" |
+| RESOLVED | "strongest evidence suggests" |
+| REFUTED | "contradicted by [specific evidence]" |
+| PROVEN | "demonstrated in [context]" |
+| DEFINITIVE | "robust evidence in [specific context]" |
+| VERIFIED | "corroborated by [source]" |
+
+Evidence is rarely definitive. Use language that reflects actual epistemic status.
+
+### 2. SEPARATE ANALYTICAL LEVELS
+
+Always state which level of analysis applies:
+- **Item-level**: Hits vs long tail (e.g., "Top 1% of items = 90% of attention")
+- **User-level**: Shared experience (e.g., "Users share only 15% overlap")
+- **Creator-level**: Income distribution (e.g., "Top 10% = 62% of earnings")
+- **Market-level**: Industry concentration (e.g., "Three firms control 80%")
+- **Belief-level**: Attitude change (e.g., "Partisan gap increased 15%")
+
+Each section must explicitly state which level it addresses. Never slide between levels.
+
+### 3. DISTINGUISH EVIDENCE FROM INFERENCE
+
+Structure claims as:
+1. **What the evidence shows**: Direct findings from cited sources
+2. **What we infer**: Interpretations, implications, synthesis (clearly marked)
+
+### 4. NO ADVOCACY FRAMING
+
+Write to inform, not to persuade. Present evidence, not arguments.
+
+---
+
 ## Execution
 
 Use **GPT 5.2 Pro with extended thinking** for article generation.
@@ -49,17 +94,25 @@ Failing gates: [list failing gates]
 Action required: Complete FOLLOW phase before WRITE phase.
 ```
 
-This prevents generating articles from incomplete investigations. The curiosity and reconciliation gates ensure all leads are investigated and findings are reconciled with the summary before writing.
+This prevents generating articles from incomplete investigations. The curiosity and reconciliation gates ensure all leads are investigated and findings are reconciled before writing.
 
 ### Step 1: Read Source Material
 
-Read `summary.md` and all `questions/*.md` files. This is the source content for all three articles.
+Assemble all findings and read supporting question files:
+
+```bash
+node scripts/findings.js assemble cases/<case-id>
+```
+
+This outputs all active findings (status: sourced or draft, excluding stale/superseded) as a single document.
+
+Also read `questions/*.md` files for additional context.
 
 **During revision cycles:** Also read the feedback file specified in `state.json.revision.feedback_file` (e.g., `feedback/revision1.md`). The `## Article Changes` section contains required revisions.
 
 ### Step 1.5: Pre-Generation Citation Validation (BLOCKING)
 
-**Before generating any articles**, validate ALL citations in summary.md:
+**Before generating any articles**, validate ALL citations in findings:
 
 ```bash
 node scripts/audit-citations.js cases/<case-id>/ --block
@@ -76,15 +129,15 @@ If the audit fails, **DO NOT proceed** to article generation. Fix issues first:
 node scripts/claims/verify-article.js cases/<case-id>/ --fix
 ```
 
-For each claim in summary.md:
+For each claim in findings:
 1. Verify the claim is registered in `claims.json` (extracted from source at capture time)
 2. If statistics are cited, verify the numbers match exactly
-3. If verification flags unverified claims, either:
+3. If verification flags unsourced claims, either:
    - Capture a source that supports the claim (which extracts and registers claims)
-   - Correct the claim in summary.md to match a registered claim
+   - Correct the claim in the finding to match a registered claim
    - Add appropriate caveats ("according to X" or "estimates suggest")
 
-**CRITICAL:** Do not generate articles with unverified citations. Citation laundering
+**CRITICAL:** Do not generate articles with unsourced citations. Citation laundering
 (attaching citations to claims they don't support) is a root cause of article failures.
 
 ### Step 2: Generate Articles with GPT 5.2 Pro
@@ -98,7 +151,11 @@ Generate all three articles **in parallel** using `mcp__mcp-openai__generate_tex
 | Full | gpt-5.2-pro | xhigh | 65536 |
 
 For each, pass:
-- `system_prompt`: The writing rules and safety checklists from this document
+- `system_prompt`: **MUST include the CRITICAL Prohibited Language section above** plus the writing rules and safety checklists from this document. The system prompt must explicitly state:
+  1. NO verdict language (CONFIRMED, VALIDATED, PROVEN, VERIFIED, etc.)
+  2. Separate analytical levels (item/user/creator/market/belief)
+  3. Distinguish evidence from inference
+  4. No advocacy framing - inform, don't persuade
 - `prompt`: The source material + that article's specific requirements (length, inclusions, exclusions)
 
 **Content Coverage Guidance:**
@@ -110,7 +167,7 @@ The model has editorial discretion to skip sections orthogonal to the main story
 Include the **full `## Article Changes` section** from the feedback file in each prompt. Structure the prompt as:
 
 ```
-[Source material: summary.md content]
+[Source material: assembled findings content]
 
 ---
 
@@ -140,10 +197,12 @@ The revision instructions are **binding requirements**, not suggestions. Every i
 
 Read (in order of authority):
 
-1. `summary.md` — **single source of truth** for findings and `[S###](url)` citations
-2. `questions/*.md` — additional context **only if consistent with summary.md**
+1. `findings/*.md` — **single source of truth** for findings and `[S###](url)` citations
+   - Use `node scripts/findings.js assemble cases/<case-id>` to get all active findings
+   - Only `sourced` and `draft` status findings are included (not `stale` or `superseded`)
+2. `questions/*.md` — additional context **only if consistent with findings**
 
-If a claim appears in `questions/*.md` but not in `summary.md`, **do not include it**.
+If a claim appears in `questions/*.md` but not in findings, **do not include it**.
 
 Do not use outside knowledge. Do not invent anecdotes, quotes, stakeholders, or timelines.
 
@@ -396,9 +455,9 @@ An EU AI Act misstatement, for example, will undermine credibility with expert r
 
 ### Prohibited
 
-- Facts not in summary.md
+- Facts not in findings
 - Invented anecdotes, scenes, or quotes
-- "Declined to comment" unless summary.md documents outreach
+- "Declined to comment" unless findings document outreach
 - "Clearly," "obviously," "it's clear that"
 - Single study presented as definitive when evidence is mixed
 - CORRECTION, UPDATE, REVISION, or any revision language

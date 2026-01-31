@@ -41,7 +41,7 @@ Used by `/parallel-review` for concurrent execution.
 
 ## Stage 1: Context-Free Scan
 
-**CRITICAL: Read ONLY `articles/full.md` first. Do NOT read summary.md, questions/*, or evidence files until Stage 2.**
+**CRITICAL: Read ONLY `articles/full.md` first. Do NOT read findings/, questions/*, or evidence files until Stage 2.**
 
 You are a reader with NO knowledge of this case. Scan for journalistic integrity issues.
 
@@ -122,7 +122,7 @@ For each flag, run adversarial debate to determine resolution.
 Read full case materials:
 - `questions/*.md` — For perspective coverage
 - `sources.json` — Source registry
-- `summary.md` — Investigation findings
+- `findings/*.md` — Investigation findings (or use `node scripts/findings.js assemble`)
 - `evidence/S###/` — As needed
 
 **CRITIC argues for FIX:**

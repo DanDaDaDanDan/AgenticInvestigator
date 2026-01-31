@@ -1,15 +1,15 @@
 ---
 name: reconcile
-description: Ensure lead investigation results are reflected in summary.md
+description: Ensure lead investigation results are reflected in findings
 context: fork
 agent: general-purpose
 user-invocable: false
 argument-hint: [case-id]
 ---
 
-# /reconcile - Reconcile Lead Results with Summary
+# /reconcile - Reconcile Lead Results with Findings
 
-Ensure lead investigation results are reflected in summary.md.
+Ensure lead investigation results are reflected in the findings.
 
 ## Usage
 
@@ -20,12 +20,12 @@ Ensure lead investigation results are reflected in summary.md.
 
 ## Task
 
-After leads are investigated, summary.md may contain claims that:
+After leads are investigated, findings may contain claims that:
 1. Were contradicted by lead investigation
 2. Could not be verified despite attempts
 3. Need caveats based on what was found
 
-This command ensures summary.md reflects the actual evidence state.
+This command ensures findings reflect the actual evidence state.
 
 ---
 
@@ -44,7 +44,7 @@ QUESTION → FOLLOW → RECONCILE → CURIOSITY → ARTICLE
 ### Step 1: Load Context
 
 Read:
-- `summary.md` - Current summary claims
+- `findings/*.md` - All current findings (use `node scripts/findings.js list cases/<case-id>`)
 - `leads.json` - All lead investigation results
 - `sources.json` - Source capture status
 
@@ -91,28 +91,28 @@ If invalid leads are found, return them for follow-up investigation before recon
 
 For each lead with status `investigated` or `dead_end`:
 
-**Check if lead result contradicts summary.md:**
+**Check if lead result contradicts any finding:**
 
 ```
-Lead L016: "Pull FEC filings for Leading the Future and Public First Super PACs"
-Result: "These specific PAC names do not exist in FEC records"
+Lead L016: "Verify claim about organization's funding"
+Result: "Organization not found in relevant registry"
 Status: dead_end
 
-Summary.md claims: "Leading the Future Super PAC with initial war chest of over $100 million"
+Finding F003 claims: "Organization received substantial initial funding"
 
-→ CONTRADICTION: Summary states PAC as fact, lead couldn't verify
+→ CONTRADICTION: Finding states organization as fact, lead couldn't verify
 ```
 
 **Check if verification leads failed:**
 
 ```
-Lead L037: "Verify $380B AI infrastructure investment claim"
+Lead L037: "Verify specific dollar amount in finding"
 Result: "Could not find primary source for this figure"
 Status: dead_end
 
-Summary.md claims: "$380 billion in AI infrastructure in 2025"
+Finding F005 claims: "Significant investment amount"
 
-→ UNVERIFIED: Claim needs caveat or removal
+→ UNSOURCED: Claim needs caveat or removal
 ```
 
 ### Step 3: Categorize Issues
@@ -135,57 +135,37 @@ For each issue found:
 - Lead found information that adds nuance
 - Action: Expand claim with additional context
 
-### Step 4: Update Summary.md
+### Step 4: Update Findings
 
 **Writing style:**
 - Write updates as **standalone facts**, not corrections
 - NEVER use: "CORRECTION:", "UPDATE:", "REVISION:", "Initial finding was wrong"
 - Simply replace incorrect information with correct information
-- Articles must be self-contained - readers shouldn't see editorial process
 
-**Citation requirements when updating summary.md:**
-- Every new claim added to summary.md MUST have a citation [S###]
+**Citation requirements when updating findings:**
+- Every claim MUST have a citation [S###]
 - The citation MUST actually support the claim (no citation laundering)
 - If adding a statistic, verify the exact number appears in the cited source
 - If no source supports a claim, add explicit caveats ("unverified reports suggest...")
 
-For each issue:
+**Finding status updates:**
+- `sourced` - Evidence supports the finding
+- `draft` - Still being developed
+- `stale` - Evidence no longer supports; needs update or removal
+
+For each issue, update the relevant finding file (`findings/F###.md`):
 
 **Example A (Direct Contradiction):**
 
-Before:
-```markdown
-"Leading the Future" Super PAC with initial war chest of **over $100 million**
-```
-
-After:
-```markdown
-Initial research referenced AI-focused Super PACs including "Leading the Future" and "Public First," but FEC records searches did not confirm these specific entities. Verified AI-related political spending flows through tech industry lobbying and broader PACs rather than dedicated AI Super PACs.
-```
+Update finding with corrected information and change status if needed.
 
 **Example B (Unable to Verify):**
 
-Before:
-```markdown
-Corporations invested $380 billion in AI infrastructure in 2025
-```
-
-After:
-```markdown
-Corporations invested an estimated $380 billion in AI infrastructure in 2025 (figure from industry research; not independently verified against company filings)
-```
+Add caveat language: "estimated", "according to industry reports", "unverified"
 
 **Example C (Partial Verification):**
 
-Before:
-```markdown
-**72% of workers** are concerned about AI reducing jobs [S003]
-```
-
-After:
-```markdown
-**52% of Americans** feel more concerned than excited about increased AI use [S003], with job security being a significant component of that concern.
-```
+Correct the claim to match what the source actually says.
 
 ### Step 5: Document Changes
 
@@ -194,32 +174,27 @@ Write to `reconciliation-log.md`:
 ```markdown
 # Reconciliation Log
 
-**Date:** 2026-01-15
+**Date:** [date]
 **Phase:** Post-FOLLOW reconciliation
 
 ## Changes Made
 
-### 1. Super PAC Claims (Lines 53-58)
-- **Issue:** L016 found PAC names don't exist in FEC records
+### 1. Finding F003 - [Title]
+- **Issue:** L016 result contradicted claim
 - **Category:** Unable to Verify
 - **Change:** Added caveat about verification status
+- **Status:** Changed to stale / updated content
 
-### 2. $380B Investment Figure (Line 28)
+### 2. Finding F005 - [Title]
 - **Issue:** L037 could not find primary source
 - **Category:** Unable to Verify
-- **Change:** Added "estimated" and verification note
+- **Change:** Added "estimated" qualifier
 
-### 3. 72% Worker Concern (Line 30)
-- **Issue:** S003 contains 52%, not 72%
-- **Category:** Direct Contradiction
-- **Change:** Corrected to match source
+## Unchanged Findings
 
-## Unchanged Claims
-
-Claims that were verified or don't require changes:
-- Lobbying figures [S002, S005] - Verified
-- California ballot initiatives [S004, S008, S009] - Verified
-- Federal legislation [S006, S007] - Verified
+Findings that are source-supported or don't require changes:
+- F001 [S002, S005] - Source-supported
+- F002 [S004, S008, S009] - Source-supported
 ```
 
 ### Step 6: Update state.json
@@ -237,16 +212,17 @@ Claims that were verified or don't require changes:
 ## Red Flags
 
 **FAIL reconciliation if:**
-- Dead_end lead for a summary claim, but claim unchanged
+- Dead_end lead for a finding claim, but claim unchanged
 - Source cited but `captured: false` in sources.json
-- Statistic in summary doesn't match captured source
+- Statistic in finding doesn't match captured source
 - Verification lead pending (should have been caught by curiosity pre-check)
 
 ---
 
 ## Output
 
-- Updated `summary.md` with caveats and corrections
+- Updated `findings/F###.md` files with caveats and corrections
+- Updated finding statuses (sourced/draft/stale) in frontmatter
 - New `reconciliation-log.md` documenting all changes
 - Updated `state.json` with `gates.reconciliation: true`
 

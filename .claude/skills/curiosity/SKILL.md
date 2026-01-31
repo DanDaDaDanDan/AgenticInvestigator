@@ -40,7 +40,7 @@ HIGH priority leads MUST be resolved. Return NOT SATISFIED immediately with the 
 Any lead where "verify" or "Verify" appears in lead text AND status: "pending" → NOT SATISFIED
 ```
 
-Verification leads (e.g., "Verify $380B claim") are critical for accuracy. These MUST be resolved before completion.
+Verification leads (e.g., "Verify specific dollar amount", "Verify statistic claim") are critical for accuracy. These MUST be resolved before completion.
 
 ### 1c. Check overall pending percentage
 
@@ -108,10 +108,11 @@ For each file in questions/*.md:
   Store the FULL content
 ```
 
-### 2c. Read summary.md
+### 2c. Read all findings
 ```
-Read summary.md in full
-Store the complete content
+Read each findings/F###.md file
+Store the complete content of each
+Or use: node scripts/findings.js assemble cases/<case-id>
 ```
 
 ### 2d. Read sources.json
@@ -148,8 +149,8 @@ mcp__mcp-gemini__generate_text
 
     [... CONTINUE FOR ALL 35 FILES ...]
 
-    === SUMMARY (summary.md) ===
-    [PASTE ENTIRE FILE CONTENT]
+    === FINDINGS (findings/*.md) ===
+    [PASTE ALL FINDING FILES CONTENT]
 
     === SOURCES (sources.json) ===
     [PASTE ENTIRE FILE CONTENT]
@@ -186,8 +187,8 @@ mcp__mcp-openai__generate_text
 
     [... CONTINUE FOR ALL 35 FILES ...]
 
-    === SUMMARY (summary.md) ===
-    [PASTE ENTIRE FILE CONTENT]
+    === FINDINGS (findings/*.md) ===
+    [PASTE ALL FINDING FILES CONTENT]
 
     === SOURCES (sources.json) ===
     [PASTE ENTIRE FILE CONTENT]

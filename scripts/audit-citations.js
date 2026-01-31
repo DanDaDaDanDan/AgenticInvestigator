@@ -3,7 +3,7 @@
  * audit-citations.js - Pre-generation citation audit
  *
  * Addresses Root Cause 1: One-way trust flow with no backward verification.
- * This script audits all citations in summary.md BEFORE article generation
+ * This script audits all citations in findings/ BEFORE article generation
  * to ensure every cited source is properly captured and verified.
  *
  * Usage:
@@ -159,9 +159,10 @@ function auditCitation(sourceId, caseDir, sourcesJson) {
 
 // Main audit function
 function auditCitations(caseDir) {
+    const findingsDir = path.join(caseDir, 'findings');
     const results = {
         caseDir,
-        summaryPath: path.join(caseDir, 'summary.md'),
+        findingsDir,
         timestamp: new Date().toISOString(),
         totalCitations: 0,
         uniqueSources: 0,
@@ -173,13 +174,27 @@ function auditCitations(caseDir) {
         warningsList: []
     };
 
-    // Load summary.md
-    const summaryPath = results.summaryPath;
-    if (!fs.existsSync(summaryPath)) {
-        results.error = 'summary.md not found';
+    // Load all findings
+    if (!fs.existsSync(findingsDir)) {
+        results.error = 'findings/ directory not found';
         return results;
     }
-    const summaryContent = fs.readFileSync(summaryPath, 'utf8');
+
+    // Read all finding files
+    const findingFiles = fs.readdirSync(findingsDir)
+        .filter(f => f.match(/^F\d{3}\.md$/))
+        .sort();
+
+    if (findingFiles.length === 0) {
+        results.error = 'No finding files found in findings/';
+        return results;
+    }
+
+    // Concatenate all findings content
+    let allContent = '';
+    for (const file of findingFiles) {
+        allContent += fs.readFileSync(path.join(findingsDir, file), 'utf8') + '\n';
+    }
 
     // Load sources.json
     const sourcesPath = path.join(caseDir, 'sources.json');
@@ -193,8 +208,8 @@ function auditCitations(caseDir) {
         }
     }
 
-    // Extract citations
-    const citations = extractCitations(summaryContent);
+    // Extract citations from all findings
+    const citations = extractCitations(allContent);
     results.totalCitations = Array.from(citations.values()).reduce((a, b) => a + b, 0);
     results.uniqueSources = citations.size;
 
@@ -248,7 +263,7 @@ function main() {
             process.exit(2);
         }
 
-        console.log(`Citations in summary.md: ${results.totalCitations} (${results.uniqueSources} unique sources)`);
+        console.log(`Citations in findings/: ${results.totalCitations} (${results.uniqueSources} unique sources)`);
         console.log(`  Passed: ${results.passed}`);
         console.log(`  Failed: ${results.failed}`);
         console.log(`  With warnings: ${results.warnings}`);

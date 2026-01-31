@@ -164,7 +164,7 @@ After capturing a source, extract and register factual claims:
    registerExtractedClaims(caseDir, sourceId, sourceUrl, llmResponse, content);
    ```
 
-**Why:** Claims registered at capture time are verified by definition - they came directly from the source with supporting quotes. Article verification becomes simple matching.
+**Why:** Claims registered at capture time are **source-matched** by definition - they came directly from the source with supporting quotes. Article verification becomes simple matching: does the claim in the article match a registered claim from its cited source?
 
 ---
 

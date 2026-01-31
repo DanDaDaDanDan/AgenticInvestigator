@@ -35,7 +35,7 @@ Merge two or more completed investigations into a new unified case.
 |-----------|----------------|
 | **Sources** | Renumber sequentially (S001, S002...), copy evidence folders |
 | **Leads** | Renumber sequentially (L001, L002...), preserve parent relationships |
-| **Summary** | Concatenate with section headers indicating origin |
+| **Findings** | Merge and renumber F### IDs, preserve status |
 | **Questions** | Preserve all answers, add cross-reference section |
 | **Evidence** | Copy all evidence folders with renumbered IDs |
 | **Articles** | NOT merged - regenerated fresh from combined content |
@@ -63,10 +63,11 @@ Merge two or more completed investigations into a new unified case.
 
 ### Phase 4: Content Merge (via sub-agent)
 
-1. Merge `summary.md` files with origin headers
-2. Merge `questions/*.md` files, adding cross-reference findings
-3. Copy planning documents (`refined_prompt.md`, `investigation_plan.md`)
-4. Create new `custom_questions.md` for cross-case analysis
+1. Merge `findings/*.md` files with renumbered IDs
+2. Update findings manifest with merged assembly order
+3. Merge `questions/*.md` files, adding cross-reference findings
+4. Copy planning documents (`refined_prompt.md`, `investigation_plan.md`)
+5. Create new `custom_questions.md` for cross-case analysis
 
 ### Phase 5: Cross-Case Analysis (via sub-agent)
 

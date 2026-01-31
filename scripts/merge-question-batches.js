@@ -3,7 +3,7 @@
  * merge-question-batches.js - Merge results from parallel question batches
  *
  * After running 5 question batches in parallel, this script:
- * - Merges summary-batch-N.md files into summary.md (in framework order)
+ * - Merges findings-batch-N.md files into findings/ (creates F### files)
  * - Merges leads-batch-N.json files into leads.json (with sequential IDs)
  * - Merges sources-batch-N.json files into sources.json
  * - Updates state.json next_source to highest used + 1
@@ -51,37 +51,77 @@ function ensureTempDir(casePath) {
 }
 
 /**
- * Merge summary batch files into summary.md
+ * Get the next finding ID
  */
-function mergeSummaryBatches(casePath) {
-  const summaryPath = path.join(casePath, 'summary.md');
+function getNextFindingId(findingsDir) {
+  const files = fs.readdirSync(findingsDir)
+    .filter(f => f.match(/^F\d{3}\.md$/))
+    .sort();
+
+  if (files.length === 0) return 1;
+  return parseInt(files[files.length - 1].slice(1, 4)) + 1;
+}
+
+/**
+ * Merge findings batch files into findings/
+ */
+function mergeFindingsBatches(casePath) {
+  const findingsDir = path.join(casePath, 'findings');
+  const manifestPath = path.join(findingsDir, 'manifest.json');
   const tempDir = path.join(casePath, 'temp');
 
-  // Read existing summary
-  let summary = '';
-  if (fs.existsSync(summaryPath)) {
-    summary = fs.readFileSync(summaryPath, 'utf-8');
+  if (!fs.existsSync(findingsDir)) {
+    fs.mkdirSync(findingsDir, { recursive: true });
   }
 
+  // Load manifest
+  let manifest = { version: 1, assembly_order: [], sections: {} };
+  if (fs.existsSync(manifestPath)) {
+    manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+  }
+
+  const now = new Date().toISOString().split('T')[0];
   const mergedBatches = [];
+  let nextId = getNextFindingId(findingsDir);
 
   // Process batches in order (1-5)
   for (let batchNum = 1; batchNum <= 5; batchNum++) {
-    const batchFile = path.join(tempDir, `summary-batch-${batchNum}.md`);
-    if (fs.existsSync(batchFile)) {
-      const batchContent = fs.readFileSync(batchFile, 'utf-8').trim();
+    const batchFile = path.join(tempDir, `findings-batch-${batchNum}.md`);
+    // Also support legacy summary-batch-N.md files
+    const legacyFile = path.join(tempDir, `summary-batch-${batchNum}.md`);
+
+    const fileToUse = fs.existsSync(batchFile) ? batchFile : (fs.existsSync(legacyFile) ? legacyFile : null);
+
+    if (fileToUse) {
+      const batchContent = fs.readFileSync(fileToUse, 'utf-8').trim();
       if (batchContent) {
-        // Add batch content with separator
-        if (!summary.includes(`## Batch ${batchNum} Findings`)) {
-          summary += `\n\n## Batch ${batchNum} Findings\n\n${batchContent}`;
-        }
+        // Create a finding for this batch
+        const id = `F${String(nextId++).padStart(3, '0')}`;
+        const content = `---
+id: ${id}
+status: draft
+created: ${now}
+updated: ${now}
+sources: []
+supersedes: null
+superseded_by: null
+confidence: medium
+related_leads: []
+---
+
+# Finding: Batch ${batchNum} Discoveries
+
+${batchContent}
+`;
+        fs.writeFileSync(path.join(findingsDir, `${id}.md`), content);
+        manifest.assembly_order.push(id);
         mergedBatches.push(batchNum);
       }
     }
   }
 
-  fs.writeFileSync(summaryPath, summary);
-  return { merged: mergedBatches };
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+  return { merged: mergedBatches, findings_created: mergedBatches.length };
 }
 
 /**
@@ -258,10 +298,10 @@ function checkBatchFiles(casePath) {
 
   for (let i = 1; i <= 5; i++) {
     const hasLeads = files.includes(`leads-batch-${i}.json`);
-    const hasSummary = files.includes(`summary-batch-${i}.md`);
+    const hasFindings = files.includes(`findings-batch-${i}.md`) || files.includes(`summary-batch-${i}.md`);
     const hasSources = files.includes(`sources-batch-${i}.json`);
-    if (hasLeads || hasSummary || hasSources) {
-      batches.push({ num: i, leads: hasLeads, summary: hasSummary, sources: hasSources });
+    if (hasLeads || hasFindings || hasSources) {
+      batches.push({ num: i, leads: hasLeads, findings: hasFindings, sources: hasSources });
     }
   }
 
@@ -285,7 +325,7 @@ function mergeQuestionBatches(casePath) {
   results.found_batches = batchCheck.batches;
 
   // Merge summaries
-  results.summary = mergeSummaryBatches(casePath);
+  results.findings = mergeFindingsBatches(casePath);
 
   // Merge leads
   results.leads = mergeLeadsBatches(casePath);
@@ -316,7 +356,7 @@ Arguments:
   --check      Only check for batch files, don't merge
 
 Merges temp files from parallel question processing:
-  temp/summary-batch-N.md  → summary.md
+  temp/findings-batch-N.md → findings/F###.md
   temp/leads-batch-N.json  → leads.json
   temp/sources-batch-N.json → sources.json
 `);
@@ -345,7 +385,7 @@ Merges temp files from parallel question processing:
 // Export functions for programmatic use
 module.exports = {
   mergeQuestionBatches,
-  mergeSummaryBatches,
+  mergeFindingsBatches,
   mergeLeadsBatches,
   mergeSourcesBatches,
   updateState,

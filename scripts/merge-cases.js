@@ -343,16 +343,43 @@ async function mergeCases(sourceCases, topic) {
     return text;
   }
 
+  // Merge findings from each case
+  console.log('\nMerging findings...');
+  const newFindingsDir = path.join(newPath, 'findings');
+  if (!fs.existsSync(newFindingsDir)) {
+    fs.mkdirSync(newFindingsDir, { recursive: true });
+  }
+
+  const now = new Date().toISOString().split('T')[0];
+  let newFindingNum = 1;
+  const manifest = { version: 1, assembly_order: [], sections: {} };
+
   for (const { slug, path: casePath, state } of casePaths) {
-    const summary = readFile(path.join(casePath, 'summary.md'));
-    if (summary) {
-      mergedSummary += `## From: ${state.topic || slug}\n\n`;
-      mergedSummary += updateCitations(summary, slug);
-      mergedSummary += `\n\n---\n\n`;
+    const findingsDir = path.join(casePath, 'findings');
+    if (fs.existsSync(findingsDir)) {
+      const findingFiles = fs.readdirSync(findingsDir)
+        .filter(f => f.match(/^F\d{3}\.md$/))
+        .sort();
+
+      for (const file of findingFiles) {
+        const oldContent = readFile(path.join(findingsDir, file));
+        if (oldContent) {
+          const newId = `F${String(newFindingNum++).padStart(3, '0')}`;
+          // Update citations in content
+          const updatedContent = updateCitations(oldContent, slug)
+            // Update the id in frontmatter
+            .replace(/^id: F\d{3}/m, `id: ${newId}`)
+            // Add origin note
+            .replace(/^(---\n)/, `$1# Origin: ${slug}\n`);
+
+          fs.writeFileSync(path.join(newFindingsDir, `${newId}.md`), updatedContent);
+          manifest.assembly_order.push(newId);
+        }
+      }
     }
   }
 
-  fs.writeFileSync(path.join(newPath, 'summary.md'), mergedSummary);
+  fs.writeFileSync(path.join(newFindingsDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
 
   // Copy and merge question files
   console.log('\nMerging question frameworks...');

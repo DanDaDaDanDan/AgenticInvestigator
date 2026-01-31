@@ -116,7 +116,7 @@ If the investigation used the planning phase, a `custom_questions.md` file may e
    - Note confidence level
    - Generate leads as needed
 3. **Create `questions/36-custom-questions.md`** with all answers
-4. **Add to summary.md** like other framework findings
+4. **Create findings** for noteworthy discoveries: `node scripts/findings.js add cases/<case-id> "Finding Title"`
 
 Custom questions represent gaps the 35 frameworks don't cover for this specific topic. They are identified by GPT 5.2 Pro during planning and are critical to a complete investigation.
 
@@ -164,10 +164,12 @@ This is optional - use judgment on when deep reasoning adds value.
    - Any question that generates a follow-up lead (depth: 0, parent: null)
    - **All novel questions** added in step 3 (depth: 0, parent: null, from: framework-file)
 
-7. **Update summary.md** - Add ALL findings with `[S###](url)` citations
+7. **Create/update findings** - Add noteworthy discoveries to `findings/`
+   - Create new finding: `node scripts/findings.js add cases/<case-id> "Finding Title"`
+   - Each finding is a separate file in `findings/F###.md`
+   - Use `[S###](url)` citations in finding content
    - Low bar for inclusion: anything of interest, unique insight, or noteworthy
-   - Filtering happens later during article generation
-   - When in doubt, include it
+   - Update finding status to `sourced` when evidence supports it
 
 ## Question Status
 
@@ -192,7 +194,7 @@ These case-specific questions go in the most relevant framework document.
 - Updated `questions/NN-framework-name.md` files for each framework in batch
 - Novel questions added where appropriate (with `<!-- LEAD: ... -->` markers)
 - New leads added to `leads.json` (including all novel questions)
-- ALL findings added to `summary.md` (low bar - include everything noteworthy)
+- New findings created in `findings/F###.md` with `[S###](url)` citations
 
 ## Next Step
 

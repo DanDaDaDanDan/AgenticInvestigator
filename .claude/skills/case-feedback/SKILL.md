@@ -50,7 +50,7 @@ COMPLETE
          │
          ▼
 ┌─────────────────┐
-│ RECONCILE       │  Update summary.md with new findings
+│ RECONCILE       │  Update findings with new discoveries
 └────────┬────────┘
          │
          ▼
@@ -123,7 +123,7 @@ Gates 3-8 reset to require re-verification.
 
 ### 4. Create Revision Plan
 
-**Dispatch sub-agent using Skill tool with /reconcile pattern** to analyze feedback. This step reads ~150KB of files (summary.md, questions/, leads.json, sources.json) and must be isolated to avoid context pollution.
+**Dispatch sub-agent using Skill tool with /reconcile pattern** to analyze feedback. This step reads ~150KB of files (findings/, questions/, leads.json, sources.json) and must be isolated to avoid context pollution.
 
 The sub-agent updates the feedback file (`feedback/revisionN.md`) with the analysis and plan:
 
@@ -176,7 +176,7 @@ Based on the feedback file's action items:
 
 1. **Add new leads** to `leads.json` with `from: "revision-N"`
 2. **Dispatch** `/action follow` for new leads
-3. **Dispatch** `/action reconcile` to update summary
+3. **Dispatch** `/action reconcile` to update findings
 4. **Dispatch** `/action curiosity` to verify completeness
 5. **Dispatch** `/action article` to regenerate articles (reads feedback file for revision instructions)
 6. **Dispatch** `/action verify` to check all gates

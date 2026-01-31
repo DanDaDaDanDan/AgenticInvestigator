@@ -27,7 +27,7 @@ Verify investigation readiness for publication.
 | 0 | Planning | Investigation strategy designed (`state.json.gates.planning === true`) |
 | 1 | Questions | All `questions/*.md` have Status: investigated (or not-applicable) |
 | 2 | Curiosity | `/curiosity` returns SATISFIED |
-| 3 | Reconciliation | All lead results reconciled with summary.md |
+| 3 | Reconciliation | All lead results reconciled with findings |
 | 4 | Article | `articles/full.md` + `full.pdf` exist with [S###] citations |
 | 5 | Sources | **Claim Verification** - Semantic + Computational verification |
 | 6 | Integrity | `/integrity` returns READY (with multi-agent debate) |
@@ -58,8 +58,8 @@ Check each `questions/*.md` file has Status: investigated or not-applicable.
 Invoke `/curiosity` if not already run this iteration.
 
 ### Gate 3: Reconciliation
-Verify lead results are reconciled with summary.md:
-- Lead results that contradict summary.md claims must be updated
+Verify lead results are reconciled with findings:
+- Lead results that contradict finding claims must be updated
 - Unverified claims must have caveats
 
 ### Gate 4: Article
@@ -84,8 +84,8 @@ Matches every factual claim against source content using LLM semantic understand
 
 | Status | Meaning | Action |
 |--------|---------|--------|
-| VERIFIED | Claim matched source content | None |
-| UNVERIFIED | Source doesn't support claim | Find source or remove claim |
+| SUPPORTED | Claim has source support | None |
+| UNSOURCED | Source doesn't support claim | Find source or remove claim |
 | SOURCE_MISSING | Evidence file missing | Re-capture or remove |
 
 #### Step 5B: Computational Fact-Checking (NEW)
@@ -105,14 +105,14 @@ Verifies numerical claims computationally:
 
 | Status | Meaning | Action |
 |--------|---------|--------|
-| VERIFIED | Computed value matches claim (within 5%) | None |
+| MATCHED | Computed value matches claim (within 5%) | None |
 | DISCREPANCY | Computed value differs significantly | Investigate and correct |
 | DATA_NOT_FOUND | Source lacks verifiable numbers | Flag for manual review |
 
 #### Combining Results
 
 Gate 5 passes when BOTH:
-- Step 5A: No UNVERIFIED claims (or all have caveats)
+- Step 5A: No UNSOURCED claims (or all have caveats)
 - Step 5B: No DISCREPANCY items (or all explained/corrected)
 
 #### Outputs
@@ -250,7 +250,7 @@ If article is ready for publication as-is, say "READY FOR PUBLICATION" explicitl
 │  │ 1. Extract claims with [S###] citations                  │ │
 │  │ 2. Generate LLM prompts for each claim                   │ │
 │  │ 3. LLM checks: "Does source support this claim?"         │ │
-│  │ 4. Report: VERIFIED / UNVERIFIED / SOURCE_MISSING        │ │
+│  │ 4. Report: SUPPORTED / UNSOURCED / SOURCE_MISSING        │ │
 │  └──────────────────────────────────────────────────────────┘ │
 │                          ↓                                     │
 │  Step 5B: Computational Verification                          │
@@ -259,7 +259,7 @@ If article is ready for publication as-is, say "READY FOR PUBLICATION" explicitl
 │  │ 2. Generate Python verification code                     │ │
 │  │ 3. Execute code (compute actual values)                  │ │
 │  │ 4. Compare: claimed vs computed (5% tolerance)           │ │
-│  │ 5. Report: VERIFIED / DISCREPANCY / DATA_NOT_FOUND       │ │
+│  │ 5. Report: MATCHED / DISCREPANCY / DATA_NOT_FOUND        │ │
 │  └──────────────────────────────────────────────────────────┘ │
 │                          ↓                                     │
 │  PASS when: 5A clean AND 5B clean                             │

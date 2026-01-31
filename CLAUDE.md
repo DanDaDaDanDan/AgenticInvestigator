@@ -224,8 +224,8 @@ node scripts/claims/verify-article.js cases/<case-id>/ --merge-batches N
 
 | Status | Meaning | Action |
 |--------|---------|--------|
-| VERIFIED | Claim matched source content | None |
-| UNVERIFIED | Source doesn't support claim | Find source or caveat |
+| SUPPORTED | Claim has source support | None |
+| UNSOURCED | Source doesn't support claim | Find source or caveat |
 | SOURCE_MISSING | Evidence file missing | Re-capture or remove |
 
 #### Step 5B: Computational Fact-Checking (NEW)
@@ -245,7 +245,7 @@ Verifies numerical claims computationally:
 
 | Status | Meaning | Action |
 |--------|---------|--------|
-| VERIFIED | Computed value matches claim (within 5%) | None |
+| MATCHED | Computed value matches claim (within 5%) | None |
 | DISCREPANCY | Computed value differs significantly | Investigate and correct |
 | DATA_NOT_FOUND | Source lacks verifiable numbers | Flag for manual review |
 
@@ -464,11 +464,11 @@ Skills that read large amounts of data use `context: fork` to automatically run 
 |-------|-------|-----------|
 | `/plan-investigation` | deep_research + 35 frameworks (~15KB for Step 3) | `context: fork` (auto) |
 | `/research` | deep_research results + captured sources (~100-200KB) | `context: fork` (auto) |
-| `/reconcile` | summary + leads + sources (~50KB) | `context: fork` (auto) |
-| `/curiosity` | 35 files + leads + summary + sources (~200KB) | `context: fork` (auto) |
-| `/article` | summary + 35 question files (~166KB) | `context: fork` (auto) |
+| `/reconcile` | findings + leads + sources (~50KB) | `context: fork` (auto) |
+| `/curiosity` | 35 files + leads + findings + sources (~200KB) | `context: fork` (auto) |
+| `/article` | findings + 35 question files (~166KB) | `context: fork` (auto) |
 | `/verify` | article + all cited evidence (~100KB+) | `context: fork` (auto) |
-| `/integrity` | article + summary + 35 questions + sources (~200KB) | `context: fork` (auto) |
+| `/integrity` | article + findings + 35 questions + sources (~200KB) | `context: fork` (auto) |
 | `/legal-review` | article + sources + evidence (~100KB) | `context: fork` (auto) |
 | `/question` | 1 framework file (~4KB) | None (lightweight) |
 | `/follow` | 1 lead context (~5KB) | None (lightweight) |
@@ -538,7 +538,7 @@ Claims are verified at **article time** by checking each citation against its so
 ```
 Article Writing → Extract cited claims → Load source content → LLM verification
                                                                     ↓
-                                              VERIFIED / UNVERIFIED / SOURCE_MISSING
+                                              SUPPORTED / UNSOURCED / SOURCE_MISSING
 ```
 
 ### Two-Part Verification
@@ -562,7 +562,7 @@ Article Writing → Extract cited claims → Load source content → LLM verific
 1. **Extract claims from article** - Find sentences with [S###] citations
 2. **Load source content** - Read the cited evidence file
 3. **LLM verification** - Ask: "Does this source support this claim?"
-4. **Report results** - VERIFIED / UNVERIFIED / SOURCE_MISSING
+4. **Report results** - SUPPORTED / UNSOURCED / SOURCE_MISSING
 
 ### Usage
 
@@ -633,24 +633,22 @@ cases/                           ← DATA REPOSITORY ROOT
         └── revision2.md         # Second revision feedback + plan
 ```
 
-### Findings Architecture (replaces monolithic summary.md)
+### Findings Architecture
 
-> **⚠️ IMPLEMENTATION STATUS: DESIGNED BUT NOT YET IMPLEMENTED**
->
-> This architecture is the target design but skills still use `summary.md`.
-> Current state: All skills reference `summary.md`. Migration to findings/ requires:
-> - Update `/research`, `/reconcile`, `/article` skills to use findings/
-> - Update `init-case.js` to create findings/ and manifest.json
-> - Create findings management scripts
->
-> Until implemented, continue using `summary.md` as the single source of truth.
+Investigation findings are stored as independent files in `findings/` with lifecycle metadata.
 
-Each finding is an independent file with lifecycle metadata:
+**Management script:** `node scripts/findings.js`
+- `list <case_dir>` - List all findings with status
+- `read <case_dir> [finding_id]` - Read findings
+- `add <case_dir> "title"` - Create new finding
+- `assemble <case_dir>` - Combine active findings into single document
+
+Each finding is an independent file:
 
 ```markdown
 ---
 id: F001
-status: verified | draft | stale | superseded
+status: sourced | draft | stale | superseded
 created: 2026-01-24
 updated: 2026-01-25
 sources: [S001, S015, S023]
@@ -842,7 +840,7 @@ All `/action` commits go to the **DATA repository** (`cases/.git`), NOT the code
 9. **ALL LEADS RESOLVED** - Every lead must be `investigated` or `dead_end`. No `pending` at completion.
 10. **CITATION MUST SUPPORT CLAIM** - The cited source must actually contain the claimed fact (no citation laundering)
 11. **LEAD RESULTS NEED SOURCES** - If a lead result contains specific numbers/statistics, `sources[]` must be populated
-12. **RECONCILE BEFORE COMPLETE** - Lead results that contradict summary claims must update the summary
+12. **RECONCILE BEFORE COMPLETE** - Lead results that contradict findings must update the findings
 13. **TEMPORAL CONTEXT** - Dated evidence must include dates: `[S###, Month Year]` for statistics/polls
 14. **TWO-SOURCE RULE FOR STATISTICS** - High-salience quantitative claims (agent counts, dollar amounts, percentages) require either:
     a. A primary source (government data, official records, academic studies), OR
@@ -1016,7 +1014,7 @@ osint_get target="https://example.com/paper.pdf" output_path="evidence/S001/pape
 - Do NOT self-report gate passage
 - Do NOT cite a source for a claim it doesn't contain (citation laundering)
 - Do NOT leave HIGH priority leads pending and claim curiosity satisfied
-- Do NOT skip reconciliation when lead results contradict summary
+- Do NOT skip reconciliation when lead results contradict findings
 - Do NOT store lead results with statistics but empty sources[]
 - Do NOT omit temporal context for dated evidence
 - Do NOT skip claim extraction when capturing sources

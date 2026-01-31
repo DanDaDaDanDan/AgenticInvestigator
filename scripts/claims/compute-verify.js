@@ -374,7 +374,7 @@ function processVerificationResponses(prepared, llmResponses, options = {}) {
     }
 
     // Determine if values match within tolerance
-    let status = 'VERIFIED';
+    let status = 'MATCHED';
     const discrepancyPercent = parsed.discrepancy_percent || 0;
 
     if (Math.abs(discrepancyPercent) > threshold * 100) {
@@ -397,14 +397,14 @@ function processVerificationResponses(prepared, llmResponses, options = {}) {
   // Calculate summary
   const summary = {
     total: results.length,
-    verified: results.filter(r => r.status === 'VERIFIED').length,
+    verified: results.filter(r => r.status === 'MATCHED').length,
     discrepancies: results.filter(r => r.status === 'DISCREPANCY').length,
     dataNotFound: results.filter(r => r.status === 'DATA_NOT_FOUND').length,
     noSource: results.filter(r => r.status === 'NO_SOURCE').length,
     errors: results.filter(r => ['PARSE_ERROR', 'NO_RESPONSE', 'SOURCE_MISSING'].includes(r.status)).length
   };
 
-  let overallStatus = 'VERIFIED';
+  let overallStatus = 'MATCHED';
   if (summary.discrepancies > 0) overallStatus = 'HAS_DISCREPANCIES';
   if (summary.discrepancies > summary.total * 0.2) overallStatus = 'SIGNIFICANT_DISCREPANCIES';
 
@@ -416,7 +416,7 @@ function processVerificationResponses(prepared, llmResponses, options = {}) {
     summary,
     results,
     discrepancies: results.filter(r => r.status === 'DISCREPANCY'),
-    verified: results.filter(r => r.status === 'VERIFIED')
+    verified: results.filter(r => r.status === 'MATCHED')
   };
 }
 

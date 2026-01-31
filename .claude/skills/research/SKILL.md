@@ -172,9 +172,11 @@ From the search results, I found these specific URLs:
 
 ### Phase 3: Synthesis
 
-9. **Update summary.md** with findings using `[S###](url)` citation format
-   - Example: `The report found X [S001](https://example.com/report)`
-   - URL comes from the source's metadata.json
+9. **Create/update findings** using `[S###](url)` citation format
+   - Create new findings: `node scripts/findings.js add cases/<case-id> "Finding Title"`
+   - Each finding is a separate file in `findings/F###.md`
+   - Example content: `The report found X [S001](https://example.com/report)`
+   - Update finding status to `sourced` when evidence supports it
 
 10. **Add leads to leads.json** for deeper investigation (depth: 0, parent: null)
 
@@ -199,7 +201,8 @@ From the search results, I found these specific URLs:
 ## Output
 
 - Captured sources in `evidence/S###/` (with spidered outbound links)
-- Initial `summary.md` with `[S###](url)` citations (clickable markdown links)
+- Initial findings in `findings/F###.md` with `[S###](url)` citations
+- Updated `findings/manifest.json` with assembly order
 - Initial leads in `leads.json` (all depth: 0, parent: null)
 
 ## Next Step
