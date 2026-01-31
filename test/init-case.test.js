@@ -61,10 +61,11 @@ function createTempDir() {
 }
 
 /**
- * Run init-case.js with given topic in specified directory
+ * Run init-case.js with given case name and optional full topic in specified directory
  */
-function runInitCase(topic, cwd) {
-  execSync(`node "${INIT_SCRIPT}" "${topic}"`, { cwd, stdio: 'pipe' });
+function runInitCase(caseName, cwd, fullTopic = null) {
+  const topicArg = fullTopic ? ` "${fullTopic}"` : '';
+  execSync(`node "${INIT_SCRIPT}" "${caseName}"${topicArg}`, { cwd, stdio: 'pipe' });
 }
 
 test('init-case.js creates correct directory structure', async (t) => {
@@ -88,8 +89,15 @@ test('init-case.js creates correct directory structure', async (t) => {
   assert.ok(fs.existsSync(path.join(caseDir, 'state.json')), 'state.json should exist');
   assert.ok(fs.existsSync(path.join(caseDir, 'sources.json')), 'sources.json should exist');
   assert.ok(fs.existsSync(path.join(caseDir, 'leads.json')), 'leads.json should exist');
-  assert.ok(fs.existsSync(path.join(caseDir, 'summary.md')), 'summary.md should exist');
+  assert.ok(fs.existsSync(path.join(caseDir, 'findings')), 'findings/ should exist');
+  assert.ok(fs.existsSync(path.join(caseDir, 'findings', 'manifest.json')), 'findings/manifest.json should exist');
+  assert.ok(fs.existsSync(path.join(caseDir, 'findings', 'F001.md')), 'findings/F001.md should exist');
   assert.ok(fs.existsSync(path.join(caseDir, 'removed-points.md')), 'removed-points.md should exist');
+
+  // Check manifest contains F001 in assembly_order
+  const manifest = JSON.parse(fs.readFileSync(path.join(caseDir, 'findings', 'manifest.json'), 'utf-8'));
+  assert.ok(manifest.assembly_order.includes('F001'), 'manifest should include F001 in assembly_order');
+  assert.ok(manifest.sections.background.includes('F001'), 'manifest should include F001 in background section');
 });
 
 test('init-case.js creates valid state.json with v2 schema', async (t) => {
@@ -119,6 +127,25 @@ test('init-case.js creates valid state.json with v2 schema', async (t) => {
     assert.equal(state.gates[gate], false, `gates.${gate} should be false`);
   }
   assert.equal(Object.keys(state.gates).length, 8, 'should have exactly 8 gates');
+});
+
+test('init-case.js stores full topic separately from short case name', async (t) => {
+  const tempDir = createTempDir();
+  const casesDir = path.join(tempDir, 'cases');
+  fs.mkdirSync(casesDir);
+
+  t.after(() => fs.rmSync(tempDir, { recursive: true, force: true }));
+
+  // Pass short name and full topic as separate arguments
+  const shortName = 'fda-pharma-influence';
+  const fullTopic = 'How does the pharmaceutical industry influence FDA drug approval processes?';
+  runInitCase(shortName, tempDir, fullTopic);
+
+  const stateFile = path.join(casesDir, 'fda-pharma-influence', 'state.json');
+  const state = JSON.parse(fs.readFileSync(stateFile, 'utf-8'));
+
+  assert.equal(state.case, 'fda-pharma-influence', 'case field should be short slug');
+  assert.equal(state.topic, fullTopic, 'topic field should be full description');
 });
 
 test('init-case.js creates valid sources.json', async (t) => {

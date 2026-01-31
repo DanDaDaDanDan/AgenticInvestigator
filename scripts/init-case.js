@@ -2,7 +2,12 @@
 /**
  * init-case.js - Create new investigation case with 35 framework files
  *
- * Usage: node scripts/init-case.js "topic description"
+ * Usage:
+ *   node scripts/init-case.js "short-case-name" "full topic description"
+ *   node scripts/init-case.js "short-case-name"  # topic defaults to case name
+ *
+ * The first argument is the case name (max 5 words, used for folder name).
+ * The second argument is the full topic description (stored in state.json).
  *
  * Creates a new case directory and commits to the DATA repository (cases/.git).
  *
@@ -141,22 +146,41 @@ Leads beyond max_depth that merit future investigation.
 `;
 }
 
-function createSummaryMd(topic) {
-  return `# ${topic}
+function createFindingsManifest() {
+  return JSON.stringify({
+    version: 1,
+    created_at: new Date().toISOString(),
+    assembly_order: ["F001"],
+    sections: {
+      "background": ["F001"]
+    }
+  }, null, 2);
+}
 
-*Investigation summary will be built here as research progresses.*
-
+function createInitialFinding(topic) {
+  const now = new Date().toISOString().split('T')[0];
+  return `---
+id: F001
+status: draft
+created: ${now}
+updated: ${now}
+sources: []
+supersedes: null
+superseded_by: null
+confidence: low
+related_leads: []
 ---
 
-## Key Findings
+# Finding: Investigation Background
 
-*Findings will be added with [S###] citations as evidence is gathered.*
+## Topic
+${topic}
 
----
+## Initial Context
+*Context will be populated during the RESEARCH phase.*
 
-## Sources Used
-
-*Source references will be listed here.*
+## Key Questions
+*Questions to be answered will be identified during the PLAN phase.*
 `;
 }
 
@@ -175,12 +199,15 @@ function main() {
   const args = process.argv.slice(2);
 
   if (args.length === 0) {
-    console.error('Usage: node scripts/init-case.js "topic description"');
+    console.error('Usage: node scripts/init-case.js "short-case-name" "full topic description"');
+    console.error('       node scripts/init-case.js "short-case-name"  # topic defaults to case name');
     process.exit(1);
   }
 
-  const topic = args.join(' ');
-  const caseSlug = slugify(topic);
+  // First arg: short case name (for folder), Second arg: full topic (for state.json)
+  const caseName = args[0];
+  const topic = args.length > 1 ? args.slice(1).join(' ') : caseName;
+  const caseSlug = slugify(caseName);
   const casePath = path.join(process.cwd(), 'cases', caseSlug);
 
   // Check if case already exists
@@ -190,13 +217,15 @@ function main() {
   }
 
   console.log(`Creating case: ${caseSlug}`);
-  console.log(`Topic: ${topic}`);
+  console.log(`Case name: ${caseName}`);
+  console.log(`Full topic: ${topic}`);
   console.log(`Path: ${casePath}`);
   console.log('');
 
   // Create directory structure
   const dirs = [
     casePath,
+    path.join(casePath, 'findings'),
     path.join(casePath, 'questions'),
     path.join(casePath, 'evidence'),
     path.join(casePath, 'articles'),
@@ -235,12 +264,19 @@ function main() {
   );
   console.log('Created: claims.json (claim registry)');
 
-  // Create summary.md
+  // Create findings/manifest.json
   fs.writeFileSync(
-    path.join(casePath, 'summary.md'),
-    createSummaryMd(topic)
+    path.join(casePath, 'findings', 'manifest.json'),
+    createFindingsManifest()
   );
-  console.log('Created: summary.md');
+  console.log('Created: findings/manifest.json');
+
+  // Create initial finding F001
+  fs.writeFileSync(
+    path.join(casePath, 'findings', 'F001.md'),
+    createInitialFinding(topic)
+  );
+  console.log('Created: findings/F001.md (initial finding)');
 
   // Create removed-points.md
   fs.writeFileSync(
@@ -298,7 +334,9 @@ function main() {
   console.log('Structure:');
   console.log(`  cases/${caseSlug}/`);
   console.log('  ├── state.json         (phase: PLAN)');
-  console.log('  ├── summary.md');
+  console.log('  ├── findings/          (decomposed findings)');
+  console.log('  │   ├── manifest.json');
+  console.log('  │   └── F001.md');
   console.log('  ├── sources.json');
   console.log('  ├── leads.json         (max_depth: 3)');
   console.log('  ├── claims.json        (claim registry)');

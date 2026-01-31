@@ -23,7 +23,7 @@ Only `--new` creates a new case. All other invocations operate on existing cases
 
 | Input | Behavior |
 |-------|----------|
-| `--new [topic]` | Creates new case via `init-case.js` |
+| `--new [topic]` | Designs short case name, creates case via `init-case.js "[short-name]" "[topic]"` |
 | `[case-id]` | Resumes existing case (error if not found) |
 | *(no args)* | Resumes case from `cases/.active` (error if no active case) |
 
@@ -62,8 +62,20 @@ CREATE CASE → PLAN → BOOTSTRAP → QUESTION → FOLLOW → WRITE → VERIFY 
 
 Only create a case when `--new` is specified. Otherwise, return an error if no existing case is found.
 
-1. Run `node scripts/init-case.js "[topic]"` - creates case structure with `phase: PLAN`
-3. Case folder now exists at `cases/[topic-slug]/`
+1. **Design a short case name** (3-5 words max) that captures the essence of the investigation:
+   - Extract the core subject matter, not the full question
+   - Use descriptive nouns, not filler words
+   - Examples:
+     - "How does the pharmaceutical industry influence FDA drug approval?" → `fda-pharma-influence`
+     - "What are the environmental impacts of bitcoin mining?" → `bitcoin-mining-environment`
+     - "Is the housing market going to crash in 2024?" → `housing-market-crash-2024`
+     - "Exposed: How tech companies avoid paying taxes" → `tech-tax-avoidance`
+
+2. Run `node scripts/init-case.js "[short-name]" "[full topic]"`:
+   - First argument: the short case name you designed
+   - Second argument: the user's full topic description (preserved in state.json)
+
+3. Case folder now exists at `cases/[short-name-slug]/`
 4. Script commits to **DATA repo** (`cases/.git`)
 5. All subsequent work happens inside the case folder
 
