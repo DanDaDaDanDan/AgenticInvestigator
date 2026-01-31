@@ -7,7 +7,7 @@ user-invocable: false
 argument-hint: [case-id]
 ---
 
-# /verify - Check 11 Gates
+# /verify - Check 8 Gates
 
 Verify investigation readiness for publication.
 
@@ -18,9 +18,9 @@ Verify investigation readiness for publication.
 /verify [case-id]    # Verify specific case
 ```
 
-## The 11 Gates
+## The 8 Gates (Process Gates 0-7)
 
-### Process Gates (0-7)
+This skill checks the 8 process gates. Quality gates (8-10) are checked separately in AI self-review.
 
 | # | Gate | Pass Criteria |
 |---|------|---------------|
@@ -33,16 +33,17 @@ Verify investigation readiness for publication.
 | 6 | Integrity | `/integrity` returns READY (with multi-agent debate) |
 | 7 | Legal | `/legal-review` returns READY (with multi-agent debate) |
 
-### Quality Gates (8-10)
+### Quality Gates (8-10) — PLANNED
 
-| # | Gate | Pass Criteria |
-|---|------|---------------|
-| 8 | Balance | All stakeholders represented; counterarguments addressed |
-| 9 | Completeness | Framework insights reflected; no obvious gaps |
-| 10 | Significance | Clear takeaway; novel findings identified |
+Quality gates are not yet implemented as separate verification steps. They are currently evaluated as part of the AI self-review process.
 
-**Note:** Quality gates (8-10) are currently checked within the AI self-review step.
-Future enhancement: dedicated `/balance-audit`, `/completeness-audit`, `/significance-audit` skills.
+| # | Gate | Pass Criteria | Status |
+|---|------|---------------|--------|
+| 8 | Balance | All stakeholders represented; counterarguments addressed | Planned |
+| 9 | Completeness | Framework insights reflected; no obvious gaps | Planned |
+| 10 | Significance | Clear takeaway; novel findings identified | Planned |
+
+**Future enhancement:** Dedicated `/balance-audit`, `/completeness-audit`, `/significance-audit` skills.
 
 ## Gate Details
 
