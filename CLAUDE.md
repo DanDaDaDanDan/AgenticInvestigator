@@ -324,31 +324,31 @@ Skills are defined in `.claude/skills/*/SKILL.md` with YAML frontmatter controll
 
 | Option | Purpose |
 |--------|---------|
-| `context: fork` | Run in isolated sub-agent (automatic context isolation) |
+| `context: fork` | Marker that skill requires Task tool dispatch (heavy context) |
 | `user-invocable: false` | Hide from `/` menu (internal skills only) |
 | `disable-model-invocation: true` | Prevent Claude from auto-invoking (user entry points) |
 
 ### Skill Reference
 
-| Skill | Purpose | Invoked By | Isolation |
-|-------|---------|------------|-----------|
-| `/investigate` | Start or resume investigation | User | None |
-| `/case-feedback` | Revise completed investigation | User | None |
-| `/action` | Router (git + dispatch) | Orchestrator | None |
-| `/plan-investigation` | Design investigation strategy | Orchestrator | `context: fork` |
-| `/research` | Broad topic research | Orchestrator | `context: fork` |
-| `/question` | Answer framework batch | Orchestrator | None |
-| `/follow` | Pursue single lead | Orchestrator | None |
-| `/reconcile` | Sync lead results with findings | Orchestrator | `context: fork` |
-| `/curiosity` | Check lead exhaustion | Orchestrator | `context: fork` |
-| `/capture-source` | Capture evidence | Any agent | None |
-| `/verify` | Check 8 gates | Orchestrator | `context: fork` |
-| `/article` | Write publication | Orchestrator | `context: fork` |
-| `/integrity` | Journalistic check (**with debate**) | Orchestrator | `context: fork` |
-| `/legal-review` | Legal risk check (**with debate**) | Orchestrator | `context: fork` |
-| `/parallel-review` | Integrity + Legal in parallel | Orchestrator | `context: fork` |
-| `/debate` | **Multi-agent flag resolution** | `/integrity`, `/legal-review` | `context: fork` |
-| `/merge-cases` | Combine multiple investigations | Orchestrator | `context: fork` |
+| Skill | Purpose | Invoked By | Dispatch |
+|-------|---------|------------|----------|
+| `/investigate` | Start or resume investigation | User | Skill tool |
+| `/case-feedback` | Revise completed investigation | User | Skill tool |
+| `/action` | Router (git + dispatch + continuation) | Orchestrator | Skill tool |
+| `/plan-investigation` | Design investigation strategy | `/action` | **Task tool** |
+| `/research` | Broad topic research | `/action` | **Task tool** |
+| `/question` | Answer framework batch | `/action` | Skill tool (light) |
+| `/follow` | Pursue single lead | `/action` | Skill tool (light) |
+| `/reconcile` | Sync lead results with findings | `/action` | **Task tool** |
+| `/curiosity` | Check lead exhaustion | `/action` | **Task tool** |
+| `/capture-source` | Capture evidence | Any agent | Skill tool (light) |
+| `/verify` | Check 8 gates | `/action` | **Task tool** |
+| `/article` | Write publication | `/action` | **Task tool** |
+| `/integrity` | Journalistic check (**with debate**) | `/action` | **Task tool** |
+| `/legal-review` | Legal risk check (**with debate**) | `/action` | **Task tool** |
+| `/parallel-review` | Integrity + Legal in parallel | `/action` | **Task tool** |
+| `/debate` | **Multi-agent flag resolution** | `/integrity`, `/legal-review` | **Task tool** |
+| `/merge-cases` | Combine multiple investigations | `/action` | **Task tool** |
 
 ---
 
@@ -458,24 +458,28 @@ Uses three-phase pattern: parallel context-free scans → parallel contextual ev
 
 ## Context Isolation Pattern
 
-Skills that read large amounts of data use `context: fork` to automatically run in isolated sub-agents. This is configured in each skill's SKILL.md frontmatter.
+Skills that read large amounts of data should run in isolated sub-agents via the **Task tool**. The `context: fork` marker in SKILL.md frontmatter indicates this requirement.
 
-| Skill | Reads | Isolation |
-|-------|-------|-----------|
-| `/plan-investigation` | deep_research + 35 frameworks (~15KB for Step 3) | `context: fork` (auto) |
-| `/research` | deep_research results + captured sources (~100-200KB) | `context: fork` (auto) |
-| `/reconcile` | findings + leads + sources (~50KB) | `context: fork` (auto) |
-| `/curiosity` | 35 files + leads + findings + sources (~200KB) | `context: fork` (auto) |
-| `/article` | findings + 35 question files (~166KB) | `context: fork` (auto) |
-| `/verify` | article + all cited evidence (~100KB+) | `context: fork` (auto) |
-| `/integrity` | article + findings + 35 questions + sources (~200KB) | `context: fork` (auto) |
-| `/legal-review` | article + sources + evidence (~100KB) | `context: fork` (auto) |
-| `/question` | 1 framework file (~4KB) | None (lightweight) |
-| `/follow` | 1 lead context (~5KB) | None (lightweight) |
+| Skill | Reads | Dispatch Method |
+|-------|-------|-----------------|
+| `/plan-investigation` | deep_research + 35 frameworks (~15KB for Step 3) | **Task tool** (sub-agent) |
+| `/research` | deep_research results + captured sources (~100-200KB) | **Task tool** (sub-agent) |
+| `/reconcile` | findings + leads + sources (~50KB) | **Task tool** (sub-agent) |
+| `/curiosity` | 35 files + leads + findings + sources (~200KB) | **Task tool** (sub-agent) |
+| `/article` | findings + 35 question files (~166KB) | **Task tool** (sub-agent) |
+| `/verify` | article + all cited evidence (~100KB+) | **Task tool** (sub-agent) |
+| `/integrity` | article + findings + 35 questions + sources (~200KB) | **Task tool** (sub-agent) |
+| `/legal-review` | article + sources + evidence (~100KB) | **Task tool** (sub-agent) |
+| `/question` | 1 framework file (~4KB) | Skill tool (inline) |
+| `/follow` | 1 lead context (~5KB) | Skill tool (inline) |
 
-**Why:** Reading 200KB into the main context makes subsequent turns expensive. Skills with `context: fork` automatically run in sub-agents and return only structured results (verdicts, gaps), keeping main context clean.
+**Why:** Reading 200KB into the main context makes subsequent turns expensive. Heavy skills run in sub-agents and return only structured results (verdicts, gaps), keeping main context clean.
 
-**Implementation:** The skill system handles isolation automatically when `context: fork` is specified in SKILL.md frontmatter. No manual Task tool dispatch needed.
+**Implementation:** The `/action` router is responsible for dispatching heavy operations via Task tool. For skills marked `context: fork`, `/action` must use:
+```
+Task(subagent_type="general-purpose", prompt="/action <command>", description="...")
+```
+Lightweight skills (`/question`, `/follow`) run inline via Skill tool to avoid Task overhead.
 
 ---
 

@@ -71,23 +71,39 @@ Route to the specified skill. Skills with `context: fork` automatically handle i
 - `/action question-parallel` → spawn 5 parallel `/question` sub-agents
 - `/action follow-batch <L001> <L002> ...` → spawn parallel `/follow` sub-agents
 
-### Context Isolation
+### Context Isolation (IMPORTANT)
 
-Skills with `context: fork` in their frontmatter automatically run in isolated sub-agents. No manual Task tool dispatch needed - the skill system handles it.
+**The Skill tool does NOT automatically fork.** You must manually dispatch heavy operations via the **Task tool** to prevent context bloat.
 
-| Command | Context | Isolation |
-|---------|---------|-----------|
-| `/plan-investigation` | Heavy (15KB+) | Automatic via `context: fork` |
-| `/research` | Heavy (100-200KB) | Automatic via `context: fork` |
-| `/reconcile` | Heavy (50KB) | Automatic via `context: fork` |
-| `/curiosity` | Heavy (200KB) | Automatic via `context: fork` |
-| `/article` | Heavy (166KB) | Automatic via `context: fork` |
-| `/verify` | Heavy (100KB+) | Automatic via `context: fork` |
-| `/integrity` | Heavy (200KB) | Automatic via `context: fork` |
-| `/legal-review` | Heavy (100KB) | Automatic via `context: fork` |
-| `/question` | Light (4KB) | None needed |
-| `/follow` | Light (5KB) | None needed |
-| `/capture-source` | Light | None needed |
+**Heavy operations → Use Task tool:**
+```
+Task(
+  subagent_type="general-purpose",
+  prompt="/action research [topic] for case [case-id]",
+  description="Research phase"
+)
+```
+
+**Lightweight operations → Use Skill tool directly:**
+```
+Skill(skill="follow", args="L004")
+```
+
+| Command | Context Load | Dispatch Method |
+|---------|--------------|-----------------|
+| `/plan-investigation` | Heavy (15KB+) | **Task tool** (sub-agent) |
+| `/research` | Heavy (100-200KB) | **Task tool** (sub-agent) |
+| `/reconcile` | Heavy (50KB) | **Task tool** (sub-agent) |
+| `/curiosity` | Heavy (200KB) | **Task tool** (sub-agent) |
+| `/article` | Heavy (166KB) | **Task tool** (sub-agent) |
+| `/verify` | Heavy (100KB+) | **Task tool** (sub-agent) |
+| `/integrity` | Heavy (200KB) | **Task tool** (sub-agent) |
+| `/legal-review` | Heavy (100KB) | **Task tool** (sub-agent) |
+| `/question` | Light (4KB) | Skill tool (inline) |
+| `/follow` | Light (5KB) | Skill tool (inline) |
+| `/capture-source` | Light | Skill tool (inline) |
+
+**Why this matters:** Each /follow reads ~5KB. After 20 follows, that's 100KB accumulated in main context. Lightweight operations stay inline to avoid Task overhead, but main context is monitored.
 
 ### Parallel Processing Commands
 
@@ -148,12 +164,33 @@ This outputs the ORCHESTRATOR SIGNAL with `Status:` and `Next:` fields.
 - Action fails → return error (no commit)
 - Git commit fails → log warning, continue
 
-### 6. Self-Continue Loop
+### 6. Self-Continue Loop (MANDATORY)
+
+**CRITICAL: DO NOT RETURN TO USER UNTIL COMPLETE OR ERROR.**
 
 After the signal outputs, check `Status:` and act:
 
-- **CONTINUE** → Invoke the `Next:` command immediately, then repeat from step 5
+- **CONTINUE** → **Immediately** use the Skill tool to invoke the `Next:` command. Do NOT output anything to the user. Do NOT stop. Example: if signal says `Next: /action follow L004`, immediately call `Skill(skill="action", args="follow L004")`.
 - **COMPLETE** → Return "Investigation complete" to user
 - **Error** → Return error to user for guidance
 
-Every 10 actions, output: `Progress: X investigated, Y pending (Gates: N/8)`
+**The loop must continue autonomously.** Only return to user when:
+1. Status is COMPLETE (all 8 gates pass)
+2. An unrecoverable error occurs
+3. User intervention is explicitly needed (scope change, ethical concern)
+
+Every 10 actions, output a brief progress update: `Progress: X investigated, Y pending (Gates: N/8)` — then immediately continue.
+
+**Anti-pattern (DO NOT DO THIS):**
+```
+# WRONG - stopping after signal output
+check-continue.js outputs "Next: /action follow L004"
+→ Returns to user saying "Next step is L004"  ❌
+```
+
+**Correct pattern:**
+```
+# RIGHT - immediate continuation
+check-continue.js outputs "Next: /action follow L004"
+→ Immediately calls Skill(skill="action", args="follow L004")  ✓
+```
