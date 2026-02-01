@@ -121,12 +121,12 @@ test('init-case.js creates valid state.json with v2 schema', async (t) => {
 
   // Check gates
   assert.ok(typeof state.gates === 'object', 'gates should be an object');
-  const expectedGates = ['planning', 'questions', 'curiosity', 'reconciliation', 'article', 'sources', 'integrity', 'legal'];
+  const expectedGates = ['planning', 'questions', 'curiosity', 'reconciliation', 'article', 'sources', 'integrity', 'legal', 'balance', 'completeness', 'significance'];
   for (const gate of expectedGates) {
     assert.ok(gate in state.gates, `gates.${gate} should exist`);
     assert.equal(state.gates[gate], false, `gates.${gate} should be false`);
   }
-  assert.equal(Object.keys(state.gates).length, 8, 'should have exactly 8 gates');
+  assert.equal(Object.keys(state.gates).length, 11, 'should have exactly 11 gates');
 });
 
 test('init-case.js stores full topic separately from short case name', async (t) => {

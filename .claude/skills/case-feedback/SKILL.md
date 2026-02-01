@@ -17,7 +17,7 @@ Incorporate feedback on completed articles and restart the investigation cycle.
 
 ## Purpose
 
-After an investigation completes (all 8 gates pass), users may want to:
+After an investigation completes (all 11 gates pass), users may want to:
 - Request deeper coverage of specific aspects
 - Add missing perspectives
 - Adjust tone or focus
@@ -28,7 +28,7 @@ This command creates a structured revision cycle.
 
 ## Prerequisites
 
-- Investigation must be COMPLETE (all 8 gates passed)
+- Investigation must be COMPLETE (all 11 gates passed)
 - Articles must exist in `articles/` folder
 
 ## Workflow
@@ -60,7 +60,7 @@ COMPLETE
          │
          ▼
 ┌─────────────────┐
-│ RE-VERIFY       │  All 8 gates must pass again
+│ RE-VERIFY       │  All 11 gates must pass again
 └────────┬────────┘
          │ All pass
          ▼

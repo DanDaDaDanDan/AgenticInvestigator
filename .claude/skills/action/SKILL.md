@@ -60,6 +60,9 @@ Route to the specified skill based on the command.
 - `/action integrity` → invoke `/integrity`
 - `/action legal-review` → invoke `/legal-review`
 - `/action parallel-review` → invoke `/parallel-review`
+- `/action balance-audit` → invoke `/balance-audit` (Quality Gate 8)
+- `/action completeness-audit` → invoke `/completeness-audit` (Quality Gate 9)
+- `/action significance-audit` → invoke `/significance-audit` (Quality Gate 10)
 - `/action merge-cases <case1> <case2> --topic "..."` → invoke `/merge-cases`
 
 **Lightweight skills (no isolation needed):**
@@ -99,6 +102,9 @@ Skill(skill="follow", args="L004")
 | `/verify` | Heavy (100KB+) | **Task tool** (sub-agent) |
 | `/integrity` | Heavy (200KB) | **Task tool** (sub-agent) |
 | `/legal-review` | Heavy (100KB) | **Task tool** (sub-agent) |
+| `/balance-audit` | Heavy (50KB) | **Task tool** (sub-agent) |
+| `/completeness-audit` | Heavy (100KB) | **Task tool** (sub-agent) |
+| `/significance-audit` | Heavy (50KB) | **Task tool** (sub-agent) |
 | `/question` | Light (4KB) | Skill tool (inline) |
 | `/follow` | Light (5KB) | Skill tool (inline) |
 | `/capture-source` | Light | Skill tool (inline) |
@@ -179,7 +185,7 @@ After the signal outputs, check `Status:` and act:
 2. An unrecoverable error occurs
 3. User intervention is explicitly needed (scope change, ethical concern)
 
-Every 10 actions, output a brief progress update: `Progress: X investigated, Y pending (Gates: N/8)` — then immediately continue.
+Every 10 actions, output a brief progress update: `Progress: X investigated, Y pending (Gates: N/11)` — then immediately continue.
 
 **Anti-pattern (DO NOT DO THIS):**
 ```

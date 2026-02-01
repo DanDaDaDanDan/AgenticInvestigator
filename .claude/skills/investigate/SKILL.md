@@ -120,7 +120,7 @@ Update state.json: phase=VERIFY, gates.article=true
 
 ### VERIFY
 
-Dispatch `/action verify` to check all 8 gates.
+Dispatch `/action verify` to check all 11 gates.
 - If ANY fail: fix issues, loop back
 - If ALL pass: phase=COMPLETE
 

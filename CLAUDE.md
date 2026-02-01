@@ -150,7 +150,7 @@ Only `--new` creates a new case. All other `/investigate` calls operate on exist
          │
          ▼
 ┌─────────────────┐
-│ VERIFY          │  /action verify (8 gates)
+│ VERIFY          │  /action verify (11 gates)
 │                 │  /action integrity, /action legal-review
 │     ◄───────────┤  Fails → back to FOLLOW or RECONCILE
 └────────┬────────┘
@@ -193,7 +193,7 @@ Only `--new` creates a new case. All other `/investigate` calls operate on exist
 | 6 | Integrity | `/integrity` review | Status: READY (with **multi-agent debate**) |
 | 7 | Legal | `/legal-review` | Status: READY (with **multi-agent debate**) |
 
-### Quality Gates (8-10) — PLANNED (not yet implemented)
+### Quality Gates (8-10)
 
 | # | Gate | Check | Pass Criteria |
 |---|------|-------|---------------|
@@ -201,7 +201,7 @@ Only `--new` creates a new case. All other `/investigate` calls operate on exist
 | 9 | Completeness | `/completeness-audit` | Framework questions reflected in article; "what's missing" review passes |
 | 10 | Significance | `/significance-audit` | Clear takeaway articulated; novel findings identified; "so what?" test passes |
 
-**Termination:** All 8 gates pass + AI self-review complete (or no feedback generated).
+**Termination:** All 11 gates pass.
 
 ### Gate 2 (Curiosity) Hard Blocks
 
@@ -342,11 +342,14 @@ Skills are defined in `.claude/skills/*/SKILL.md` with YAML frontmatter controll
 | `/reconcile` | Sync lead results with findings | `/action` | **Task tool** |
 | `/curiosity` | Check lead exhaustion | `/action` | **Task tool** |
 | `/capture-source` | Capture evidence | Any agent | Skill tool (light) |
-| `/verify` | Check 8 gates | `/action` | **Task tool** |
+| `/verify` | Check 11 gates | `/action` | **Task tool** |
 | `/article` | Write publication | `/action` | **Task tool** |
 | `/integrity` | Journalistic check (**with debate**) | `/action` | **Task tool** |
 | `/legal-review` | Legal risk check (**with debate**) | `/action` | **Task tool** |
 | `/parallel-review` | Integrity + Legal in parallel | `/action` | **Task tool** |
+| `/balance-audit` | Quality Gate 8: Stakeholder balance | `/action` | **Task tool** |
+| `/completeness-audit` | Quality Gate 9: Framework coverage | `/action` | **Task tool** |
+| `/significance-audit` | Quality Gate 10: Clear takeaway | `/action` | **Task tool** |
 | `/debate` | **Multi-agent flag resolution** | `/integrity`, `/legal-review` | **Task tool** |
 | `/merge-cases` | Combine multiple investigations | `/action` | **Task tool** |
 
@@ -445,7 +448,7 @@ Uses three-phase pattern: parallel context-free scans → parallel contextual ev
 1. Read `state.json` to determine current phase
 2. Dispatch appropriate `/action` command
 3. Track progress via TodoWrite
-4. Loop until all 8 gates pass
+4. Loop until all 11 gates pass
 
 ### Orchestrator MUST NOT
 
@@ -470,6 +473,9 @@ Skills that read large amounts of data should run in isolated sub-agents via the
 | `/verify` | article + all cited evidence (~100KB+) | **Task tool** (sub-agent) |
 | `/integrity` | article + findings + 35 questions + sources (~200KB) | **Task tool** (sub-agent) |
 | `/legal-review` | article + sources + evidence (~100KB) | **Task tool** (sub-agent) |
+| `/balance-audit` | article + findings (~50KB) | **Task tool** (sub-agent) |
+| `/completeness-audit` | article + 35 questions + leads (~100KB) | **Task tool** (sub-agent) |
+| `/significance-audit` | article + findings (~50KB) | **Task tool** (sub-agent) |
 | `/question` | 1 framework file (~4KB) | Skill tool (inline) |
 | `/follow` | 1 lead context (~5KB) | Skill tool (inline) |
 
@@ -1037,6 +1043,6 @@ osint_get target="https://example.com/paper.pdf" output_path="evidence/S001/pape
 
 ## Autonomous Continuation
 
-The `/action` command self-loops until all 8 gates pass or an error occurs.
+The `/action` command self-loops until all 11 gates pass or an error occurs.
 
 Start the loop with `/action <command>`. It continues automatically - intervene only on errors (API failures, contradictions, scope expansion, legal concerns).

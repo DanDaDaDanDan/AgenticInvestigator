@@ -109,7 +109,10 @@ function createStateJson(caseSlug, topic) {
       article: false,
       sources: false,
       integrity: false,
-      legal: false
+      legal: false,
+      balance: false,
+      completeness: false,
+      significance: false
     }
   }, null, 2);
 }

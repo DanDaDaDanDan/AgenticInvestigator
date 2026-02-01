@@ -18,7 +18,7 @@
  * Status: CONTINUE | COMPLETE
  * Phase: <current phase>
  * Next: <next action to take>
- * Gates: X/8 passing
+ * Gates: X/11 passing
  * ═══════════════════════════════════════════════════════
  */
 
@@ -143,7 +143,7 @@ function determineNextAction(state, casePath, options = {}) {
   // Check if all gates pass
   const allGatesPass = Object.values(gates).every(Boolean);
   if (allGatesPass) {
-    return { status: 'COMPLETE', next: null, reason: 'All 8 gates passing', leadInfo: null };
+    return { status: 'COMPLETE', next: null, reason: 'All 11 gates passing', leadInfo: null };
   }
 
   // Load leads for FOLLOW phase decisions
@@ -337,6 +337,39 @@ function determineNextAction(state, casePath, options = {}) {
           };
         }
 
+        // Check for quality gate audits (gates 8-10) - run after process gates pass
+        const processGatesPass = gates.planning && gates.questions && gates.curiosity &&
+                                  gates.reconciliation && gates.article && gates.sources &&
+                                  gates.integrity && gates.legal;
+
+        if (processGatesPass) {
+          // Process gates pass, check quality gates in order
+          if (!gates.balance) {
+            return {
+              status: 'CONTINUE',
+              next: '/action balance-audit',
+              reason: 'Quality Gate 8 - balance audit needed',
+              leadInfo: null
+            };
+          }
+          if (!gates.completeness) {
+            return {
+              status: 'CONTINUE',
+              next: '/action completeness-audit',
+              reason: 'Quality Gate 9 - completeness audit needed',
+              leadInfo: null
+            };
+          }
+          if (!gates.significance) {
+            return {
+              status: 'CONTINUE',
+              next: '/action significance-audit',
+              reason: 'Quality Gate 10 - significance audit needed',
+              leadInfo: null
+            };
+          }
+        }
+
         return {
           status: 'CONTINUE',
           next: `/action verify (failing: ${failingGates.join(', ')})`,
@@ -416,7 +449,7 @@ function main() {
   console.log(`Case: ${state.case}`);
   console.log(`Phase: ${state.phase}`);
   console.log(`Iteration: ${state.iteration}`);
-  console.log(`Gates: ${passingGates}/8 passing`);
+  console.log(`Gates: ${passingGates}/11 passing`);
 
   // Show lead status in FOLLOW phase
   if (result.leadInfo) {
@@ -445,7 +478,7 @@ function main() {
     console.log('Status: ✓ COMPLETE');
     console.log(`Reason: ${result.reason}`);
     console.log('');
-    console.log('Investigation finished. All 8 gates pass.');
+    console.log('Investigation finished. All 11 gates pass.');
   } else if (result.error) {
     console.log('Status: ✗ ERROR');
     console.log(`Reason: ${result.reason}`);

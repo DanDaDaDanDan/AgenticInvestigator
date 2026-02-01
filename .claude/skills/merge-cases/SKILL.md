@@ -92,7 +92,7 @@ Generate new custom questions that emerge from combining the cases:
 
 ### Phase 8: Verification
 
-1. Run `/action verify` for all 8 gates
+1. Run `/action verify` for all 11 gates
 2. Run `/action integrity` and `/action legal-review`
 
 ## Instructions
@@ -144,4 +144,4 @@ All changes committed to DATA repo (`cases/.git`) with prefix:
 - Combined sources, leads, evidence
 - Cross-case custom questions
 - Fresh articles synthesizing all findings
-- All 8 gates passing
+- All 11 gates passing
