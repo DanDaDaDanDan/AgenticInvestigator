@@ -45,6 +45,21 @@ const logger = require('./logger').create('osint-save');
 
 // Capture signature generation for evidence verification
 const CAPTURE_SALT = 'osint-capture-2026';
+const RECEIPT_KEY_ENV = 'EVIDENCE_RECEIPT_KEY';
+
+function getReceiptKey() {
+  const key = process.env[RECEIPT_KEY_ENV];
+  if (!key || typeof key !== 'string' || !key.trim()) return null;
+  return key;
+}
+
+function receiptKeyId(key) {
+  return crypto.createHash('sha256').update(key).digest('hex').slice(0, 12);
+}
+
+function signReceiptPayload(payload, key) {
+  return crypto.createHmac('sha256', key).update(payload).digest('hex');
+}
 
 /**
  * Normalize URL for comparison (remove tracking params, trailing slashes, etc.)
@@ -208,6 +223,19 @@ async function saveEvidence(sourceId, caseDir, osintData, options = {}) {
   let verificationFile = null;
   let verificationHash = null;
 
+  // Save FULL osint_get response as an immutable capture receipt (prevents later "manual evidence" edits)
+  // NOTE: This file may be large because it includes raw_html.
+  const osintResponsePath = path.join(evidenceDir, 'osint-response.json');
+  const osintResponseJson = JSON.stringify(osintData, null, 2);
+  const osintResponseBuffer = Buffer.from(osintResponseJson);
+  fs.writeFileSync(osintResponsePath, osintResponseBuffer);
+  files.osint_response = {
+    path: 'osint-response.json',
+    hash: `sha256:${hashBuffer(osintResponseBuffer)}`,
+    size: osintResponseBuffer.length
+  };
+  logger.debug(`Saved osint-response.json (${osintResponseBuffer.length} bytes)`);
+
   // Save raw_html for web pages (CRITICAL for verification)
   // osint_get computes SHA256 of raw_html, so we need this to verify
   if (osintData.raw_html) {
@@ -257,13 +285,15 @@ async function saveEvidence(sourceId, caseDir, osintData, options = {}) {
     logger.debug(`Saved links.json (${osintData.links.length} links)`);
   }
 
-  // Extract osint_get's reported hash (from metadata.sha256)
-  const osintReportedHash = osintData.metadata?.sha256
-    ? (osintData.metadata.sha256.startsWith('sha256:') ? osintData.metadata.sha256 : `sha256:${osintData.metadata.sha256}`)
+  // Extract osint_get's reported hash (variants: metadata.sha256 or top-level sha256)
+  const reportedSha = osintData.metadata?.sha256 || osintData.sha256;
+  const osintReportedHash = reportedSha
+    ? (String(reportedSha).startsWith('sha256:') ? String(reportedSha) : `sha256:${reportedSha}`)
     : null;
 
   // Generate metadata with verification block
   const capturedAt = new Date().toISOString();
+  const receiptKey = getReceiptKey();
   const metadata = {
     source_id: sourceId,
     url: osintData.url || '',
@@ -280,6 +310,30 @@ async function saveEvidence(sourceId, caseDir, osintData, options = {}) {
       osint_reported_hash: osintReportedHash,
       verified: osintReportedHash ? (verificationHash === osintReportedHash) : null
     },
+    // Receipt signature: optional cryptographic guarantee that evidence was created by osint-save.js
+    // If EVIDENCE_RECEIPT_KEY is configured, verify-source.js can cryptographically detect manual edits/fabrication.
+    receipt: (() => {
+      const payloadObj = {
+        v: 'hmac_v1',
+        source_id: sourceId,
+        url_normalized: normalizeUrl(osintData.url || ''),
+        captured_at: capturedAt,
+        osint_reported_hash: osintReportedHash,
+        files: Object.fromEntries(Object.entries(files).map(([k, v]) => [k, v.hash || null]))
+      };
+      const payload = JSON.stringify(payloadObj);
+      const signature = receiptKey ? signReceiptPayload(payload, receiptKey) : null;
+
+      return {
+        version: payloadObj.v,
+        payload,
+        signature_alg: 'HMAC-SHA256',
+        signature,
+        key_id: receiptKey ? receiptKeyId(receiptKey) : null,
+        osint_response_file: 'osint-response.json',
+        osint_response_hash: files.osint_response.hash
+      };
+    })(),
     // Provenance from osint_get response
     provenance: osintData.provenance || null,
     _capture_signature: generateCaptureSignature(sourceId, osintData.url || '', capturedAt, files)

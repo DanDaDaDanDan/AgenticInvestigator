@@ -22,11 +22,11 @@ Verify investigation readiness for publication.
 
 | # | Gate | Pass Criteria |
 |---|------|---------------|
-| 0 | Planning | Investigation strategy designed (`state.json.gates.planning === true`) |
-| 1 | Questions | All `questions/*.md` have Status: investigated (or not-applicable) |
-| 2 | Curiosity | `/curiosity` returns SATISFIED |
-| 3 | Reconciliation | All lead results reconciled with findings |
-| 4 | Article | `articles/full.md` + `full.pdf` exist with [S###] citations |
+| 0 | Planning | Planning outputs exist (`refined_prompt.md`, `investigation_plan.md`) |
+| 1 | Questions | All `questions/*.md` have **Status:** investigated (or not-applicable) |
+| 2 | Curiosity | No `pending` leads remain in `leads.json` |
+| 3 | Reconciliation | `reconciliation-log.md` is fresh vs inputs (and lead hygiene checks pass) |
+| 4 | Article | `articles/full.md` + `full.pdf` exist, includes `[S###]` citations, and `articles/outline.md` exists |
 | 5 | Sources | **Claim Verification** - Semantic + Computational verification |
 | 6 | Integrity | `/integrity` returns READY (with multi-agent debate) |
 | 7 | Legal | `/legal-review` returns READY (with multi-agent debate) |
@@ -36,16 +36,31 @@ Verify investigation readiness for publication.
 
 ## Gate Details
 
+## Critical: Do Not Trust Self-Reported Gate Booleans
+
+`state.json.gates.*` is a convenience snapshot and can be stale or wrong.
+
+**Always derive gates from artifacts** using:
+
+```bash
+node scripts/update-gates.js cases/<case-id>/ --json
+```
+
+If you want to sync `state.json` to the derived results:
+
+```bash
+node scripts/update-gates.js cases/<case-id>/ --write
+```
+
 ### Gate 0: Planning
 Verify investigation planning was completed:
-- Check `state.json.gates.planning === true`
 - Verify planning outputs exist: `refined_prompt.md`, `investigation_plan.md`
 
 ### Gate 1: Questions
 Check each `questions/*.md` file has Status: investigated or not-applicable.
 
 ### Gate 2: Curiosity
-Invoke `/curiosity` if not already run this iteration.
+Derived from `leads.json`: there must be **zero** leads with `status: pending`.
 
 ### Gate 3: Reconciliation
 Verify lead results are reconciled with findings:
@@ -56,11 +71,39 @@ Verify lead results are reconciled with findings:
 Verify:
 - `articles/full.md` exists with [S###] citations
 - `articles/full.pdf` exists
+- `articles/outline.md` exists (scope control for final deliverable)
 - Sources Consulted section lists uncited sources
 
 ### Gate 5: Sources - Two-Part Verification
 
 Gate 5 now has TWO verification steps:
+
+#### Step 5-Preflight: Findings + Evidence Hygiene (BLOCKING)
+
+Run these before claim verification so you don't "verify" against missing/invalid inputs:
+
+```bash
+node scripts/audit-findings.js cases/<case-id>/ --block
+node scripts/audit-citations.js cases/<case-id>/ --block
+node scripts/verify-source.js --check-article cases/<case-id>/
+node scripts/audit-numerics.js cases/<case-id>/ --block --article articles/full.md
+```
+
+Optional convenience entrypoint (same checks, single command):
+
+```bash
+node scripts/gate5-preflight.js cases/<case-id>/
+```
+
+**Optional hardening: cryptographic receipts**
+
+- If `EVIDENCE_RECEIPT_KEY` is configured, `gate5-preflight` automatically enforces strict receipt checks for cited sources.
+- `--strict` forces receipt enforcement (and will fail if `EVIDENCE_RECEIPT_KEY` is not set).
+
+```bash
+node scripts/gate5-preflight.js cases/<case-id>/ --strict
+node scripts/verify-source.js --check-article cases/<case-id>/ --strict
+```
 
 #### Step 5A: Semantic Claim Verification
 
@@ -70,6 +113,8 @@ node scripts/claims/verify-article.js cases/<case-id>/ --generate-batches
 node scripts/claims/verify-article.js cases/<case-id>/ --merge-batches N
 ```
 
+This writes `semantic-verification.json` to the case folder (used for deterministic gate derivation).
+
 Matches every factual claim against source content using LLM semantic understanding.
 
 | Status | Meaning | Action |
@@ -77,6 +122,10 @@ Matches every factual claim against source content using LLM semantic understand
 | SUPPORTED | Claim has source support | None |
 | UNSOURCED | Source doesn't support claim | Find source or remove claim |
 | SOURCE_MISSING | Evidence file missing | Re-capture or remove |
+| SOURCE_INVALID | Evidence failed integrity checks | Re-capture or remove |
+| INVALID_RESPONSE | LLM response invalid (e.g., supported=true but no quote) | Re-run batch |
+| PARSE_ERROR | LLM response not valid JSON | Re-run batch |
+| NO_RESPONSE | Missing LLM response for a prompt | Re-run batch |
 
 #### Step 5B: Computational Fact-Checking
 
@@ -85,6 +134,8 @@ node scripts/claims/compute-verify.js cases/<case-id>/ --generate-prompts
 # Process prompts with LLM (include code execution)
 node scripts/claims/compute-verify.js cases/<case-id>/ --responses <file>
 ```
+
+This writes `compute-verification.json` to the case folder (used for deterministic gate derivation).
 
 Verifies numerical claims computationally:
 - Percentages and percentage changes
@@ -98,12 +149,23 @@ Verifies numerical claims computationally:
 | MATCHED | Computed value matches claim (within 5%) | None |
 | DISCREPANCY | Computed value differs significantly | Investigate and correct |
 | DATA_NOT_FOUND | Source lacks verifiable numbers | Flag for manual review |
+| NO_SOURCE | Numerical claim has no citation | Add citation or remove number |
+| SOURCE_MISSING | Evidence file missing | Re-capture or remove |
+| SOURCE_INVALID | Evidence failed integrity checks | Re-capture or remove |
+| PARSE_ERROR | LLM response not valid JSON | Re-run batch |
+| NO_RESPONSE | Missing LLM response for a prompt | Re-run batch |
 
 #### Combining Results
 
 Gate 5 passes when BOTH:
-- Step 5A: No UNSOURCED claims (or all have caveats)
-- Step 5B: No DISCREPANCY items (or all explained/corrected)
+- Step 5A: No UNSOURCED / SOURCE_MISSING / SOURCE_INVALID / INVALID_RESPONSE / PARSE_ERROR / NO_RESPONSE items
+- Step 5B: No DISCREPANCY / NO_SOURCE / SOURCE_MISSING / SOURCE_INVALID / PARSE_ERROR / NO_RESPONSE items
+
+After you run the checks above, recompute gates from artifacts:
+
+```bash
+node scripts/update-gates.js cases/<case-id>/ --write
+```
 
 #### Outputs
 

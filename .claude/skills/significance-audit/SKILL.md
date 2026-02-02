@@ -63,22 +63,28 @@ Answer these questions:
 
 ### If PASS
 
-```
-Significance Audit: PASS
+Write `significance-audit.md` containing:
 
-Takeaway:
+```markdown
+# Significance Audit
+
+## Takeaway
 "[One sentence summary of main point]"
 Location in article: [introduction/conclusion reference]
 
-Novel Findings:
+## Novel Findings
 1. [Finding 1] - Previously [unknown/assumed otherwise]
 2. [Finding 2] - New synthesis of [X and Y]
 3. [Finding 3] - Data showing [Z]
 
-Significance ("So What?"):
+## So What?
 - Affects: [who/what]
 - Implications: [what changes]
 - Action items: [what can be done]
+
+## Status
+
+**PASS**
 ```
 
 Update `state.json`:
@@ -91,23 +97,29 @@ Update `state.json`:
 
 ### If FAIL
 
-```
-Significance Audit: FAIL
+Write `significance-audit.md` containing:
 
-FAIL_TAKEAWAY:
+```markdown
+# Significance Audit
+
+## FAIL_TAKEAWAY
 - No clear main point identified
 - Multiple competing conclusions without synthesis
 - Article trails off without conclusion
 
-FAIL_NOVELTY:
+## FAIL_NOVELTY
 - All findings are already public knowledge
 - No new analysis or synthesis provided
 - Investigation confirms known information without adding value
 
-FAIL_SIGNIFICANCE:
+## FAIL_SIGNIFICANCE
 - "So what?" not answered
 - Implications not explained
 - Reader left without understanding why this matters
+
+## Status
+
+**FAIL**
 ```
 
 Do NOT update gate. Return specific issues to fix.

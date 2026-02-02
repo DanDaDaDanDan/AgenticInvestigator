@@ -29,6 +29,12 @@
 const fs = require('fs');
 const path = require('path');
 
+const { verifySource } = require('../verify-source');
+
+function parseNumber(str) {
+  return parseFloat(String(str).replace(/,/g, ''));
+}
+
 /**
  * Patterns for extracting numerical claims
  */
@@ -39,12 +45,54 @@ const NUMERICAL_PATTERNS = [
     pattern: /(\d+(?:\.\d+)?)\s*(?:percent|%)/gi,
     extract: (match) => ({ value: parseFloat(match[1]), unit: 'percent' })
   },
+  // Multipliers (range form: "100-200x", "100 to 200 times")
+  {
+    type: 'multiplier_range',
+    pattern: /(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(?:-|–|to)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(?:x|×|times)\b/gi,
+    extract: (match) => {
+      const min = parseNumber(match[1]);
+      const max = parseNumber(match[2]);
+      return {
+        value: min,
+        value_min: Math.min(min, max),
+        value_max: Math.max(min, max),
+        unit: 'multiplier_range'
+      };
+    }
+  },
+  // Multipliers (single: "200x", "200 times")
+  {
+    type: 'multiplier',
+    pattern: /(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(?:x|×|times)\b/gi,
+    extract: (match) => ({ value: parseNumber(match[1]), unit: 'multiplier' })
+  },
+  // Ratios and fractions (range form: "1 in 5,000-10,000")
+  {
+    type: 'ratio_range',
+    pattern: /(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(?:out of|of|in)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(?:-|–|to)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)/gi,
+    extract: (match) => {
+      const numerator = parseNumber(match[1]);
+      const denominatorMin = parseNumber(match[2]);
+      const denominatorMax = parseNumber(match[3]);
+      const valueAtMin = numerator / denominatorMin;
+      const valueAtMax = numerator / denominatorMax;
+      return {
+        numerator,
+        denominator_min: denominatorMin,
+        denominator_max: denominatorMax,
+        value_min: Math.min(valueAtMin, valueAtMax),
+        value_max: Math.max(valueAtMin, valueAtMax),
+        value: valueAtMin,
+        unit: 'ratio_range'
+      };
+    }
+  },
   // Dollar amounts
   {
     type: 'currency',
-    pattern: /\$\s*(\d+(?:\.\d+)?)\s*(million|billion|thousand|M|B|K)?/gi,
+    pattern: /\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(million|billion|thousand|M|B|K)?/gi,
     extract: (match) => {
-      let value = parseFloat(match[1]);
+      let value = parseNumber(match[1]);
       const multiplier = match[2]?.toLowerCase();
       if (multiplier === 'billion' || multiplier === 'b') value *= 1e9;
       else if (multiplier === 'million' || multiplier === 'm') value *= 1e6;
@@ -55,11 +103,11 @@ const NUMERICAL_PATTERNS = [
   // Ratios and fractions
   {
     type: 'ratio',
-    pattern: /(\d+)\s*(?:out of|of|in)\s*(\d+)/gi,
+    pattern: /(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(?:out of|of|in)\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)/gi,
     extract: (match) => ({
-      numerator: parseInt(match[1]),
-      denominator: parseInt(match[2]),
-      value: parseInt(match[1]) / parseInt(match[2]),
+      numerator: parseNumber(match[1]),
+      denominator: parseNumber(match[2]),
+      value: parseNumber(match[1]) / parseNumber(match[2]),
       unit: 'ratio'
     })
   },
@@ -97,8 +145,18 @@ const NUMERICAL_PATTERNS = [
     type: 'count',
     pattern: /(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(people|employees|users|cases|incidents|deaths|agents?)/gi,
     extract: (match) => ({
-      value: parseFloat(match[1].replace(/,/g, '')),
+      value: parseNumber(match[1]),
       unit: match[2].toLowerCase()
+    })
+  },
+  // Micromorts (useful for risk comparisons)
+  {
+    type: 'micromort',
+    pattern: /(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(?:-|–|to)?\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)?\s*micromorts?/gi,
+    extract: (match) => ({
+      value: parseNumber(match[1]),
+      value_max: match[2] ? parseNumber(match[2]) : null,
+      unit: 'micromort'
     })
   }
 ];
@@ -123,7 +181,6 @@ function extractNumericalClaims(articleText) {
 
     // Find citations in this line
     const citations = [...line.matchAll(citationPattern)].map(m => m[1]);
-    if (citations.length === 0) continue;
 
     // Check each numerical pattern
     for (const { type, pattern, extract } of NUMERICAL_PATTERNS) {
@@ -274,6 +331,17 @@ function prepareVerification(caseDir, options = {}) {
   const numericalClaims = extractNumericalClaims(articleText);
 
   const verificationData = [];
+  const sourceIntegrityCache = new Map();
+
+  function getSourceIntegrity(sourceId) {
+    if (sourceIntegrityCache.has(sourceId)) return sourceIntegrityCache.get(sourceId);
+    const result = verifySource(sourceId, caseDir, {
+      strict: !!process.env.EVIDENCE_RECEIPT_KEY,
+      publication: true
+    });
+    sourceIntegrityCache.set(sourceId, result);
+    return result;
+  }
 
   for (const claim of numericalClaims) {
     if (claim.sourceIds.length === 0) {
@@ -286,6 +354,18 @@ function prepareVerification(caseDir, options = {}) {
     }
 
     const sourceId = claim.sourceIds[0];
+    const integrity = getSourceIntegrity(sourceId);
+    if (!integrity.valid) {
+      verificationData.push({
+        claim,
+        sourceId,
+        status: 'SOURCE_INVALID',
+        reason: 'Source failed verify-source integrity checks',
+        integrityErrors: integrity.errors,
+        integrityWarnings: integrity.warnings
+      });
+      continue;
+    }
     const sourceData = loadSourceData(caseDir, sourceId);
 
     if (!sourceData.content) {
@@ -324,6 +404,7 @@ function prepareVerification(caseDir, options = {}) {
     pending: prompts.length,
     noSource: verificationData.filter(v => v.status === 'NO_SOURCE').length,
     sourceMissing: verificationData.filter(v => v.status === 'SOURCE_MISSING').length,
+    sourceInvalid: verificationData.filter(v => v.status === 'SOURCE_INVALID').length,
     byType: {}
   };
 
@@ -401,12 +482,22 @@ function processVerificationResponses(prepared, llmResponses, options = {}) {
     discrepancies: results.filter(r => r.status === 'DISCREPANCY').length,
     dataNotFound: results.filter(r => r.status === 'DATA_NOT_FOUND').length,
     noSource: results.filter(r => r.status === 'NO_SOURCE').length,
-    errors: results.filter(r => ['PARSE_ERROR', 'NO_RESPONSE', 'SOURCE_MISSING'].includes(r.status)).length
+    sourceMissing: results.filter(r => r.status === 'SOURCE_MISSING').length,
+    sourceInvalid: results.filter(r => r.status === 'SOURCE_INVALID').length,
+    noResponse: results.filter(r => r.status === 'NO_RESPONSE').length,
+    parseErrors: results.filter(r => r.status === 'PARSE_ERROR').length,
+    errors: results.filter(r => ['PARSE_ERROR', 'NO_RESPONSE', 'SOURCE_MISSING', 'SOURCE_INVALID'].includes(r.status)).length
   };
 
   let overallStatus = 'MATCHED';
   if (summary.discrepancies > 0) overallStatus = 'HAS_DISCREPANCIES';
   if (summary.discrepancies > summary.total * 0.2) overallStatus = 'SIGNIFICANT_DISCREPANCIES';
+  if (summary.noSource > 0) overallStatus = 'HAS_NO_SOURCE';
+  if (summary.sourceMissing > 0) overallStatus = 'HAS_MISSING_SOURCES';
+  if (summary.sourceInvalid > 0) overallStatus = 'HAS_INVALID_SOURCES';
+  if (summary.dataNotFound > 0) overallStatus = 'HAS_DATA_NOT_FOUND';
+  if (summary.noResponse > 0) overallStatus = 'HAS_NO_RESPONSE';
+  if (summary.parseErrors > 0) overallStatus = 'HAS_PARSE_ERRORS';
 
   return {
     status: overallStatus,
@@ -446,15 +537,18 @@ function generateReport(results) {
   lines.push(`  Verified (within tolerance): ${results.summary.verified}`);
   lines.push(`  Discrepancies found: ${results.summary.discrepancies}`);
   lines.push(`  Data not in source: ${results.summary.dataNotFound}`);
-  if (results.summary.errors > 0) {
-    lines.push(`  Errors: ${results.summary.errors}`);
-  }
+  if (results.summary.noSource > 0) lines.push(`  Missing citations: ${results.summary.noSource}`);
+  if (results.summary.sourceMissing > 0) lines.push(`  Missing evidence: ${results.summary.sourceMissing}`);
+  if (results.summary.sourceInvalid > 0) lines.push(`  Invalid evidence: ${results.summary.sourceInvalid}`);
+  if (results.summary.noResponse > 0) lines.push(`  Missing LLM responses: ${results.summary.noResponse}`);
+  if (results.summary.parseErrors > 0) lines.push(`  Parse errors: ${results.summary.parseErrors}`);
+  if (results.summary.errors > 0) lines.push(`  Errors: ${results.summary.errors}`);
 
   if (results.discrepancies && results.discrepancies.length > 0) {
     lines.push('\n--- DISCREPANCIES ---');
     for (const item of results.discrepancies) {
       lines.push(`\n  Line ${item.claim.line}: ${item.claim.type}`);
-      lines.push(`    Claimed: ${item.claim.value} ${item.claim.unit || ''}`);
+      lines.push(`    Claimed: ${item.claim.raw || item.claim.value} ${item.claim.unit || ''}`);
       lines.push(`    Computed: ${item.computed_value}`);
       lines.push(`    Discrepancy: ${item.discrepancy_percent?.toFixed(1)}%`);
       lines.push(`    Context: "${item.claim.context?.slice(0, 60)}..."`);
@@ -471,7 +565,7 @@ function generateReport(results) {
   if (results.verified && results.verified.length > 0 && results.verified.length <= 10) {
     lines.push('\n--- VERIFIED CLAIMS ---');
     for (const item of results.verified) {
-      lines.push(`\n  Line ${item.claim.line}: ${item.claim.value} ${item.claim.unit || ''} ✓`);
+      lines.push(`\n  Line ${item.claim.line}: ${item.claim.raw || item.claim.value} ${item.claim.unit || ''} ✓`);
       lines.push(`    Computed: ${item.computed_value} (confidence: ${(item.confidence * 100).toFixed(0)}%)`);
     }
   }
@@ -559,7 +653,16 @@ async function main() {
     fs.writeFileSync(outputPath, JSON.stringify(results, null, 2));
     console.log(`\nResults written to: ${outputPath}`);
 
-    process.exit(results.summary.discrepancies > 0 ? 1 : 0);
+    process.exit(
+      (results.summary.discrepancies > 0 ||
+        results.summary.noSource > 0 ||
+        results.summary.dataNotFound > 0 ||
+        results.summary.sourceMissing > 0 ||
+        results.summary.sourceInvalid > 0 ||
+        results.summary.noResponse > 0 ||
+        results.summary.parseErrors > 0 ||
+        results.summary.errors > 0) ? 1 : 0
+    );
     return;
   }
 

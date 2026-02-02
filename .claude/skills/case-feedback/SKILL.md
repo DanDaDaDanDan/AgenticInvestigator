@@ -15,6 +15,12 @@ Incorporate feedback on completed articles and restart the investigation cycle.
 /case-feedback [feedback text]
 ```
 
+If you already have feedback captured in one or more files, use the deterministic helper:
+
+```bash
+node scripts/ingest-feedback.js cases/<case-id> feedback-1.md feedback-2.md
+```
+
 ## Purpose
 
 After an investigation completes (all 11 gates pass), users may want to:

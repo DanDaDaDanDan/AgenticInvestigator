@@ -75,15 +75,17 @@ Use **GPT 5.2 Pro with extended thinking** for article generation.
 
 ### Step 0: Prerequisite Gate Check (BLOCKING)
 
-**Before ANY article generation**, verify that gates 0-3 are passing:
+**Before ANY article generation**, derive gates from artifacts (do not trust self-reported booleans) and verify gates 0-3 are passing:
 
+```bash
+node scripts/update-gates.js cases/<case-id>/ --json
 ```
-Read state.json and verify:
-- gates.planning === true    (Gate 0)
-- gates.questions === true   (Gate 1)
-- gates.curiosity === true   (Gate 2)
-- gates.reconciliation === true (Gate 3)
-```
+
+Verify the derived results show:
+- `planning: PASS` (Gate 0)
+- `questions: PASS` (Gate 1)
+- `curiosity: PASS` (Gate 2)
+- `reconciliation: PASS` (Gate 3)
 
 **FAIL IMMEDIATELY if ANY of gates 0-3 are false.**
 
@@ -96,6 +98,18 @@ Action required: Complete FOLLOW phase before WRITE phase.
 
 This prevents generating articles from incomplete investigations. The curiosity and reconciliation gates ensure all leads are investigated and findings are reconciled before writing.
 
+### Step 0.5: Findings Hygiene Gate (BLOCKING)
+
+**Before assembling findings**, ensure findings are in canonical form (or critical findings may be silently ignored):
+
+```bash
+node scripts/audit-findings.js cases/<case-id>/ --block
+```
+
+If this fails, fix findings hygiene first:
+- Resolve duplicate IDs (merge content into a single finding)
+- Ensure each finding file is named exactly `F###.md` and matches `id: F###` in frontmatter
+
 ### Step 1: Read Source Material
 
 Assemble all findings and read supporting question files:
@@ -107,6 +121,12 @@ node scripts/findings.js assemble cases/<case-id>
 This outputs all active findings (status: sourced or draft, excluding stale/superseded) as a single document.
 
 Also read `questions/*.md` files for additional context.
+
+If the case is large (many findings/questions) and you want a single high-context input for writing, generate a bundle:
+
+```bash
+node scripts/build-article-context.js cases/<case-id>/ --output cases/<case-id>/articles/article-context.md
+```
 
 **During revision cycles:** Also read the feedback file specified in `state.json.revision.feedback_file` (e.g., `feedback/revision1.md`). The `## Article Changes` section contains required revisions.
 
@@ -123,22 +143,26 @@ If the audit fails, **DO NOT proceed** to article generation. Fix issues first:
 2. Update `sources.json` entries to have `captured: true`
 3. Ensure each `evidence/S###/` has `metadata.json` and `content.md`
 
-**Then run claim verification:**
-
-```bash
-node scripts/claims/verify-article.js cases/<case-id>/ --fix
-```
-
-For each claim in findings:
-1. Verify the claim is registered in `claims.json` (extracted from source at capture time)
-2. If statistics are cited, verify the numbers match exactly
-3. If verification flags unsourced claims, either:
-   - Capture a source that supports the claim (which extracts and registers claims)
-   - Correct the claim in the finding to match a registered claim
-   - Add appropriate caveats ("according to X" or "estimates suggest")
-
 **CRITICAL:** Do not generate articles with unsourced citations. Citation laundering
 (attaching citations to claims they don't support) is a root cause of article failures.
+
+### Step 1.6: Article Outline + Scope Control (BLOCKING)
+
+Before drafting, write an explicit outline to keep the final deliverable aligned to the refined ask (and prevent one-off tangents from dominating):
+
+- Create `articles/outline.md` with:
+  - **Deliverables checklist** derived from `refined_prompt.md` (what the reader came for)
+  - **Section outline** with target word counts and *which findings* support each section (e.g., “Uses F003, F007…”)
+  - **Quant claims plan**: list each planned “precise number” and its supporting `[S###]` source(s); if you can’t name the source(s), do not include the number
+- **Tangent budget**: any single case-study correction/misattribution should be ≤10–15% of total words unless it changes the main conclusion
+
+If the outline does not clearly answer the refined prompt, stop and fix the outline before writing.
+
+Validate the outline artifact:
+
+```bash
+node scripts/audit-article-outline.js cases/<case-id>/ --block
+```
 
 ### Step 2: Generate Articles with GPT 5.2 Pro
 
@@ -189,7 +213,12 @@ The revision instructions are **binding requirements**, not suggestions. Every i
 ### Step 3: Write and Generate PDFs
 
 1. Write responses to `articles/short.md`, `articles/medium.md`, `articles/full.md`
-2. Run: `node scripts/generate-pdf.js cases/<case-id>/`
+2. Validate risk-rate → micromort requirement (full article):
+
+```bash
+node scripts/audit-risk-micromort.js cases/<case-id>/ --block --article articles/full.md
+```
+3. Run: `node scripts/generate-pdf.js cases/<case-id>/`
 
 ---
 
@@ -197,6 +226,9 @@ The revision instructions are **binding requirements**, not suggestions. Every i
 
 Read (in order of authority):
 
+0. Planning artifacts (`refined_prompt.md`, `strategic_context.md`, `investigation_plan.md`, `custom_questions.md`) — **scope only, NOT evidence**
+   - These may contain hypotheses, rough estimates, or even errors.
+   - Do not import facts/numbers from them unless the claim also appears in a finding with `[S###]` citations.
 1. `findings/*.md` — **single source of truth** for findings and `[S###](url)` citations
    - Use `node scripts/findings.js assemble cases/<case-id>` to get all active findings
    - Only `sourced` and `draft` status findings are included (not `stale` or `superseded`)
@@ -251,8 +283,9 @@ Avoid "report voice" (Part I/Part II, CRITICAL FINDING, excessive bullets). If s
   - Clear structure with informative subheads
   - Section on what works / what doesn't / what we don't know
   - Section on implementation constraints (fidelity, staffing, funding)
+  - If the core story hinges on quantitative claims (rates, comparisons, risk): **1–2 paragraphs** explaining the counting/estimation approach and its limits (no long methods appendix)
   - **Sources** section at end
-- **Exclude:** Methodology section, exhaustive tables/enumerations
+- **Exclude:** Long methodology sections, exhaustive tables/enumerations
 
 ### 3. Full Article (`articles/full.md`)
 
@@ -261,11 +294,15 @@ Avoid "report voice" (Part I/Part II, CRITICAL FINDING, excessive bullets). If s
 - **Tone:** Long-form investigative/explanatory journalism
 - **Include:**
   - Everything needed to understand and verify the investigation
-  - Brief **Methodology** section: what types of sources consulted, how claims were selected, limitations
+  - **Methodology + Data** section: definitions/inclusion criteria, what was counted, key assumptions, and limitations (especially for any per-event/per-hour risk estimates)
+  - **If you publish any *death-risk* rate** (e.g., “1 in X”, “Y% per ascent/hour”, “Z× more deadly”): include a micromort conversion. **When you introduce micromorts, explicitly state they measure *death risk only* (not injury risk).** Show the calculation with every input sourced (or remove the number). Benchmark comparisons are encouraged when they clarify scale; prefer 2+ when you can do it without forcing low-quality analogies.
+  - **Quantitative transparency:** for any “precise-looking” number, either quote it verbatim from the source or show the arithmetic and cite every input source
   - Complete **Sources Cited** section (sources with `[S###]` markers used in text)
   - **REQUIRED: Sources Consulted** section listing ALL other captured sources from `sources.json` that informed the investigation but were not directly cited. This provides transparency about the full evidence base.
 - **Appendices preferred** for heavy detail:
   - `## Appendix: Study Notes / Evidence Map`
+  - `## Appendix: Dataset / Counting Rules` (if you created/used a case list)
+  - `## Appendix: Numerical Claims Ledger` (claim → source quote or calculation → inputs)
   - `## Appendix: Implementation Details`
   - `## Appendix: Definitions / Acronyms`
 

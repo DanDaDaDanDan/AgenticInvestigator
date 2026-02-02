@@ -28,6 +28,9 @@
 const fs = require('fs');
 const path = require('path');
 
+const { verifySource } = require('../verify-source');
+const { normalizeUrl } = require('../osint-save');
+
 /**
  * Patterns that indicate a claim is a source reference, not a factual claim
  */
@@ -112,6 +115,28 @@ function validateCitationUrl(url) {
   return null; // Valid
 }
 
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function supportingQuoteAppearsInSource(sourceContent, supportingQuote) {
+  if (!supportingQuote || typeof supportingQuote !== 'string') return false;
+  const trimmed = supportingQuote.trim();
+  if (!trimmed) return false;
+
+  if (sourceContent.includes(trimmed)) return true;
+
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length < 3) return false;
+
+  const pattern = parts.map(escapeRegExp).join('\\s+');
+  try {
+    return new RegExp(pattern).test(sourceContent);
+  } catch {
+    return false;
+  }
+}
+
 function extractArticleClaims(articleText) {
   const claims = [];
   const lines = articleText.split('\n');
@@ -140,6 +165,13 @@ function extractArticleClaims(articleText) {
     for (const sentence of sentences) {
       const sentenceMatches = [...sentence.matchAll(citationPattern)];
       if (sentenceMatches.length === 0) continue;
+
+      const citationUrls = {};
+      for (const match of sentenceMatches) {
+        const sourceId = match[1];
+        const url = match[2];
+        if (url) citationUrls[sourceId] = url;
+      }
 
       // Validate citation URLs
       for (const match of sentenceMatches) {
@@ -174,6 +206,7 @@ function extractArticleClaims(articleText) {
         text: claimText,
         line: lineNum + 1,
         sourceIds,
+        citationUrls,
         raw: sentence.trim(),
         isSourceRef: sourceRefCheck.isSourceRef,
         sourceRefReason: sourceRefCheck.reason || null
@@ -270,14 +303,16 @@ function parseVerificationResponse(response) {
       supported: !!parsed.supported,
       confidence: parsed.confidence || 0,
       supportingQuote: parsed.supporting_quote || null,
-      reason: parsed.reason || ''
+      reason: parsed.reason || '',
+      parseError: false
     };
   } catch (err) {
     return {
       supported: false,
       confidence: 0,
       supportingQuote: null,
-      reason: `Failed to parse response: ${err.message}`
+      reason: `Failed to parse response: ${err.message}`,
+      parseError: true
     };
   }
 }
@@ -312,6 +347,17 @@ function prepareVerification(caseDir, options = {}) {
   }
 
   const verificationData = [];
+  const sourceIntegrityCache = new Map();
+
+  function getSourceIntegrity(sourceId) {
+    if (sourceIntegrityCache.has(sourceId)) return sourceIntegrityCache.get(sourceId);
+    const result = verifySource(sourceId, caseDir, {
+      strict: !!process.env.EVIDENCE_RECEIPT_KEY,
+      publication: true
+    });
+    sourceIntegrityCache.set(sourceId, result);
+    return result;
+  }
 
   for (const claim of articleClaims) {
     // Skip source references
@@ -336,6 +382,18 @@ function prepareVerification(caseDir, options = {}) {
 
     // Use the first cited source (primary citation)
     const sourceId = claim.sourceIds[0];
+    const integrity = getSourceIntegrity(sourceId);
+    if (!integrity.valid) {
+      verificationData.push({
+        claim,
+        sourceId,
+        status: 'SOURCE_INVALID',
+        reason: 'Source failed verify-source integrity checks',
+        integrityErrors: integrity.errors,
+        integrityWarnings: integrity.warnings
+      });
+      continue;
+    }
     const sourceData = loadSourceContent(caseDir, sourceId);
 
     if (sourceData.error) {
@@ -351,12 +409,27 @@ function prepareVerification(caseDir, options = {}) {
     const metadata = loadSourceMetadata(caseDir, sourceId);
     const sourceUrl = metadata?.url || '';
 
+    const warnings = [];
+    const citedUrl = claim.citationUrls?.[sourceId] || null;
+    if (citedUrl && sourceUrl) {
+      const normalizedCited = normalizeUrl(citedUrl);
+      const normalizedCaptured = normalizeUrl(sourceUrl);
+      if (normalizedCited && normalizedCaptured && normalizedCited !== normalizedCaptured) {
+        warnings.push({
+          code: 'CITATION_URL_MISMATCH',
+          message: `Citation URL does not match captured metadata.url (citation: ${citedUrl}; captured: ${sourceUrl})`
+        });
+      }
+    }
+
     const prompt = generateVerificationPrompt(claim, sourceData.content, sourceUrl);
 
     verificationData.push({
       claim,
       sourceId,
       sourceUrl,
+      citedUrl,
+      warnings,
       prompt,
       status: 'PENDING'
     });
@@ -378,10 +451,13 @@ function prepareVerification(caseDir, options = {}) {
     pending: prompts.length,
     skipped: verificationData.filter(v => v.status === 'SKIPPED').length,
     noSource: verificationData.filter(v => v.status === 'NO_SOURCE').length,
-    sourceMissing: verificationData.filter(v => v.status === 'SOURCE_MISSING').length
+    sourceMissing: verificationData.filter(v => v.status === 'SOURCE_MISSING').length,
+    sourceInvalid: verificationData.filter(v => v.status === 'SOURCE_INVALID').length,
+    citationUrlMismatches: verificationData.filter(v => (v.warnings || []).some(w => w.code === 'CITATION_URL_MISMATCH')).length
   };
 
   return {
+    caseDir,
     articlePath,
     preparedAt: new Date().toISOString(),
     verificationData,
@@ -395,6 +471,15 @@ function prepareVerification(caseDir, options = {}) {
  */
 function processVerificationResponses(prepared, llmResponses) {
   const responseMap = new Map(llmResponses.map(r => [r.index, r.response]));
+  const sourceContentCache = new Map();
+
+  function getSourceContent(sourceId) {
+    if (sourceContentCache.has(sourceId)) return sourceContentCache.get(sourceId);
+    const loaded = loadSourceContent(prepared.caseDir, sourceId);
+    const content = loaded?.content || '';
+    sourceContentCache.set(sourceId, content);
+    return content;
+  }
 
   const results = prepared.verificationData.map((item, idx) => {
     if (item.status !== 'PENDING') {
@@ -408,11 +493,53 @@ function processVerificationResponses(prepared, llmResponses) {
 
     const parsed = parseVerificationResponse(response);
 
+    if (parsed.parseError) {
+      return {
+        ...item,
+        status: 'PARSE_ERROR',
+        confidence: 0,
+        supportingQuote: null,
+        reason: parsed.reason
+      };
+    }
+
+    if (parsed.supported) {
+      const supportingQuote = typeof parsed.supportingQuote === 'string' ? parsed.supportingQuote.trim() : '';
+      if (!supportingQuote) {
+        return {
+          ...item,
+          status: 'INVALID_RESPONSE',
+          confidence: parsed.confidence,
+          supportingQuote: null,
+          reason: 'LLM marked supported=true but provided no supporting_quote'
+        };
+      }
+
+      const sourceContent = getSourceContent(item.sourceId);
+      if (!supportingQuoteAppearsInSource(sourceContent, supportingQuote)) {
+        return {
+          ...item,
+          status: 'INVALID_RESPONSE',
+          confidence: parsed.confidence,
+          supportingQuote,
+          reason: 'LLM supporting_quote does not appear verbatim in source content'
+        };
+      }
+
+      return {
+        ...item,
+        status: 'SUPPORTED',
+        confidence: parsed.confidence,
+        supportingQuote,
+        reason: parsed.reason
+      };
+    }
+
     return {
       ...item,
-      status: parsed.supported ? 'SUPPORTED' : 'UNSOURCED',
+      status: 'UNSOURCED',
       confidence: parsed.confidence,
-      supportingQuote: parsed.supportingQuote,
+      supportingQuote: parsed.supportingQuote || null,
       reason: parsed.reason
     };
   });
@@ -425,13 +552,22 @@ function processVerificationResponses(prepared, llmResponses) {
     skipped: results.filter(r => r.status === 'SKIPPED').length,
     noSource: results.filter(r => r.status === 'NO_SOURCE').length,
     sourceMissing: results.filter(r => r.status === 'SOURCE_MISSING').length,
-    noResponse: results.filter(r => r.status === 'NO_RESPONSE').length
+    sourceInvalid: results.filter(r => r.status === 'SOURCE_INVALID').length,
+    noResponse: results.filter(r => r.status === 'NO_RESPONSE').length,
+    parseErrors: results.filter(r => r.status === 'PARSE_ERROR').length,
+    invalidResponses: results.filter(r => r.status === 'INVALID_RESPONSE').length,
+    citationUrlMismatches: results.filter(r => (r.warnings || []).some(w => w.code === 'CITATION_URL_MISMATCH')).length
   };
 
   // Determine overall status
   let overallStatus = 'SUPPORTED';
   if (summary.unverified > 0) overallStatus = 'HAS_UNSOURCED';
+  if (summary.noSource > 0) overallStatus = 'HAS_NO_SOURCE';
   if (summary.sourceMissing > 0) overallStatus = 'HAS_MISSING_SOURCES';
+  if (summary.sourceInvalid > 0) overallStatus = 'HAS_INVALID_SOURCES';
+  if (summary.noResponse > 0) overallStatus = 'HAS_NO_RESPONSE';
+  if (summary.parseErrors > 0) overallStatus = 'HAS_PARSE_ERRORS';
+  if (summary.invalidResponses > 0) overallStatus = 'HAS_INVALID_LLM_RESPONSES';
 
   return {
     status: overallStatus,
@@ -470,9 +606,13 @@ function generateReport(results) {
   lines.push(`  Source-supported: ${results.summary.verified}`);
   lines.push(`  Needs source: ${results.summary.unverified}`);
   lines.push(`  Skipped (source refs): ${results.summary.skipped}`);
-  if (results.summary.sourceMissing > 0) {
-    lines.push(`  Missing sources: ${results.summary.sourceMissing}`);
-  }
+  if (results.summary.noSource > 0) lines.push(`  Missing citations: ${results.summary.noSource}`);
+  if (results.summary.sourceMissing > 0) lines.push(`  Missing evidence: ${results.summary.sourceMissing}`);
+  if (results.summary.sourceInvalid > 0) lines.push(`  Invalid evidence: ${results.summary.sourceInvalid}`);
+  if (results.summary.noResponse > 0) lines.push(`  Missing LLM responses: ${results.summary.noResponse}`);
+  if (results.summary.parseErrors > 0) lines.push(`  Parse errors: ${results.summary.parseErrors}`);
+  if (results.summary.invalidResponses > 0) lines.push(`  Invalid LLM responses: ${results.summary.invalidResponses}`);
+  if (results.summary.citationUrlMismatches > 0) lines.push(`  Citation URL mismatches: ${results.summary.citationUrlMismatches}`);
 
   if (results.unverified && results.unverified.length > 0) {
     lines.push('\n--- CLAIMS NEEDING SOURCE ---');
@@ -708,13 +848,28 @@ async function main() {
 
     const results = processVerificationResponses(prepared, responses);
 
+    // Persist results for deterministic gate derivation (Gate 5)
+    const outputPath = path.join(caseDir, 'semantic-verification.json');
+    fs.writeFileSync(outputPath, JSON.stringify(results, null, 2));
+
     if (options.json) {
       console.log(JSON.stringify(results, null, 2));
     } else {
       console.log(generateReport(results));
     }
 
-    process.exit(results.summary.unverified > 0 ? 1 : 0);
+    console.log(`\nResults written to: ${outputPath}`);
+
+    process.exit(
+      (results.summary.unverified > 0 ||
+        results.summary.noSource > 0 ||
+        results.summary.sourceMissing > 0 ||
+        results.summary.sourceInvalid > 0 ||
+        results.summary.noResponse > 0 ||
+        results.summary.parseErrors > 0 ||
+        results.summary.invalidResponses > 0 ||
+        results.summary.citationUrlMismatches > 0) ? 1 : 0
+    );
     return;
   }
 
@@ -723,13 +878,28 @@ async function main() {
     const responses = JSON.parse(fs.readFileSync(options.responsesFile, 'utf-8'));
     const results = processVerificationResponses(prepared, responses);
 
+    // Persist results for deterministic gate derivation (Gate 5)
+    const outputPath = path.join(caseDir, 'semantic-verification.json');
+    fs.writeFileSync(outputPath, JSON.stringify(results, null, 2));
+
     if (options.json) {
       console.log(JSON.stringify(results, null, 2));
     } else {
       console.log(generateReport(results));
     }
 
-    process.exit(results.summary.unverified > 0 ? 1 : 0);
+    console.log(`\nResults written to: ${outputPath}`);
+
+    process.exit(
+      (results.summary.unverified > 0 ||
+        results.summary.noSource > 0 ||
+        results.summary.sourceMissing > 0 ||
+        results.summary.sourceInvalid > 0 ||
+        results.summary.noResponse > 0 ||
+        results.summary.parseErrors > 0 ||
+        results.summary.invalidResponses > 0 ||
+        results.summary.citationUrlMismatches > 0) ? 1 : 0
+    );
     return;
   }
 

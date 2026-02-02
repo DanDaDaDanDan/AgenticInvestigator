@@ -98,9 +98,23 @@ Consider:
    - What does each party claim/believe?
    - Whose perspective is usually missing?
 
+6. DELIVERABLES CONTRACT (CRITICAL)
+   - Write a short checklist of what the final deliverable MUST answer.
+   - Do not replace the user’s ask with a “more interesting” question.
+   - If you propose a sharper framing/thesis, it must still satisfy the deliverables.
+
 OUTPUT FORMAT:
 
 # Refined Investigation Prompt
+
+## Original Ask (Verbatim)
+[Repeat the raw topic verbatim. This is the contract for what the reader came for.]
+
+## Deliverables Checklist
+- [Question the final article MUST answer]
+- [Question the final article MUST answer]
+- [Question the final article MUST answer]
+- [Question the final article MUST answer]
 
 ## Investigation Question
 [Clear, specific statement of what we're trying to learn - 1-2 sentences]

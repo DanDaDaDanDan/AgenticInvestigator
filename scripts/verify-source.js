@@ -23,6 +23,9 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { normalizeUrl } = require('./osint-save');
+
+const RECEIPT_KEY_ENV = 'EVIDENCE_RECEIPT_KEY';
 
 // Red flag patterns that suggest fabrication
 const FABRICATION_PATTERNS = {
@@ -32,12 +35,130 @@ const FABRICATION_PATTERNS = {
   suspiciousTitle: /(compilation|synthesis|summary|overview|aggregat)/i
 };
 
+function getReceiptKey() {
+  const key = process.env[RECEIPT_KEY_ENV];
+  if (!key || typeof key !== 'string' || !key.trim()) return null;
+  return key;
+}
+
+function verifyReceiptSignature(payload, signatureHex, key) {
+  const expected = crypto.createHmac('sha256', key).update(payload).digest('hex');
+  return expected === signatureHex;
+}
+
 function hashFile(filePath) {
   const content = fs.readFileSync(filePath);
   return `sha256:${crypto.createHash('sha256').update(content).digest('hex')}`;
 }
 
-function verifySource(sourceId, caseDir) {
+function hostMatches(a, b) {
+  const aa = String(a || '').toLowerCase();
+  const bb = String(b || '').toLowerCase();
+  if (!aa || !bb) return false;
+  return aa === bb || aa.endsWith(`.${bb}`) || bb.endsWith(`.${aa}`);
+}
+
+function safeUrlHost(url) {
+  try {
+    return new URL(url).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+function extractCapturedFromHeaderUrl(html) {
+  // Some capture pipelines prepend a provenance comment header.
+  // This is not a trust anchor (it can be forged), but it is a useful consistency check.
+  const head = String(html || '').slice(0, 2000);
+  const m = head.match(/<!--\s*Captured from:\s*(https?:\/\/[^>\s]+)\s*-->/i);
+  return m ? String(m[1]).trim() : null;
+}
+
+function extractCanonicalUrlFromHtml(html) {
+  const raw = String(html || '');
+
+  // Prefer canonical/og:url from the <head> section to avoid matching embedded third-party HTML.
+  const headMatch = raw.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
+  const haystack = headMatch ? headMatch[1] : raw;
+  const patterns = [
+    /<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i,
+    /<link[^>]+href=["']([^"']+)["'][^>]+rel=["']canonical["']/i,
+    /<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']/i,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:url["']/i
+  ];
+  for (const re of patterns) {
+    const m = haystack.match(re);
+    if (m && m[1]) return String(m[1]).trim();
+  }
+  return null;
+}
+
+function extractDominantAnchorHostname(html, options = {}) {
+  const maxMatches = Number.isFinite(options.maxMatches) ? options.maxMatches : 500;
+  const raw = String(html || '');
+  const re = /<a[^>]+href=["'](https?:\/\/[^"']+)["']/ig;
+  const counts = new Map();
+  let total = 0;
+
+  let match;
+  while ((match = re.exec(raw)) !== null) {
+    total += 1;
+    if (total > maxMatches) break;
+    try {
+      const host = new URL(match[1]).hostname.toLowerCase();
+      counts.set(host, (counts.get(host) || 0) + 1);
+    } catch {
+      // ignore invalid URLs
+    }
+  }
+
+  if (counts.size === 0) return null;
+
+  let topHost = null;
+  let topCount = 0;
+  for (const [host, count] of counts.entries()) {
+    if (count > topCount) {
+      topHost = host;
+      topCount = count;
+    }
+  }
+
+  return {
+    hostname: topHost,
+    count: topCount,
+    total,
+    share: total > 0 ? topCount / total : 0,
+    uniqueHosts: counts.size
+  };
+}
+
+function wordsFromText(text) {
+  const raw = String(text || '')
+    .replace(/https?:\/\/\S+/gi, ' ')
+    .replace(/&[a-z]+;/gi, ' ')
+    .replace(/[^a-z0-9]+/gi, ' ')
+    .toLowerCase();
+
+  const words = raw
+    .split(/\s+/)
+    .map(w => w.trim())
+    .filter(w => w.length >= 3);
+
+  return [...new Set(words)];
+}
+
+function tokenOverlapRatio(aWords, bWords) {
+  const a = Array.isArray(aWords) ? aWords : [];
+  const b = Array.isArray(bWords) ? bWords : [];
+  if (a.length === 0 || b.length === 0) return 0;
+  const bSet = new Set(b);
+  const overlap = a.filter(w => bSet.has(w)).length;
+  return overlap / Math.min(a.length, b.length);
+}
+
+function verifySource(sourceId, caseDir, options = {}) {
+  const strict = options.strict === true;
+  const publication = options.publication === true;
   const evidenceDir = path.join(caseDir, 'evidence', sourceId);
   const metadataPath = path.join(evidenceDir, 'metadata.json');
   const result = {
@@ -116,6 +237,131 @@ function verifySource(sourceId, caseDir) {
   if (result.errors.length > 0) return result;
   result.checks.push('required_fields');
 
+  // Check 4c: Provenance (publication-mode hardening)
+  // For sources used in publication, require at least one provenance signal:
+  // - receipt (osint-save.js), OR
+  // - provenance block (firecrawl/browsertrix/mcp-osint), OR
+  // - capture_method / method (osint_get / download), OR
+  // - a plausible capture signature (sig_v2_osint_* / sig_v2_<hash> / sig_v2_*<timestamp>)
+  if (publication) {
+    const hasReceipt = !!(metadata.receipt && typeof metadata.receipt === 'object');
+    const hasProvenance = !!(metadata.provenance && typeof metadata.provenance === 'object');
+    const hasMethod = !!(
+      (metadata.method && typeof metadata.method === 'string' && metadata.method.trim()) ||
+      (metadata.verification?.method && typeof metadata.verification.method === 'string' && metadata.verification.method.trim())
+    );
+    const hasCaptureMethod = !!(metadata.capture_method && typeof metadata.capture_method === 'string' && metadata.capture_method.trim());
+
+    const sig = metadata._capture_signature;
+    const hasCaptureSignature = (() => {
+      if (!sig || typeof sig !== 'string') return false;
+      if (!sig.startsWith('sig_v2_')) return false;
+      const suffix = sig.slice('sig_v2_'.length);
+      if (!suffix) return false;
+
+      // Mirrors (lightly) the later signature format checks: accept signatures that look like they were generated
+      // by an automated capture pipeline (osint prefix / hash suffix / embedded timestamp pattern).
+      if (suffix.startsWith('osint')) return true;
+      if (/^[a-f0-9]{32}$/i.test(suffix)) return true;
+      if (/\d{4}[-T]\d{2}/.test(suffix)) return true; // YYYY-MM or YYYYTMM pattern
+      return false;
+    })();
+
+    if (!hasReceipt && !hasProvenance && !hasMethod && !hasCaptureMethod && !hasCaptureSignature) {
+      result.errors.push('Missing capture provenance (expected receipt, provenance, method, or capture_method)');
+      return result;
+    }
+    result.checks.push('provenance_present');
+  }
+
+  // Check 4b: Cryptographic receipt verification (optional; REQUIRED in strict mode)
+  // If enabled, this prevents a model from fabricating/editing evidence files after capture.
+  const receiptKey = getReceiptKey();
+  const receipt = metadata.receipt;
+
+  if (strict && !receiptKey) {
+    result.errors.push(`Strict mode requires ${RECEIPT_KEY_ENV} to be set to verify receipt signatures`);
+  }
+
+  if (receipt && typeof receipt === 'object') {
+    const receiptFile = receipt.osint_response_file;
+    const expectedReceiptHash = receipt.osint_response_hash;
+
+    if (receiptFile) {
+      const receiptPath = path.join(evidenceDir, receiptFile);
+      if (!fs.existsSync(receiptPath)) {
+        result.errors.push(`Receipt file missing: ${receiptFile}`);
+      } else if (expectedReceiptHash) {
+        const actualReceiptHash = hashFile(receiptPath);
+        if (actualReceiptHash === expectedReceiptHash) {
+          result.checks.push('receipt_file_hash');
+        } else {
+          result.errors.push(`Receipt hash mismatch: file=${actualReceiptHash}, stored=${expectedReceiptHash}`);
+        }
+      } else if (strict) {
+        result.errors.push('Receipt missing osint_response_hash');
+      } else {
+        result.warnings.push('Receipt present but osint_response_hash missing');
+      }
+    } else if (strict) {
+      result.errors.push('Receipt missing osint_response_file');
+    }
+
+    if (receipt.payload && receipt.signature) {
+      if (receiptKey) {
+        const ok = verifyReceiptSignature(receipt.payload, receipt.signature, receiptKey);
+        if (ok) {
+          result.checks.push('receipt_signature');
+
+          // Verify receipt payload file hashes against current evidence files.
+          // This detects post-hoc edits even if metadata.json was also modified.
+          try {
+            const payloadObj = JSON.parse(receipt.payload);
+            const payloadFiles = payloadObj && typeof payloadObj === 'object' ? payloadObj.files : null;
+            if (payloadFiles && typeof payloadFiles === 'object') {
+              for (const [key, expectedHash] of Object.entries(payloadFiles)) {
+                if (!expectedHash) continue;
+
+                let relPath = null;
+                const fileInfo = metadata.files?.[key];
+                if (fileInfo && typeof fileInfo === 'object' && fileInfo.path) relPath = fileInfo.path;
+                else if (typeof fileInfo === 'string') relPath = fileInfo;
+                else if (key === 'osint_response' && receipt.osint_response_file) relPath = receipt.osint_response_file;
+
+                if (!relPath) continue;
+                const filePath = path.join(evidenceDir, relPath);
+                if (!fs.existsSync(filePath)) {
+                  result.errors.push(`Receipt payload references missing file: ${relPath}`);
+                  continue;
+                }
+
+                const actualHash = hashFile(filePath);
+                if (actualHash !== expectedHash) {
+                  result.errors.push(`Receipt payload hash mismatch for ${relPath}: actual=${actualHash}, expected=${expectedHash}`);
+                }
+              }
+            } else if (strict) {
+              result.errors.push('Receipt payload missing files map (cannot verify evidence file hashes)');
+            }
+          } catch (e) {
+            if (strict) result.errors.push(`Receipt payload is not valid JSON: ${e.message}`);
+            else result.warnings.push(`Receipt payload is not valid JSON: ${e.message}`);
+          }
+        } else {
+          result.errors.push('Receipt signature invalid (evidence may be fabricated or manually edited)');
+        }
+      } else {
+        result.warnings.push(`Receipt signature present but ${RECEIPT_KEY_ENV} not set; cannot verify cryptographically`);
+      }
+    } else if (strict) {
+      result.errors.push('Receipt missing payload/signature (set EVIDENCE_RECEIPT_KEY before capturing)');
+    }
+  } else if (strict) {
+    result.errors.push('Missing receipt block (metadata.receipt). Re-capture using osint_get + osint-save.js');
+  }
+
+  if (result.errors.length > 0) return result;
+
   // Check 5: Capture signature validation
   // Legitimate signatures from osint-save.js: sig_v2_[32 hex chars] or sig_v2_osint_[method]_[timestamp]
   // Fabricated signatures are human-readable: sig_v2_synthesis_topic_name
@@ -146,7 +392,9 @@ function verifySource(sourceId, caseDir) {
         if (isHexHash || isOsintFormat || hasTimestamp) {
           result.checks.push('capture_signature');
         } else {
-          result.warnings.push(`Unusual capture signature format: "${sig}" - may be manually created`);
+          const msg = `Unusual capture signature format: "${sig}" - may be manually created`;
+          if (publication) result.errors.push(msg);
+          else result.warnings.push(msg);
         }
       }
     }
@@ -175,11 +423,13 @@ function verifySource(sourceId, caseDir) {
         result.errors.push(`Hash mismatch: file=${actualHash}, stored=${v.computed_hash}`);
       }
 
-      // Check against osint_get reported hash
+      // Check against osint_get reported hash (if provided)
       if (v.osint_reported_hash) {
         if (actualHash === v.osint_reported_hash) {
           result.checks.push('hash_matches_osint');
         } else {
+          // WARNING: osint_get sha256 semantics can vary by provider (raw_html vs canonicalized html vs other).
+          // In strict mode we rely on the cryptographic receipt signature instead.
           result.warnings.push(`Hash differs from osint_get: ${actualHash} vs ${v.osint_reported_hash}`);
         }
       }
@@ -229,6 +479,99 @@ function verifySource(sourceId, caseDir) {
     }
   }
 
+  if (!verificationPassed) {
+    result.errors.push('No verifiable hash information - cannot confirm evidence integrity');
+  }
+
+  // Check 6.5: URL/content consistency heuristics (best-effort)
+  // Goal: detect cases where evidence files contain content from a different page/domain than metadata.url.
+  // NOTE: Without an external receipt, this cannot fully prevent coherent fabrication; it only catches common capture mixups.
+  try {
+    const expectedUrl = typeof metadata.url === 'string' ? metadata.url.trim() : '';
+    const expectedHost = safeUrlHost(expectedUrl);
+
+    // Only run these checks when a raw HTML file exists.
+    const rawRel =
+      (metadata.verification && metadata.verification.raw_file) ||
+      (metadata.files && typeof metadata.files.raw_html === 'string' ? metadata.files.raw_html : null) ||
+      null;
+
+    if (expectedHost && rawRel) {
+      const rawPath = path.join(evidenceDir, rawRel);
+      if (fs.existsSync(rawPath)) {
+        const html = fs.readFileSync(rawPath, 'utf-8');
+
+        // 6.5a) Header "Captured from" (if present)
+        const headerUrl = extractCapturedFromHeaderUrl(html);
+        if (headerUrl) {
+          const normalizedHeader = normalizeUrl(headerUrl);
+          const normalizedExpected = normalizeUrl(expectedUrl);
+          if (normalizedHeader && normalizedExpected && normalizedHeader !== normalizedExpected) {
+            const msg = `raw.html header URL disagrees with metadata.url: header=${headerUrl}, metadata=${expectedUrl}`;
+            if (publication) result.errors.push(msg);
+            else result.warnings.push(msg);
+          } else {
+            result.checks.push('header_url_consistent');
+          }
+        }
+
+        // 6.5b) Canonical / og:url (if present)
+        const canonicalRaw = extractCanonicalUrlFromHtml(html);
+        if (canonicalRaw) {
+          let canonicalAbs = canonicalRaw;
+          try {
+            canonicalAbs = new URL(canonicalRaw, expectedUrl).toString();
+          } catch {
+            // If we can't resolve, compare raw string.
+            canonicalAbs = canonicalRaw;
+          }
+
+          const normalizedCanonical = normalizeUrl(canonicalAbs);
+          const normalizedExpected = normalizeUrl(expectedUrl);
+          if (normalizedCanonical && normalizedExpected && normalizedCanonical !== normalizedExpected) {
+            const msg = `Canonical URL disagrees with metadata.url: canonical=${canonicalAbs}, metadata=${expectedUrl}`;
+            if (publication) result.errors.push(msg);
+            else result.warnings.push(msg);
+          } else {
+            result.checks.push('canonical_url_consistent');
+          }
+        }
+
+        // 6.5c) Dominant anchor hostname (helps catch domain mixups like RockAndIce vs Climbing.com)
+        const dom = extractDominantAnchorHostname(html);
+        if (dom && dom.total >= 25 && dom.share >= 0.6 && !hostMatches(dom.hostname, expectedHost)) {
+          const msg = `Dominant anchor hostname "${dom.hostname}" disagrees with metadata.url host "${expectedHost}" (${dom.count}/${dom.total} anchor hrefs)`;
+          if (publication) result.errors.push(msg);
+          else result.warnings.push(msg);
+        } else if (dom) {
+          result.checks.push('dominant_anchor_host_ok');
+        }
+
+        // 6.5d) Domain-specific sanity: AAC Publications slugs should broadly align with the page title.
+        // This catches common “wrong slug/path pasted” errors that still pass hash checks.
+        if (hostMatches(expectedHost, 'publications.americanalpineclub.org')) {
+          const m = expectedUrl.match(/\/articles\/\d+\/([^/?#]+)$/i);
+          const slug = m ? decodeURIComponent(m[1]) : null;
+          if (slug && slug.length >= 25 && (slug.match(/-/g) || []).length >= 3 && metadata.title) {
+            const slugWords = wordsFromText(slug.replace(/[-_]+/g, ' '));
+            const titleWords = wordsFromText(String(metadata.title).replace(/^aac publications\s*-\s*/i, ' '));
+            const overlap = tokenOverlapRatio(slugWords, titleWords);
+            if (overlap < 0.2) {
+              const msg = `AAC URL slug appears inconsistent with metadata.title (overlap=${overlap.toFixed(2)}): slug="${slug}", title="${String(metadata.title).trim()}"`;
+              if (publication) result.errors.push(msg);
+              else result.warnings.push(msg);
+            } else {
+              result.checks.push('aac_slug_matches_title');
+            }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    // Never fail verification due to heuristic crashes.
+    result.warnings.push(`URL/content consistency check failed to run: ${e.message}`);
+  }
+
   // Check 7: Red flags
 
   // Round timestamp
@@ -274,7 +617,7 @@ function extractCitedSources(articlePath) {
   return unique;
 }
 
-function verifyAllSources(caseDir) {
+function verifyAllSources(caseDir, options = {}) {
   const evidenceDir = path.join(caseDir, 'evidence');
 
   if (!fs.existsSync(evidenceDir)) {
@@ -285,7 +628,7 @@ function verifyAllSources(caseDir) {
     .filter(d => d.match(/^S\d{3}$/))
     .sort();
 
-  const results = sources.map(sourceId => verifySource(sourceId, caseDir));
+  const results = sources.map(sourceId => verifySource(sourceId, caseDir, options));
 
   return {
     sources: results,
@@ -297,7 +640,7 @@ function verifyAllSources(caseDir) {
   };
 }
 
-function verifyArticleSources(caseDir) {
+function verifyArticleSources(caseDir, options = {}) {
   const articlePath = path.join(caseDir, 'articles', 'full.md');
   const citedSources = extractCitedSources(articlePath);
 
@@ -309,8 +652,11 @@ function verifyArticleSources(caseDir) {
     };
   }
 
+  // Publication-mode by default for cited sources (stricter provenance/signature handling).
+  const publication = options.publication !== false;
+
   const results = citedSources.map(sourceId => {
-    const result = verifySource(sourceId, caseDir);
+    const result = verifySource(sourceId, caseDir, { ...options, publication });
     result.citedInArticle = true;
     return result;
   });
@@ -356,6 +702,7 @@ function printUsage() {
   console.log('Options:');
   console.log('  --verbose, -v    Show detailed output');
   console.log('  --json           Output as JSON');
+  console.log('  --strict         Require cryptographic receipt verification (set EVIDENCE_RECEIPT_KEY)');
   console.log('');
   console.log('Exit codes:');
   console.log('  0 - All verified');
@@ -373,6 +720,7 @@ async function main() {
 
   const verbose = args.includes('--verbose') || args.includes('-v');
   const jsonOutput = args.includes('--json');
+  const strict = args.includes('--strict');
   const filteredArgs = args.filter(a => !a.startsWith('-'));
 
   let result;
@@ -384,7 +732,7 @@ async function main() {
       process.exit(2);
     }
 
-    result = verifyAllSources(caseDir);
+    result = verifyAllSources(caseDir, { strict });
 
     if (jsonOutput) {
       console.log(JSON.stringify(result, null, 2));
@@ -405,7 +753,7 @@ async function main() {
       process.exit(2);
     }
 
-    result = verifyArticleSources(caseDir);
+    result = verifyArticleSources(caseDir, { strict });
 
     if (jsonOutput) {
       console.log(JSON.stringify(result, null, 2));
@@ -434,7 +782,7 @@ async function main() {
       process.exit(2);
     }
 
-    result = verifySource(sourceId, caseDir);
+    result = verifySource(sourceId, caseDir, { strict });
 
     if (jsonOutput) {
       console.log(JSON.stringify(result, null, 2));

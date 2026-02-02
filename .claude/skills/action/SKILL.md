@@ -145,6 +145,8 @@ This creates `articles/short.pdf`, `articles/medium.pdf`, and `articles/full.pdf
 
 ### 4. Git Commit (DATA Repository)
 
+**IMPORTANT:** `node scripts/check-continue.js` may update `state.json` (phase transitions) and should run *before* committing so the ledger captures the state change.
+
 After action (and post-processing) completes, commit changes to the **DATA repository** (`cases/.git`):
 
 ```bash
@@ -162,6 +164,8 @@ After every action, run:
 ```bash
 node scripts/check-continue.js cases/<case-id>/
 ```
+
+**Run this before committing** (it can update `state.json`). Then commit the resulting changes to `cases/.git`.
 
 This outputs the ORCHESTRATOR SIGNAL with `Status:` and `Next:` fields.
 

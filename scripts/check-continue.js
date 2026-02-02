@@ -25,6 +25,8 @@
 const fs = require('fs');
 const path = require('path');
 
+const { deriveAllGates } = require('./gates');
+
 function findCasePath(providedPath) {
   // If path provided, use it
   if (providedPath) {
@@ -283,6 +285,110 @@ function determineNextAction(state, casePath, options = {}) {
       updatePhase(casePath, state, 'WRITE');
       return determineNextAction(state, casePath, options);
 
+    case 'REVISION':
+      // Revision cycles behave like FOLLOW → WRITE → VERIFY, but remain explicitly labeled.
+      // 1) Pursue any new/pending leads
+      // 2) Reconcile findings
+      // 3) Re-run curiosity
+      // 4) Re-write articles (reads feedback/revisionN.md)
+      // 5) Re-verify all gates
+
+      // If there are pending leads, treat like FOLLOW phase lead pursuit.
+      if (batchMode) {
+        const batchLeads = getBatchOfPendingLeads(leads, batchSize);
+        if (batchLeads.length > 1) {
+          const leadIds = batchLeads.map(l => l.id).join(' ');
+          return {
+            status: 'CONTINUE',
+            next: `/action follow-batch ${leadIds}`,
+            reason: `Revision cycle: batch processing ${batchLeads.length} leads`,
+            leadInfo: {
+              pending: leadCounts.pending,
+              investigated: leadCounts.investigated,
+              dead_end: leadCounts.dead_end,
+              total: leadCounts.total,
+              batchLeads
+            },
+            batchRecommendation: {
+              size: batchLeads.length,
+              leads: batchLeads.map(l => ({ id: l.id, priority: l.priority, lead: l.lead }))
+            }
+          };
+        }
+        if (batchLeads.length === 1) {
+          return {
+            status: 'CONTINUE',
+            next: `/action follow ${batchLeads[0].id}`,
+            reason: `Revision cycle: pending lead "${batchLeads[0].lead}"`,
+            leadInfo: {
+              pending: leadCounts.pending,
+              investigated: leadCounts.investigated,
+              dead_end: leadCounts.dead_end,
+              total: leadCounts.total,
+              nextLead: batchLeads[0]
+            }
+          };
+        }
+      } else {
+        const nextLead = getNextPendingLead(leads);
+        if (nextLead) {
+          return {
+            status: 'CONTINUE',
+            next: `/action follow ${nextLead.id}`,
+            reason: `Revision cycle: pending lead "${nextLead.lead}"`,
+            leadInfo: {
+              pending: leadCounts.pending,
+              investigated: leadCounts.investigated,
+              dead_end: leadCounts.dead_end,
+              total: leadCounts.total,
+              nextLead
+            }
+          };
+        }
+      }
+
+      // No pending leads: reconcile, then curiosity, then rewrite.
+      if (!gates.reconciliation) {
+        return {
+          status: 'CONTINUE',
+          next: '/action reconcile',
+          reason: 'Revision cycle: reconcile results with findings',
+          leadInfo: {
+            pending: 0,
+            investigated: leadCounts.investigated,
+            dead_end: leadCounts.dead_end,
+            total: leadCounts.total
+          }
+        };
+      }
+
+      if (!gates.curiosity) {
+        return {
+          status: 'CONTINUE',
+          next: '/action curiosity',
+          reason: 'Revision cycle: evaluate completeness after reconciliation',
+          leadInfo: {
+            pending: 0,
+            investigated: leadCounts.investigated,
+            dead_end: leadCounts.dead_end,
+            total: leadCounts.total
+          }
+        };
+      }
+
+      if (!gates.article) {
+        return {
+          status: 'CONTINUE',
+          next: '/action article',
+          reason: 'Revision cycle: regenerate articles with feedback',
+          leadInfo: null
+        };
+      }
+
+      // Once rewritten, proceed to verification.
+      updatePhase(casePath, state, 'VERIFY');
+      return determineNextAction(state, casePath, options);
+
     case 'WRITE':
       // SAFETY CHECK: Verify prerequisites before article generation
       // Gates 0-3 must pass before we can write articles
@@ -396,7 +502,8 @@ function parseArgs(args) {
   const options = {
     casePath: null,
     batchMode: false,
-    batchSize: 4
+    batchSize: 4,
+    strict: false
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -405,6 +512,8 @@ function parseArgs(args) {
     } else if (args[i] === '--batch-size' && args[i + 1]) {
       options.batchSize = parseInt(args[i + 1], 10);
       i++;
+    } else if (args[i] === '--strict') {
+      options.strict = true;
     } else if (!args[i].startsWith('-')) {
       options.casePath = args[i];
     }
@@ -436,8 +545,15 @@ function main() {
   const statePath = path.join(casePath, 'state.json');
   const state = JSON.parse(fs.readFileSync(statePath, 'utf-8'));
 
-  const passingGates = countPassingGates(state.gates);
-  const result = determineNextAction(state, casePath, {
+  // Derive gates from artifacts + deterministic checks to prevent self-reported gate passage.
+  const derived = deriveAllGates(casePath, { strict: options.strict });
+  const stateWithDerivedGates = { ...state, gates: derived.gates };
+  const gateDiffs = Object.entries(derived.gates)
+    .filter(([k, v]) => state.gates?.[k] !== v)
+    .map(([k]) => k);
+
+  const passingGates = countPassingGates(stateWithDerivedGates.gates);
+  const result = determineNextAction(stateWithDerivedGates, casePath, {
     batchMode: options.batchMode,
     batchSize: options.batchSize
   });
@@ -449,7 +565,13 @@ function main() {
   console.log(`Case: ${state.case}`);
   console.log(`Phase: ${state.phase}`);
   console.log(`Iteration: ${state.iteration}`);
-  console.log(`Gates: ${passingGates}/11 passing`);
+  console.log(`Gates: ${passingGates}/11 passing (derived)`);
+  if (gateDiffs.length > 0) {
+    console.log(`Gate corrections suggested: ${gateDiffs.join(', ')}`);
+    if (options.strict) {
+      console.log('Note: --strict is enabled (receipt enforcement).');
+    }
+  }
 
   // Show lead status in FOLLOW phase
   if (result.leadInfo) {

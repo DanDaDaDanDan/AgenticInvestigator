@@ -60,6 +60,70 @@ function createValidSource(caseDir, sourceId, content = '# Test Content\n\nSome 
   return evidenceDir;
 }
 
+function createReceiptSignedSource(caseDir, sourceId, key) {
+  const evidenceDir = path.join(caseDir, 'evidence', sourceId);
+  fs.mkdirSync(evidenceDir, { recursive: true });
+
+  const content = '# Test Content\n\nSome test content here.';
+  fs.writeFileSync(path.join(evidenceDir, 'content.md'), content);
+  const contentHash = hashContent(content);
+
+  const osintResponse = {
+    format: 'markdown',
+    url: 'https://example.com/article/123',
+    title: 'Test Article',
+    content,
+    raw_html: '<html><body>Test</body></html>',
+    metadata: { sha256: contentHash.replace('sha256:', '') }
+  };
+  const osintResponseJson = JSON.stringify(osintResponse, null, 2);
+  fs.writeFileSync(path.join(evidenceDir, 'osint-response.json'), osintResponseJson);
+  const osintResponseHash = hashContent(osintResponseJson);
+
+  const capturedAt = new Date().toISOString();
+  const payloadObj = {
+    v: 'hmac_v1',
+    source_id: sourceId,
+    url_normalized: 'https://example.com/article/123',
+    captured_at: capturedAt,
+    osint_reported_hash: contentHash,
+    files: { content: contentHash, osint_response: osintResponseHash }
+  };
+  const payload = JSON.stringify(payloadObj);
+  const signature = crypto.createHmac('sha256', key).update(payload).digest('hex');
+
+  const metadata = {
+    source_id: sourceId,
+    url: 'https://example.com/article/123',
+    title: 'Test Article',
+    captured_at: capturedAt,
+    capture_method: 'osint_get',
+    files: {
+      content: { path: 'content.md', hash: contentHash, size: content.length },
+      osint_response: { path: 'osint-response.json', hash: osintResponseHash, size: osintResponseJson.length }
+    },
+    verification: {
+      raw_file: 'content.md',
+      computed_hash: contentHash,
+      osint_reported_hash: contentHash,
+      verified: true
+    },
+    receipt: {
+      version: 'hmac_v1',
+      payload,
+      signature_alg: 'HMAC-SHA256',
+      signature,
+      key_id: crypto.createHash('sha256').update(key).digest('hex').slice(0, 12),
+      osint_response_file: 'osint-response.json',
+      osint_response_hash: osintResponseHash
+    },
+    _capture_signature: `sig_v2_${crypto.createHash('sha256').update(sourceId + capturedAt).digest('hex').slice(0, 32)}`
+  };
+
+  fs.writeFileSync(path.join(evidenceDir, 'metadata.json'), JSON.stringify(metadata, null, 2));
+  return evidenceDir;
+}
+
 // Tests
 
 test('verifySource passes for valid source', async (t) => {
@@ -72,6 +136,42 @@ test('verifySource passes for valid source', async (t) => {
   assert.equal(result.valid, true, 'Should be valid');
   assert.equal(result.errors.length, 0, 'Should have no errors');
   assert.ok(result.checks.includes('hash_self_consistent'), 'Should verify hash');
+});
+
+test('verifySource strict mode fails without receipt', async (t) => {
+  const caseDir = createTempCase();
+  t.after(() => fs.rmSync(caseDir, { recursive: true, force: true }));
+
+  const prev = process.env.EVIDENCE_RECEIPT_KEY;
+  process.env.EVIDENCE_RECEIPT_KEY = 'test-key';
+  t.after(() => {
+    if (prev === undefined) delete process.env.EVIDENCE_RECEIPT_KEY;
+    else process.env.EVIDENCE_RECEIPT_KEY = prev;
+  });
+
+  createValidSource(caseDir, 'S001');
+  const result = verifySource('S001', caseDir, { strict: true });
+
+  assert.equal(result.valid, false, 'Should be invalid in strict mode without receipt');
+  assert.ok(result.errors.some(e => e.toLowerCase().includes('receipt')), 'Should require receipt');
+});
+
+test('verifySource strict mode passes with valid receipt signature', async (t) => {
+  const caseDir = createTempCase();
+  t.after(() => fs.rmSync(caseDir, { recursive: true, force: true }));
+
+  const prev = process.env.EVIDENCE_RECEIPT_KEY;
+  process.env.EVIDENCE_RECEIPT_KEY = 'test-key';
+  t.after(() => {
+    if (prev === undefined) delete process.env.EVIDENCE_RECEIPT_KEY;
+    else process.env.EVIDENCE_RECEIPT_KEY = prev;
+  });
+
+  createReceiptSignedSource(caseDir, 'S001', process.env.EVIDENCE_RECEIPT_KEY);
+  const result = verifySource('S001', caseDir, { strict: true });
+
+  assert.equal(result.valid, true, 'Should be valid in strict mode with receipt');
+  assert.ok(result.checks.includes('receipt_signature'), 'Should verify receipt signature');
 });
 
 test('verifySource fails for missing evidence directory', async (t) => {

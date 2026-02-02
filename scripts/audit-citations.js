@@ -28,6 +28,17 @@
 
 const fs = require('fs');
 const path = require('path');
+const { verifySource } = require('./verify-source');
+const { normalizeUrl } = require('./osint-save');
+
+function isHttpUrl(url) {
+    return typeof url === 'string' && /^https?:\/\/.+/i.test(url.trim());
+}
+
+function isForbiddenSourceType(type) {
+    if (!type || typeof type !== 'string') return false;
+    return /synth|compil/i.test(type);
+}
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -78,6 +89,16 @@ function auditCitation(sourceId, caseDir, sourcesJson) {
         result.url = sourceEntry.url;
         result.title = sourceEntry.title;
 
+        // Enforce One Source = One URL (no placeholders like research_synthesis)
+        if (!isHttpUrl(sourceEntry.url)) {
+            result.errors.push(`Invalid URL in sources.json: "${sourceEntry.url}" (must be http/https)`);
+            result.passed = false;
+        }
+        if (isForbiddenSourceType(sourceEntry.type)) {
+            result.errors.push(`Forbidden source type in sources.json: "${sourceEntry.type}" (no synthesis/compilation sources allowed)`);
+            result.passed = false;
+        }
+
         // Check 1b: captured: true
         if (sourceEntry.captured !== true) {
             result.errors.push(`captured: ${sourceEntry.captured} (should be true)`);
@@ -118,9 +139,13 @@ function auditCitation(sourceId, caseDir, sourcesJson) {
                 result.warnings.push('No verification hash');
             }
 
-            // Check URL consistency
-            if (sourceEntry && metadata.url !== sourceEntry.url) {
-                result.warnings.push('URL mismatch between sources.json and metadata');
+            // Check URL consistency (normalized, to avoid false mismatches from tracking params)
+            if (sourceEntry && metadata.url && sourceEntry.url) {
+                const normalizedMeta = normalizeUrl(metadata.url);
+                const normalizedSources = normalizeUrl(sourceEntry.url);
+                if (normalizedMeta && normalizedSources && normalizedMeta !== normalizedSources) {
+                    result.warnings.push('URL mismatch between sources.json and metadata');
+                }
             }
 
         } catch (e) {
@@ -151,6 +176,25 @@ function auditCitation(sourceId, caseDir, sourcesJson) {
             } else {
                 result.checks.push('not_fabricated');
             }
+        }
+    }
+
+    // Check 6: Full verify-source integrity (hashes, URL validity, signature red flags)
+    const integrity = verifySource(sourceId, caseDir, {
+        strict: !!process.env.EVIDENCE_RECEIPT_KEY,
+        publication: true
+    });
+    if (!integrity.valid) {
+        for (const err of integrity.errors) {
+            result.errors.push(`verify-source: ${err}`);
+        }
+        result.passed = false;
+    } else {
+        result.checks.push('verify_source_valid');
+    }
+    if (integrity.warnings && integrity.warnings.length > 0) {
+        for (const warn of integrity.warnings) {
+            result.warnings.push(`verify-source: ${warn}`);
         }
     }
 

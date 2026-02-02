@@ -63,6 +63,7 @@ Each case creates `cases/[topic-slug]/` with:
 | `articles/full.md` + `full.pdf` | Comprehensive (no limit) - primary deliverable |
 | `questions/` | 35 framework Q&A documents + custom questions |
 | `evidence/S###/` | Captured sources with metadata, content, raw HTML |
+| `analysis/` | Working memos and syntheses (must cite S###; never treated as a source) |
 | `leads.json` | Lead tracking with depth and parent relationships |
 | `sources.json` | Source registry with capture status |
 | `removed-points.md` | Auto-removed unverifiable claims (for review) |

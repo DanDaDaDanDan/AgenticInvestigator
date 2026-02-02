@@ -27,6 +27,18 @@ This gate passes when:
 
 ## Audit Process
 
+### Step 0: Refined Prompt Alignment (Must Pass)
+
+Read `refined_prompt.md` and extract the explicit deliverables (the questions the user actually asked, required comparisons, requested outputs).
+
+Then verify `articles/full.md` clearly addresses each deliverable. If the article drifts into tangents that crowd out the deliverables, fail:
+
+```
+FAIL_ALIGNMENT:
+- Deliverable not addressed: <what refined_prompt asked>
+- Article over-focuses on: <tangent> (crowds out required coverage)
+```
+
 ### Step 1: Framework Coverage Check
 
 For each `questions/*.md` file with Status: investigated:
@@ -64,18 +76,27 @@ For each investigated lead with non-trivial findings:
 
 ### If PASS
 
-```
-Completeness Audit: PASS
+Write `completeness-audit.md` containing:
 
+```markdown
+# Completeness Audit
+
+## Refined Prompt Alignment
+[PASS notes: each refined_prompt deliverable addressed]
+
+## Framework Coverage
 Framework Coverage: [X]/35 frameworks → article
-Key insights from all investigated frameworks are represented.
+[Notes]
 
-Gap Detection: No obvious missing angles
-- Topic sufficiently covered
-- Expected perspectives included
+## Gap Detection
+[Notes]
 
-Dropped Threads: None
-All significant lead results are represented in the article.
+## Dropped Threads
+[None / list]
+
+## Status
+
+**PASS**
 ```
 
 Update `state.json`:
@@ -88,20 +109,30 @@ Update `state.json`:
 
 ### If FAIL
 
-```
-Completeness Audit: FAIL
+Write `completeness-audit.md` containing:
 
-FAIL_FRAMEWORK:
+```markdown
+# Completeness Audit
+
+## FAIL_ALIGNMENT
+- Deliverable not addressed: <what refined_prompt asked>
+- Article over-focuses on: <tangent> (crowds out required coverage)
+
+## FAIL_FRAMEWORK
 - Framework 07 (Stakeholder Mapping): Key insight about [X] not in article
 - Framework 23 (Marketing vs Reality): Finding about [Y] missing
 
-FAIL_GAP:
+## FAIL_GAP
 - Expected coverage of [topic aspect] not found
 - Reader would expect [X] to be addressed
 
-FAIL_DROPPED:
+## FAIL_DROPPED
 - Lead L023 found [significant finding] but article doesn't mention it
 - Lead L041 result contradicts article claim but not addressed
+
+## Status
+
+**FAIL**
 ```
 
 Do NOT update gate. Return specific issues to fix.

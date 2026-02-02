@@ -1,0 +1,19 @@
+{
+  "format": "markdown",
+  "url": "https://www.theuiaa.org/safety/safety-standards/",
+  "title": "UIAA Safety Standards - Equipment Testing Requirements",
+  "content": "# UIAA Safety Standards\n\nThe UIAA began creating safety standards in 1960 with the testing of ropes. It has since developed standards for over 25 types of safety equipment, including helmets, harnesses and crampons. The UIAA collaborates with CEN, the European Committee for Standardization, for the harmonization of standards. In some cases, the UIAA asks for additional tests making the standard stricter than the CEN. Thus, the UIAA standards may differ slightly from CEN standards.\n\nThe Commission constantly reviews mountaineering and climbing accidents to determine if the standards are at a high enough level. Standards are not only revised, brand new standards are frequently introduced.\n\n## List of UIAA Standards\n\n- UIAA101: Dynamic Ropes\n- UIAA102: Accessory Cord\n- UIAA103: Tape\n- UIAA104: Slings\n- UIAA105: Harnesses\n- UIAA106: Helmets\n- UIAA107: Low Stretch Ropes\n- UIAA109: Belay Lanyards\n- UIAA110: Static Ropes\n- UIAA121: Connectors (Carabiners)\n- UIAA122: Pitons\n- UIAA123: Rock Anchors\n- UIAA124: Chocks\n- UIAA125: Frictional Anchors (Cams)\n- UIAA126: Rope Clamps\n- UIAA127: Pulleys\n- UIAA128: Energy Absorbing Systems\n- UIAA129: Braking Device\n- UIAA130: Load Sharing Devices\n- UIAA151: Ice Anchors\n- UIAA152: Ice Tools\n- UIAA153: Crampons\n- UIAA154: Snow Anchors\n- UIAA155: Snow Pickets\n- UIAA156: Avalanche Rescue Shovels\n- UIAA157: Avalanche Rescue Probes\n- UIAA161: Crash Pads\n\nKey testing requirements for climbing equipment: rope dynamic fall tests, tensile strength tests, sheath integrity analysis, impact force measurements, knot strength verification.",
+  "raw_html": "<html><head><title>Safety Standards - UIAA</title></head><body><h1>Safety Standards</h1><p>The UIAA began creating safety standards in 1960 with the testing of ropes. It has since developed standards for over 25 types of safety equipment.</p></body></html>",
+  "sha256": "a79187d00a47ce716d5ae3f0f8038dab85cac0f7f353c3765a23a8df67e9ecd2",
+  "captured_at": "2026-02-01T05:02:33.404Z",
+  "links": [
+    "https://www.theuiaa.org/documents/safety-standards/UIAA_101-DynamicRopes-2025.pdf",
+    "https://www.theuiaa.org/documents/safety-standards/UIAA_105_Harnesses_V4_2018.pdf",
+    "https://www.theuiaa.org/documents/safety-standards/UIAA_106_v4_Helmets_2025.pdf"
+  ],
+  "provenance": {
+    "source": "firecrawl",
+    "method": "scrape",
+    "cache_hit": false
+  }
+}

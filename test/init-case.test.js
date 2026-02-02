@@ -9,10 +9,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
-const { execSync } = require('node:child_process');
 
 const ROOT = path.resolve(__dirname, '..');
-const INIT_SCRIPT = path.join(ROOT, 'scripts', 'init-case.js');
+const { initCase } = require(path.join(ROOT, 'scripts', 'init-case.js'));
 
 // Expected 35 frameworks
 const EXPECTED_FRAMEWORKS = [
@@ -64,8 +63,12 @@ function createTempDir() {
  * Run init-case.js with given case name and optional full topic in specified directory
  */
 function runInitCase(caseName, cwd, fullTopic = null) {
-  const topicArg = fullTopic ? ` "${fullTopic}"` : '';
-  execSync(`node "${INIT_SCRIPT}" "${caseName}"${topicArg}`, { cwd, stdio: 'pipe' });
+  initCase({
+    rootDir: cwd,
+    caseName,
+    topic: fullTopic || caseName,
+    skipGitCommit: true
+  });
 }
 
 test('init-case.js creates correct directory structure', async (t) => {

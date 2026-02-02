@@ -38,6 +38,7 @@ After capture, **verify these files exist**:
 evidence/S###/
 ├── content.md       # Markdown for reading
 ├── raw.html         # Original HTML (web pages) - CRITICAL for verification
+├── osint-response.json # FULL osint_get response (receipt)
 ├── metadata.json    # With verification block and capture signature
 └── [document.pdf]   # For PDFs - the actual file
 ```
@@ -45,10 +46,13 @@ evidence/S###/
 **metadata.json MUST contain:**
 - `verification.computed_hash` - SHA256 of raw file
 - `_capture_signature` - Proves capture via osint-save.js
+- `receipt.signature` - Cryptographic receipt (when `EVIDENCE_RECEIPT_KEY` is set)
 
 **If verification block is missing or hash mismatches, the capture FAILED.** Do not cite.
 
-Run verification: `node scripts/verify-source.js S### cases/[case-id]`
+Run verification:
+- Basic: `node scripts/verify-source.js S### cases/[case-id]`
+- Strong (recommended): set `EVIDENCE_RECEIPT_KEY` and use `node scripts/verify-source.js S### cases/[case-id] --strict`
 
 ### 3. Never Write Evidence Manually
 
@@ -142,29 +146,13 @@ Register in sources.json:
 }
 ```
 
-### Claim Extraction (Required)
+### Claim Extraction (Planned)
 
-After capturing a source, extract and register factual claims:
+Capture-time claim registries are planned work. Today, verification is enforced at article time via:
+- Semantic verification: `node scripts/claims/verify-article.js cases/<case-id>` (requires verbatim supporting quotes)
+- Computational verification: `node scripts/claims/compute-verify.js cases/<case-id>`
 
-1. **Generate extraction prompt:**
-   ```bash
-   node scripts/claims/capture-integration.js cases/<case-id> prepare S###
-   ```
-
-2. **Send prompt to LLM** (Gemini or GPT):
-   ```
-   mcp__mcp-gemini__generate_text
-     prompt: <the extraction prompt>
-     model: gemini-3-pro
-   ```
-
-3. **Register extracted claims:**
-   ```javascript
-   const { registerExtractedClaims } = require('./scripts/claims');
-   registerExtractedClaims(caseDir, sourceId, sourceUrl, llmResponse, content);
-   ```
-
-**Why:** Claims registered at capture time are **source-matched** by definition - they came directly from the source with supporting quotes. Article verification becomes simple matching: does the claim in the article match a registered claim from its cited source?
+To reduce citation laundering during research, prefer writing findings with short verbatim quotes for key claims, and cite the exact `[S###]` source for each quote.
 
 ---
 

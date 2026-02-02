@@ -194,29 +194,27 @@ Points removed during verification due to unverifiable sources.
 
 ---
 
-*No points removed yet.*
+  *No points removed yet.*
 `;
 }
 
-function main() {
-  const args = process.argv.slice(2);
-
-  if (args.length === 0) {
-    console.error('Usage: node scripts/init-case.js "short-case-name" "full topic description"');
-    console.error('       node scripts/init-case.js "short-case-name"  # topic defaults to case name');
-    process.exit(1);
-  }
-
-  // First arg: short case name (for folder), Second arg: full topic (for state.json)
-  const caseName = args[0];
-  const topic = args.length > 1 ? args.slice(1).join(' ') : caseName;
+/**
+ * Programmatic entry point (used by tests). Creates a new case under rootDir/cases/.
+ *
+ * @param {object} options
+ * @param {string} options.rootDir
+ * @param {string} options.caseName
+ * @param {string} options.topic
+ * @param {boolean} options.skipGitCommit
+ * @returns {{caseSlug: string, casePath: string}}
+ */
+function initCase({ rootDir, caseName, topic, skipGitCommit = false }) {
   const caseSlug = slugify(caseName);
-  const casePath = path.join(process.cwd(), 'cases', caseSlug);
+  const casePath = path.join(rootDir, 'cases', caseSlug);
 
   // Check if case already exists
   if (fs.existsSync(casePath)) {
-    console.error(`Error: Case already exists at ${casePath}`);
-    process.exit(1);
+    throw new Error(`Case already exists at ${casePath}`);
   }
 
   console.log(`Creating case: ${caseSlug}`);
@@ -232,11 +230,12 @@ function main() {
     path.join(casePath, 'questions'),
     path.join(casePath, 'evidence'),
     path.join(casePath, 'articles'),
+    path.join(casePath, 'analysis')
   ];
 
   dirs.forEach(dir => {
     fs.mkdirSync(dir, { recursive: true });
-    console.log(`Created: ${path.relative(process.cwd(), dir)}/`);
+    console.log(`Created: ${path.relative(rootDir, dir)}/`);
   });
 
   // Create state.json (always starts at PLAN phase)
@@ -307,24 +306,26 @@ function main() {
     );
   });
 
-  console.log(`Created: questions/ (35 files)`);
+  console.log('Created: questions/ (35 files)');
 
   // Update .active file to point to new case
-  const activePath = path.join(process.cwd(), 'cases', '.active');
+  const activePath = path.join(rootDir, 'cases', '.active');
   fs.writeFileSync(activePath, caseSlug);
   console.log(`Updated: .active → ${caseSlug}`);
 
   // Commit to DATA repository (cases/.git)
-  console.log('');
-  console.log('Committing to DATA repository (cases/.git)...');
-  try {
-    const casesDir = path.join(process.cwd(), 'cases');
-    execSync('git add -A', { cwd: casesDir, stdio: 'pipe' });
-    execSync(`git commit -m "Initialize investigation: ${topic}"`, { cwd: casesDir, stdio: 'pipe' });
-    console.log('Committed to cases/.git');
-  } catch (err) {
-    console.error('Warning: Git commit failed (cases/.git may not exist or no changes)');
-    console.error(err.message);
+  if (!skipGitCommit) {
+    console.log('');
+    console.log('Committing to DATA repository (cases/.git)...');
+    try {
+      const casesDir = path.join(rootDir, 'cases');
+      execSync('git add -A', { cwd: casesDir, stdio: 'pipe' });
+      execSync(`git commit -m "Initialize investigation: ${topic}"`, { cwd: casesDir, stdio: 'pipe' });
+      console.log('Committed to cases/.git');
+    } catch (err) {
+      console.error('Warning: Git commit failed (cases/.git may not exist or no changes)');
+      console.error(err.message);
+    }
   }
 
   // Summary
@@ -347,9 +348,39 @@ function main() {
   console.log('  ├── future_research.md');
   console.log('  ├── questions/         (35 framework files)');
   console.log('  ├── evidence/');
-  console.log('  └── articles/');
+  console.log('  ├── articles/');
+  console.log('  └── analysis/');
   console.log('');
   console.log('Next step: /action plan-investigation');
+
+  return { caseSlug, casePath };
 }
 
-main();
+function main() {
+  const args = process.argv.slice(2);
+
+  if (args.length === 0) {
+    console.error('Usage: node scripts/init-case.js "short-case-name" "full topic description"');
+    console.error('       node scripts/init-case.js "short-case-name"  # topic defaults to case name');
+    process.exit(1);
+  }
+
+  const caseName = args[0];
+  const topic = args.length > 1 ? args.slice(1).join(' ') : caseName;
+
+  try {
+    initCase({ rootDir: process.cwd(), caseName, topic, skipGitCommit: false });
+  } catch (err) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  initCase,
+  slugify
+};

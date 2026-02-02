@@ -17,13 +17,15 @@
 
 const fs = require('fs');
 const path = require('path');
+const { auditFindings } = require('./audit-findings');
 
 /**
  * Get the next finding ID
  */
 function getNextFindingId(findingsDir) {
   const files = fs.readdirSync(findingsDir)
-    .filter(f => f.match(/^F\d{3}\.md$/))
+    // Include non-canonical filenames (e.g., F007-something.md) to avoid duplicate IDs.
+    .filter(f => f.match(/^F\d{3}.*\.md$/))
     .sort();
 
   if (files.length === 0) return 'F001';
@@ -89,6 +91,15 @@ function listFindings(caseDir) {
   const files = fs.readdirSync(findingsDir)
     .filter(f => f.match(/^F\d{3}\.md$/))
     .sort();
+
+  const nonCanonical = fs.readdirSync(findingsDir)
+    .filter(f => f.match(/^F\d{3}.*\.md$/) && !f.match(/^F\d{3}\.md$/))
+    .sort();
+  if (nonCanonical.length > 0) {
+    console.log('\x1b[33mWARNING:\x1b[0m Non-canonical findings files exist and will be ignored by assembly.');
+    console.log(`  Run: node scripts/audit-findings.js ${caseDir} --block`);
+    console.log(`  Files: ${nonCanonical.slice(0, 8).join(', ')}${nonCanonical.length > 8 ? '…' : ''}\n`);
+  }
 
   console.log('Findings:\n');
 
@@ -213,9 +224,30 @@ function addFinding(caseDir, title) {
 /**
  * Assemble all findings into a single document
  */
-function assembleFindings(caseDir) {
+function assembleFindings(caseDir, options = {}) {
+  const { block = false } = options;
   const findingsDir = path.join(caseDir, 'findings');
   const manifestPath = path.join(findingsDir, 'manifest.json');
+
+  const hygiene = auditFindings(caseDir);
+  const hygieneHasErrors =
+    !hygiene ||
+    hygiene.error ||
+    (hygiene.summary?.errors || 0) > 0 ||
+    (hygiene.duplicates || []).length > 0 ||
+    (hygiene.manifest?.missingCanonicalInAssemblyOrder || []).length > 0;
+
+  if (hygieneHasErrors) {
+    const msg = 'Findings hygiene issues detected (duplicate IDs and/or non-canonical filenames).';
+    if (block) {
+      console.error(`ERROR: ${msg}`);
+      console.error(`Run: node scripts/audit-findings.js ${caseDir} --block`);
+      process.exit(1);
+    } else {
+      console.error(`WARNING: ${msg}`);
+      console.error(`Run: node scripts/audit-findings.js ${caseDir} --block\n`);
+    }
+  }
 
   let assemblyOrder = [];
   let sections = {};
@@ -313,7 +345,7 @@ function main() {
       addFinding(caseDir, args.slice(2).join(' '));
       break;
     case 'assemble':
-      assembleFindings(caseDir);
+      assembleFindings(caseDir, { block: args.includes('--block') });
       break;
     default:
       console.error(`Unknown command: ${command}`);

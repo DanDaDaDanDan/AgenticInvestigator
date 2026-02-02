@@ -31,94 +31,68 @@ node scripts/osint-save.js S001 cases/[case-id] --url https://example.com --mark
 Creates:
 - `evidence/S001/content.md` - Markdown content (for reading)
 - `evidence/S001/raw.html` - Original HTML (for verification)
+- `evidence/S001/osint-response.json` - Full `osint_get` response (capture receipt)
 - `evidence/S001/links.json` - Extracted links (if provided)
 - `evidence/S001/metadata.json` - Timestamps, hashes, verification block, capture signature
 
 **Note:** For PDFs, use `osint_get` with `output_path` directly - it handles download and SHA256.
 
----
+**Optional hardening:** Set `EVIDENCE_RECEIPT_KEY` in your environment. When set, `osint-save.js` will write a cryptographic receipt signature into `metadata.json.receipt.signature` and `verify-source.js --strict` can detect manual evidence fabrication/edits.
 
 ---
 
-## Claim Registry (`scripts/claims/`)
+---
 
-The claim registry system verifies article claims against source evidence. Claims are extracted from sources using LLM at capture time, then article verification is simple matching.
+## Claim Verification (`scripts/claims/`)
+
+These scripts help verify that article claims are supported by captured evidence.
 
 ### `claims/verify-article.js`
 
-Main verification entry point - matches article claims to registry using LLM semantic matching.
+Semantic verification entry point - checks each cited claim against the cited source content.
 
 ```bash
-# Basic verification (returns pending items that need LLM)
+# Prepare verification (shows counts and next steps)
 node scripts/claims/verify-article.js cases/[case-id]
 
 # Output only LLM prompts for batch processing
 node scripts/claims/verify-article.js cases/[case-id] --prompts-only
 
-# Process LLM responses to complete verification
-node scripts/claims/verify-article.js cases/[case-id] --responses responses.json
+# Generate batch files (recommended for large articles)
+node scripts/claims/verify-article.js cases/[case-id] --generate-batches
 
-# With fix suggestions
-node scripts/claims/verify-article.js cases/[case-id] --fix
+# Merge and process batch response files
+node scripts/claims/verify-article.js cases/[case-id] --merge-batches N
 
 # JSON output
 node scripts/claims/verify-article.js cases/[case-id] --json
 ```
 
 **Workflow:**
-1. Run basic verification to get prompts for claims needing LLM matching
-2. Send prompts to LLM (Gemini 3 Pro recommended)
+1. Run `--generate-batches` to create prompt batches
+2. Send prompts to LLM (Gemini 3 Pro recommended) and save responses
 3. Save responses as JSON array: `[{index: 0, response: "..."}, ...]`
-4. Run with `--responses` to process and get final results
+4. Run `--merge-batches N` to process and get final results
 
-### `claims/migrate-sources.js`
+### Planned: Capture-Time Claim Registry
 
-Batch extract claims from existing sources (LLM-based).
+Capture-time claim registries are planned work. Article-time verification is implemented and enforced via `claims/verify-article.js` + `claims/compute-verify.js`.
 
-```bash
-# Check extraction status
-node scripts/claims/migrate-sources.js cases/[case-id] status
+### `claims/compute-verify.js`
 
-# Generate LLM prompt for one source
-node scripts/claims/migrate-sources.js cases/[case-id] prompt S001
-
-# Generate prompts for all sources (JSON output)
-node scripts/claims/migrate-sources.js cases/[case-id] prompt-all
-
-# Register claims from LLM response file
-node scripts/claims/migrate-sources.js cases/[case-id] register S001 response.json
-```
-
-**Workflow:**
-1. Run `status` to see which sources need extraction
-2. Run `prompt <source-id>` to get the LLM prompt
-3. Send prompt to Gemini 3 Pro
-4. Save LLM response to file
-5. Run `register <source-id> <response-file>` to register claims
-
-### `claims/capture-integration.js`
-
-Integrate claim extraction into source capture workflow.
+Computational verification for numerical claims (ratios, percentages, counts, multipliers).
 
 ```bash
-# Check status
-node scripts/claims/capture-integration.js cases/[case-id] status
+# Generate LLM prompts (JSON)
+node scripts/claims/compute-verify.js cases/[case-id] --generate-prompts
 
-# Prepare extraction prompt for a source
-node scripts/claims/capture-integration.js cases/[case-id] prepare S001
-
-# List sources pending extraction
-node scripts/claims/capture-integration.js cases/[case-id] list-pending
+# Process responses and write compute-verification.json
+node scripts/claims/compute-verify.js cases/[case-id] --responses responses.json
 ```
 
-### Other Claim Modules
+### `claims/cross-check.js`
 
-| Module | Purpose |
-|--------|---------|
-| `registry.js` | CRUD for claims.json |
-| `extract.js` | Generate LLM prompts for claim extraction |
-| `match.js` | LLM-based semantic matching of article claims to registry |
-| `index.js` | Module exports |
+Cross-check a subset of claims against pre-defined authoritative sources (where applicable).
 
 ---
 
@@ -163,6 +137,90 @@ node scripts/verify-source.js --check-article cases/[case-id] --json
 - 2: Usage error
 
 ---
+
+### `audit-findings.js`
+
+Findings hygiene gate: blocks cases where findings are duplicated or misnamed (which can cause `findings.js assemble` to silently ignore critical content).
+
+```bash
+node scripts/audit-findings.js cases/[case-id]
+node scripts/audit-findings.js cases/[case-id] --block
+node scripts/audit-findings.js cases/[case-id] --json
+```
+
+### `audit-leads.js`
+
+Lead hygiene audit: for investigated leads, numeric claims (digits) must have valid sources listed in `sources[]`.
+
+```bash
+node scripts/audit-leads.js cases/[case-id] --block
+node scripts/audit-leads.js cases/[case-id] --json
+```
+
+### `audit-article-outline.js`
+
+Article outline audit: enforces the presence of `articles/outline.md` with deliverables + scope-control sections (prevents tangent domination).
+
+```bash
+node scripts/audit-article-outline.js cases/[case-id] --block
+node scripts/audit-article-outline.js cases/[case-id] --json
+```
+
+### `audit-risk-micromort.js`
+
+Risk framing audit: if the article publishes **death-risk** rates (e.g., “1 in X”, “Y%”, “Z× more deadly”) it must include a micromort conversion (micromorts measure death risk only).
+
+```bash
+node scripts/audit-risk-micromort.js cases/[case-id] --block
+node scripts/audit-risk-micromort.js cases/[case-id] --json
+```
+
+### `gate5-preflight.js`
+
+Run deterministic Gate 5 preflight checks (findings hygiene, citations, evidence integrity for cited sources, and numeric citation hygiene).
+
+```bash
+node scripts/gate5-preflight.js cases/[case-id]
+node scripts/gate5-preflight.js cases/[case-id] --json
+# Strict receipts (requires EVIDENCE_RECEIPT_KEY; auto-enabled when the env var is set)
+node scripts/gate5-preflight.js cases/[case-id] --strict
+```
+
+### `update-gates.js`
+
+Derive gate statuses from deterministic checks + required artifacts, and optionally write them to `state.json`.
+
+```bash
+node scripts/update-gates.js cases/[case-id] --json
+node scripts/update-gates.js cases/[case-id] --write
+node scripts/update-gates.js cases/[case-id] --write --strict
+```
+
+### `ingest-feedback.js`
+
+Start a revision cycle from one or more feedback files by creating `feedback/revisionN.md` (verbatim) and updating `state.json`.
+
+```bash
+node scripts/ingest-feedback.js cases/[case-id] feedback-1.md feedback-2.md
+```
+
+### `audit-numerics.js`
+
+Flags numeric sentences without `[S###]` citations (helps prevent unsourced “precise-looking” numbers).
+
+```bash
+node scripts/audit-numerics.js cases/[case-id] --block --article articles/full.md
+node scripts/audit-numerics.js cases/[case-id] --json
+```
+
+### `build-article-context.js`
+
+Bundle case context into a single file for high-context article generation.
+
+```bash
+node scripts/build-article-context.js cases/[case-id] --output cases/[case-id]/articles/article-context.md
+node scripts/build-article-context.js cases/[case-id] --no-questions
+```
 
 ### `capture.js`
 

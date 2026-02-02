@@ -64,20 +64,28 @@ Scan for:
 
 ### If PASS
 
-```
-Balance Audit: PASS
+Write `balance-audit.md` containing:
 
-Stakeholders Represented: [count]
+```markdown
+# Balance Audit
+
+## Stakeholders Represented
+Stakeholders represented: [count]
 - [stakeholder 1]: quoted/cited
 - [stakeholder 2]: perspective included
 ...
 
-Steelman Test: PASS
+## Steelman Test
 Main thesis: "[thesis]"
 Strongest counterargument: "[counterargument]"
 Addressed in: [section reference]
 
-Framing: BALANCED
+## Framing
+[BALANCED / notes]
+
+## Status
+
+**PASS**
 ```
 
 Update `state.json`:
@@ -90,20 +98,26 @@ Update `state.json`:
 
 ### If FAIL
 
-```
-Balance Audit: FAIL
+Write `balance-audit.md` containing:
 
-FAIL_STAKEHOLDER:
+```markdown
+# Balance Audit
+
+## FAIL_STAKEHOLDER
 - [stakeholder X] mentioned but not represented
 - Missing perspective on [topic]
 
-FAIL_STEELMAN:
+## FAIL_STEELMAN
 - Main thesis: "[thesis]"
 - Unaddressed counterargument: "[counterargument]"
 
-FAIL_FRAMING:
+## FAIL_FRAMING
 - "[quoted text]" uses loaded language
 - Asymmetric treatment of [parties]
+
+## Status
+
+**FAIL**
 ```
 
 Do NOT update gate. Return specific issues to fix.
